@@ -12,7 +12,7 @@ runModel <- function(sampleID, outType="dTabs", RCP=0, rcps = "CurrClim",
                      coefN20_1 = 0.23,coefN20_2 = 0.077,#g m-2 y-1
                      landClassUnman=NULL,compHarvX = 0,
                      funPreb = regionPrebas, ingrowth = F,
-                     initSoilCreStart=NULL,
+                     initSoilCreStart=NULL,thinFactX = 0.25,
                      outModReStart=NULL,reStartYear=1,climdata=NULL,
                      sampleX=NULL,P0currclim=NA, fT0=NA){
   # outType determines the type of output:
@@ -355,7 +355,7 @@ runModel <- function(sampleID, outType="dTabs", RCP=0, rcps = "CurrClim",
   if(harvInten == "Low"){ cutArX <- cutArX * 1}
   if(harvInten == "MaxSust"){cutArX <- cutArX * 1.2}
   if(harvScen == "NoHarv"){cutArX <- cutArX * 0.}
-  cutArX <- cutArX * 2
+  #cutArX <- cutArX * 3
   ###run PREBAS
   if(initilizeSoil){
     if(!(harvScen =="Base" & harvInten == "Base") | rcps!="CurrClim"){
@@ -465,7 +465,7 @@ runModel <- function(sampleID, outType="dTabs", RCP=0, rcps = "CurrClim",
         print("start regionPrebas...")
         region <- regionPrebas(initPrebas, HarvLim = as.numeric(HarvLimX),
                           minDharv = minDharvX,cutAreas =cutArX,
-                          compHarv=compHarvX,
+                          compHarv=compHarvX, thinFact = thinFactX, 
                           startSimYear=reStartYear)
       }
       

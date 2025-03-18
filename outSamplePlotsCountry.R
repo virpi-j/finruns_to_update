@@ -4,10 +4,11 @@ if(dev.interactive()) dev.off()
 library(dplyr)
 library(ggplot2)
 library(data.table)
-toFile <- F
+if(!exists("toFile")) toFile <- F
 vPREBAS <- "newVersion"
 #vPREBAS <- "master"
-nSegs <- 10000
+nSegs <- 5000
+if(toFile) nSegs <- 30000
 fmi_from_allas <- F
 
 library(tidyverse)
@@ -89,6 +90,7 @@ results <- array(0,c(8,nYears,length(rids),2))
 dimnames(results) <- list(c("grossgrowth","V","Vharvested", "NEE", "Wharvested", "CH4em", "N2Oem","NBE"),1:nYears,regionNames[rids],c("sum","ave"))
 
 r_noi <- 4
+if(!toFile) rids <- rids[1:3]
 if(toFile) pdf(paste0(outDir,"results.pdf"))
 for(r_noi in 1:length(rids)){
   toMem <- ls()
@@ -126,7 +128,7 @@ for(r_noi in 1:length(rids)){
   
   samplaus <- T
   if(samplaus){
-    sampleArea <- nSegs
+    sampleArea <- nSegs*median(data.all$area)
     sample_weight <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
     sample_weight_lc1 <- sample_weight/sum(sample_weight)
     ikaid <- array(0,c(nrow(data.all),1))
@@ -152,13 +154,9 @@ for(r_noi in 1:length(rids)){
       ni <- ni[sample(1:length(ni),nSegs,replace = T)]
       ni <- ni[which(cumsum(data.all$area[ni])<= sample_weight[id]*sampleArea)]
       nirandom <- c(nirandom,ni)
-    #  head(data.all[ni,c("age","area","landclass")])
     }
     
     dataS <- data.all[nirandom[sample(1:length(nirandom),nSegs,replace=F)],]
-#    dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = T, prob = sample_weight/sum(sample_weight)),]
-#    h <- hist(dataS$age, breaks = c(0,1,20,40,60,80,100,120,140,160))
-#    points(h$mids,sample_weight_lc1,col="red")
   } else {
     dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F),]
   }
@@ -184,8 +182,6 @@ for(r_noi in 1:length(rids)){
     dataS$lat <- location$y
   }
   rcps <- "CurrClim"
-  #workdir <-"/scratch/project_2000994/PREBASruns/PREBAStesting/"
-  #setwd(workdir)
   print(fmi_from_allas)
   # fmi data from allas
   if(fmi_from_allas){
@@ -232,12 +228,12 @@ for(r_noi in 1:length(rids)){
     
   }
   
-  #ops <- list(dataS)
   source("~/finruns_to_update/functions.R")
   
   deltaID <- 1; outType <- "TestRun"; harvScen="Base"; harvInten="Base"; climScen=0  
   out <- runModel(1,sampleID=1, outType = "testRun", rcps = rcps, RCP=0,
-                harvScen="Base", harvInten="Base", procDrPeat=T,
+                harvScen="Base", harvInten="Base", procDrPeat=T, thinFactX= 0.75,
+                compHarvX = 2,
                 forceSaveInitSoil=F, sampleX = dataS)
   print(sum(dataS$area))
   #lapply(sampleIDs, 
@@ -262,16 +258,24 @@ for(r_noi in 1:length(rids)){
   
   ti <- 1
   ikaluokat <- array(0,c(nYears,9))
+  agelimits <- c(0,20,40,60,80,100,120,140,1e4)
   for(ti in 1:nYears){
     ages <- apply(output[,ti,"age",,1]*output[,ti,"BA",,1],1,sum)/apply(output[,ti,"BA",,1],1,sum)
     ages[is.na(ages)] <- 0 
     ages <- ages[n_lc1]
-    ikaluokat[ti,] <- round(c(sum(areas1[ages==0]),sum(areas1[ages>0 & ages<=20]),
-      sum(areas1[ages>20 & ages<=40]),sum(areas1[ages>40 & ages<=60]),
-      sum(areas1[ages>60 & ages<=80]),sum(areas1[ages>80 & ages<=100]),
-      sum(areas1[ages>100 & ages<=120]),sum(areas1[ages>120 & ages<=140]),
-      sum(areas1[ages>140]))/sum(areas1),3)
+    for(ij in 1:length(agelimits)){
+      if(ij == 1){ 
+        ikaluokat[ti,ij] <- sum(areas1[which(ages==agelimits[1])])
+      } else if(ij==length(agelimits)){
+        ikaluokat[ti,ij] <- sum(areas1[which(ages>(agelimits[ij-1]+1))])
+      } else {
+        ikaluokat[ti,ij] <- sum(areas1[which(ages>(agelimits[ij-1]+1) & ages<=agelimits[ij])])  
+      }
+    }
+    ikaluokat[ti,] <- round(ikaluokat[ti,]/sum(ikaluokat[ti,]),3)
   }
+  
+  
   
   V <- colSums(apply(output[,,"V",,1],1:2,sum)*areas)/sum(areas)
   Vlc1 <- colSums(apply(output[n_lc1,,"V",,1],1:2,sum)*areas1)/sum(areas1)
@@ -334,33 +338,33 @@ for(r_noi in 1:length(rids)){
          ylim = c(0,8))
     points(c(2015,2021),ggstats,pch=19,col="red")
     lines(time, grossgrowthlc1,col="blue")
-    lines(time, grossgrowthlc2,col="green")
+    if(length(n_lc2)>0) lines(time, grossgrowthlc2,col="green")
     #    plot(time, BA, type="l",main=paste("Region",r_no,rname))
     plot(time, NEP, type="l",main=paste("Region",r_no),
-         ylim=c(min(min(NEPlc2),min(NEP)),max(NEP)))
+         ylim=c(min(NEP),max(NEP)))
     lines(time, NEPlc1, col="blue")
-    lines(time, NEPlc2, col="green")
+    if(length(n_lc2)>0)lines(time, NEPlc2, col="green")
 
     plot(time, V, type="l",main=paste("Region",r_no), ylim = c(0,160))
     points(c(2015,2021),Vstats,pch=19,col="red")
     lines(time, Vlc1, col="blue")
-    lines(time, Vlc2, col="green")
+    if(length(n_lc2)>0) lines(time, Vlc2, col="green")
     
     plot(time, Wtot, type="l",main=paste("Region",r_no), 
          ylim = c(0,60000))
     points(c(2015,2021),wstats,pch=19,col="red")
     lines(time, Wtotlc1, col="blue")
-    lines(time, Wtotlc2, col="green")
+    if(length(n_lc2)>0) lines(time, Wtotlc2, col="green")
     
     plot(time, Vharvested, type="l",main=paste("Region",r_no), ylim=c(0,max(Vharvested)))
     points(time[1:nYears],rowSums(HarvLimMaak[1:nYears,])/totArea*1000,col="red")
     lines(time, Vharvestedlc1, col="blue")
-    lines(time, Vharvestedlc2, col="green")
+    if(length(n_lc2)>0)lines(time, Vharvestedlc2, col="green")
     
     plot(time, NBE, type="l",ylim = 1.05*c(min(0,min(NBE)),max(max(NBE),0)),main=paste("Region",r_no))
     lines(c(time[1],time[length(time)]),c(0,0),col="black")
     lines(time, NBElc1, col="blue")
-    lines(time, NBElc2, col="green")
+    if(length(n_lc2)>0) lines(time, NBElc2, col="green")
     
     par(mfrow=c(1,1))
     datagroups <- c("a: 0","b: 1-20","c: 21-40","d: 41-60","e: 61-80","f:81-100","g: 101-120","h: 121-140","i: 140-")
