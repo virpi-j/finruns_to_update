@@ -52,10 +52,10 @@ if(!exists("harvInten")) harvInten = "Base"#c("NoHarv","Base")
 
 # Missing from varOuts: 
 # MinPeat-index, NEPdrPeat
-if(!exists("mortMod")) mortMod=3
+if(!exists("mortMod")) mortMod=13
 if(!exists("BioIndCalc")) BioIndCalc=FALSE ##if true include the bioindeces in the data.tables outputDT
 if(!exists("siteTypes")) siteTypes=1:20
-if(!exists("landClassX")) landClassX=1:3
+if(!exists("landClassX")) landClassX=1:2
 ###flag for settings the regions to consider
 if(!exists("regSets")) regSets <- "maakunta" ### "forCent", "maakunta"
 if(!exists("minDharvX")) minDharvX <- 15 ### minimum DBH for clearcutting
@@ -205,8 +205,114 @@ colnames(bigregiondrain) = c('Area','1990-2013')
 rem = merge(rem, bigregiondrain)
 
 
-
-if(regSets=="maakunta"){
+OldData <- T # F = Updated harvest statistics 
+if(regSets=="maakunta" & !OldData){
+  pathToHarvStats <- "/scratch/project_2000994/PREBASruns/PREBAStesting/RegionRuns/harvest.xlsx"
+  #pathToHarvStats_old <- "/scratch/project_2000994/PREBASruns/metadata/maakunta/harvest.xlsx"
+  roundWoodTab <- data.table(read_excel(
+    path = pathToHarvStats,
+    sheet="roundWood"))
+  roundWood <- as.numeric(c(unlist(roundWoodTab[id==r_no,3:11]),
+                            rep(unlist(roundWoodTab[id==r_no,12]),1),
+                            rep(unlist(roundWoodTab[id==r_no,13]),10),
+                            rep(unlist(roundWoodTab[id==r_no,14]),10),
+                            rep(unlist(roundWoodTab[id==r_no,15]),10),
+                            rep(unlist(roundWoodTab[id==r_no,16]),10)
+  ))
+  energyWoodFromRoundWoodTab <- data.table(read_excel(
+    path = pathToHarvStats,
+    sheet="energyWoodRoundWood"))
+  energyWoodFromRoundWood <- as.numeric(c(unlist(energyWoodFromRoundWoodTab[id==r_no,3:11]),
+                                          rep(unlist(energyWoodFromRoundWoodTab[id==r_no,12]),1),
+                                          rep(unlist(energyWoodFromRoundWoodTab[id==r_no,13]),10),
+                                          rep(unlist(energyWoodFromRoundWoodTab[id==r_no,14]),10),
+                                          rep(unlist(energyWoodFromRoundWoodTab[id==r_no,15]),10),
+                                          rep(unlist(energyWoodFromRoundWoodTab[id==r_no,16]),10)
+  ))
+  energyWoodTab <- data.table(read_excel(
+    path = pathToHarvStats,
+    sheet="energyWood"))
+  energyWood <- as.numeric(c(unlist(energyWoodTab[id==r_no,3:11]),
+                             rep(unlist(energyWoodTab[id==r_no,12]),1),
+                             rep(unlist(energyWoodTab[id==r_no,13]),10),
+                             rep(unlist(energyWoodTab[id==r_no,14]),10),
+                             rep(unlist(energyWoodTab[id==r_no,15]),10),
+                             rep(unlist(energyWoodTab[id==r_no,16]),10)
+  ))
+  
+  ####!!!!!!!!!!!to be checked!!!!!!!
+  ####energy wood from statistics includes pulp, sawn and energyWood from roundWood
+  roundWood <- energyWoodFromRoundWood + roundWood
+  ######!!!!#####
+  
+  clcutArTab <- data.table(read_excel(
+    path = pathToHarvStats,
+    sheet="clearcutAreas"))
+  clcutAr <- as.numeric(c(unlist(clcutArTab[id==r_no,3:11]),
+                          rep(unlist(clcutArTab[id==r_no,12]),1),
+                          rep(unlist(clcutArTab[id==r_no,13]),10),
+                          rep(unlist(clcutArTab[id==r_no,14]),10),
+                          rep(unlist(clcutArTab[id==r_no,15]),10),
+                          rep(unlist(clcutArTab[id==r_no,16]),10)
+  ))
+  clcutAr <- clcutAr * clcutArFact
+  HarvLimMaak <- cbind(roundWood,energyWood)
+  
+  thinArTab <- data.table(read_excel(
+    path = pathToHarvStats,
+    sheet="thinningAreas"))
+  thinAr <- as.numeric(c(unlist(thinArTab[id==r_no,3:11]),
+                         rep(unlist(thinArTab[id==r_no,12]),1),
+                         rep(unlist(thinArTab[id==r_no,13]),10),
+                         rep(unlist(thinArTab[id==r_no,14]),10),
+                         rep(unlist(thinArTab[id==r_no,15]),10),
+                         rep(unlist(thinArTab[id==r_no,16]),10)
+  ))
+  noClcutArTab <- data.table(read_excel(
+    path = pathToHarvStats,
+    sheet="NoClearCutArea"))
+  noClcutAr <- as.numeric(c(unlist(noClcutArTab[id==r_no,3:11]),
+                            rep(unlist(noClcutArTab[id==r_no,12]),1),
+                            rep(unlist(noClcutArTab[id==r_no,13]),10),
+                            rep(unlist(noClcutArTab[id==r_no,14]),10),
+                            rep(unlist(noClcutArTab[id==r_no,15]),10),
+                            rep(unlist(noClcutArTab[id==r_no,16]),10)
+  ))
+  
+  firstThinAreaTab <- data.table(read_excel(
+    path = pathToHarvStats,
+    sheet="firstThinArea"))
+  firstThinAr <- as.numeric(c(unlist(firstThinAreaTab[id==r_no,3:11]),
+                              rep(unlist(firstThinAreaTab[id==r_no,12]),1),
+                              rep(unlist(firstThinAreaTab[id==r_no,13]),10),
+                              rep(unlist(firstThinAreaTab[id==r_no,14]),10),
+                              rep(unlist(firstThinAreaTab[id==r_no,15]),10),
+                              rep(unlist(firstThinAreaTab[id==r_no,16]),10)
+  ))
+  
+  tendingAreaTab <- data.table(read_excel(
+    path = pathToHarvStats,
+    sheet="tendingArea"))
+  tendingAr <- as.numeric(c(unlist(tendingAreaTab[id==r_no,3:11]),
+                            rep(unlist(tendingAreaTab[id==r_no,12]),1),
+                            rep(unlist(tendingAreaTab[id==r_no,13]),10),
+                            rep(unlist(tendingAreaTab[id==r_no,14]),10),
+                            rep(unlist(tendingAreaTab[id==r_no,15]),10),
+                            rep(unlist(tendingAreaTab[id==r_no,16]),10)
+  ))
+  stats <- data.table(read_excel(
+    path = pathToHarvStats,
+    sheet="stats",col_types=c("text","numeric","numeric","text",rep("numeric",40)),na="NA"))
+  ####converts data to model output units
+  cFact <- 1e6 ####M m3 -> m3
+  stats[,names(stats)[5:9]:=.SD*cFact,.SDcols=5:9]  ####converts volume from Mm3 to m3
+  cFact <- 1e9/2 #### orginal units M t dryMatter -> kgC
+  stats[,names(stats)[11:30]:= .SD*cFact,.SDcols=11:30] ####converts biomasses
+  cFact <- 1e3 #### orginal units kha -> ha
+  stats[,names(stats)[38:44]:= .SD*cFact,.SDcols=38:44] ####converts areas
+  
+} 
+if(regSets=="maakunta" & OldData){
   roundWoodTab <- data.table(read_excel(
     path = "/scratch/project_2000994/PREBASruns/metadata/maakunta/harvest.xlsx",
     sheet="roundWood"))
@@ -241,6 +347,7 @@ if(regSets=="maakunta"){
   ####!!!!!!!!!!!to be checked!!!!!!!
   ####energy wood from statistics includes pulp, sawn and energyWood from roundWood
   roundWood <- energyWoodFromRoundWood + roundWood
+  #energyWood <- energyWoodFromRoundWood + energyWood
   ######!!!!#####
   
   clcutArTab <- data.table(read_excel(
@@ -310,6 +417,7 @@ if(regSets=="maakunta"){
   stats[,names(stats)[38:44]:= .SD*cFact,.SDcols=38:44] ####converts areas
   
 }
+
 
 regIDs <- stats[4:22,3:4]
 setkey(regIDs,regID)
