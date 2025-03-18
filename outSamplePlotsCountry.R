@@ -1,10 +1,13 @@
-rm(list=ls())
-gc()
-if(dev.interactive()) dev.off()
+if(!exists("toFile")){
+  rm(list=ls())
+  gc()
+  if(dev.interactive()) dev.off()
+  toFile <- F
+}
 library(dplyr)
 library(ggplot2)
 library(data.table)
-if(!exists("toFile")) toFile <- F
+print(toFile)
 vPREBAS <- "newVersion"
 #vPREBAS <- "master"
 nSegs <- 5000

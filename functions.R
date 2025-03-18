@@ -40,6 +40,7 @@ runModel <- function(sampleID, outType="dTabs", RCP=0, rcps = "CurrClim",
     sampleX <- ops[[1]]
     #    sampleX <- ops[[sampleID]]
   }
+  print(paste("Sample size",nrow(sampleX)))
   #print(sampleX[1:3,])
   sampleX$oldCons <- sampleX$cons
   procInSample=F
