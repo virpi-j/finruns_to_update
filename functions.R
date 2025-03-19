@@ -13,6 +13,7 @@ runModel <- function(sampleID, outType="dTabs", RCP=0, rcps = "CurrClim",
                      landClassUnman=NULL,compHarvX = 0,
                      funPreb = regionPrebas, ingrowth = F,
                      initSoilCreStart=NULL,thinFactX = 0.25,
+                     ageHarvPriorX = 0,
                      outModReStart=NULL,reStartYear=1,climdata=NULL,
                      sampleX=NULL,P0currclim=NA, fT0=NA){
   # outType determines the type of output:
@@ -463,9 +464,11 @@ runModel <- function(sampleID, outType="dTabs", RCP=0, rcps = "CurrClim",
         #print("save regionPrebas input")
         #save(initPrebas, HarvLimX, minDharvX,cutArX,compHarvX,
         #     file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/testRunHiilikartta.rdata"))
+        print(paste("compHarv =",compHarvX," thinFact =",thinFactX,"ageHarvPrior =", ageHarvPriorX))
         print("start regionPrebas...")
         region <- regionPrebas(initPrebas, HarvLim = as.numeric(HarvLimX),
                           minDharv = minDharvX,cutAreas =cutArX,
+                          ageHarvPrior = ageHarvPriorX,
                           compHarv=compHarvX, thinFact = thinFactX, 
                           startSimYear=reStartYear)
       }
@@ -492,10 +495,15 @@ runModel <- function(sampleID, outType="dTabs", RCP=0, rcps = "CurrClim",
                         cutAreas =cutArX,compHarv=compHarvX,
                         startSimYear=reStartYear)
     } else {
-      region <- funPreb(initPrebas, HarvLim = as.numeric(HarvLimX),
-                        minDharv = minDharvX,cutAreas =cutArX,
-                        compHarv=compHarvX,
-                        startSimYear=reStartYear)
+      region <- regionPrebas(initPrebas, HarvLim = as.numeric(HarvLimX),
+                             minDharv = minDharvX,cutAreas =cutArX,
+                             ageHarvPrior = ageHarvPriorX,
+                             compHarv=compHarvX, thinFact = thinFactX, 
+                             startSimYear=reStartYear)
+#      region <- funPreb(initPrebas, HarvLim = as.numeric(HarvLimX),
+#                        minDharv = minDharvX,cutAreas =cutArX,
+#                        compHarv=compHarvX, ageHarvPrior = ageHarvPriorX,
+#                        startSimYear=reStartYear)
     } 
   }
   

@@ -107,6 +107,7 @@ for(r_noi in 1:length(rids)){
   landClassX <- 1:2
   if(!exists("compHarvX")) compHarvX <- 0
   if(!exists("thinFactX")) thinFactX <- 0.25
+  print(paste("CompHarv =", compHarvX))
   source("~/finruns_to_update/settings.R")
   
   areasLandClass2015 <- as.numeric(landclass2015[which(landclass2015[,1]==rname_fi),2:3])
@@ -236,8 +237,9 @@ for(r_noi in 1:length(rids)){
   
   deltaID <- 1; outType <- "TestRun"; harvScen="Base"; harvInten="Base"; climScen=0  
   out <- runModel(1,sampleID=1, outType = "testRun", rcps = rcps, RCP=0,
-                harvScen="Base", harvInten="Base", procDrPeat=T, thinFactX= thinFactX,
-                compHarvX = compHarvX,
+                harvScen="Base", harvInten="Base", procDrPeat=T, 
+                thinFactX= thinFactX,
+                compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
                 forceSaveInitSoil=F, sampleX = dataS)
   print(sum(dataS$area))
   #lapply(sampleIDs, 
