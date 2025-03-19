@@ -203,7 +203,8 @@ runModel <- function(sampleID, outType="dTabs", RCP=0, rcps = "CurrClim",
   clim = prep.climate.f(dat, data.sample, startingYear, nYears)
   Region = nfiareas[ID==r_no, Region]
   
-  HcFactor <- 1
+  print(paste("HcFactor =",HcFactor))
+  #HcFactor <- 1
   print(paste("Ingrowth =",ingrowth))
   #if(outType=="testRun"){
   initPrebas = create_prebas_input.f(r_no, clim, data.sample, nYears = nYears,
