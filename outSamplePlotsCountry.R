@@ -390,7 +390,7 @@ for(r_noi in 1:length(rids)){
   results_ave <- rbind(grossgrowth,V,Vharvested, NEE, Wharvested, CH4em, N2Oem, NBE)/sum(areas)
   results[,,r_noi,1] <- results_ave*totArea
   results[,,r_noi,2] <- results_ave
-  if(toFile) save(results, landclassMSNFI, 
+  if(toFile) save(results, landclassMSNFI, ikaluokat, 
                   file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,".rdata"))  
   rm(list=setdiff(ls(), toMem))
   gc()
