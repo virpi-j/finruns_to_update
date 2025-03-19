@@ -133,7 +133,7 @@ for(r_noi in 1:length(rids)){
   areaRegion <- totArea <- sum(data.all$area,na.rm=T)
   
   if(samplaus){
-    sampleArea <- nSegs*median(data.all$area)*2
+    sampleArea <- nSegs*median(data.all$area)*1
     sample_weight <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
     sample_weight_lc1 <- sample_weight/sum(sample_weight)
     ikaid <- array(0,c(nrow(data.all),1))
