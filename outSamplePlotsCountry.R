@@ -95,7 +95,7 @@ dimnames(results) <- list(c("grossgrowth","V","Vharvested", "NEE", "Wharvested",
 
 r_noi <- 7
 if(!toFile) rids <- rids[1:3]
-if(toFile) pdf(paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,".pdf"))
+if(toFile) pdf(paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,".pdf"))
 for(r_noi in 1:length(rids)){
   toMem <- ls()
   set.seed(1)
@@ -393,7 +393,7 @@ for(r_noi in 1:length(rids)){
   results[,,r_noi,1] <- results_ave*totArea
   results[,,r_noi,2] <- results_ave
   if(toFile) save(results, landclassMSNFI, ikaluokat, 
-                  file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,".rdata"))  
+                  file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,".rdata"))  
   rm(list=setdiff(ls(), toMem))
   gc()
 }
