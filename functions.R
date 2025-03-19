@@ -357,7 +357,7 @@ runModel <- function(sampleID, outType="dTabs", RCP=0, rcps = "CurrClim",
   if(harvInten == "Low"){ cutArX <- cutArX * 1}
   if(harvInten == "MaxSust"){cutArX <- cutArX * 1.2}
   if(harvScen == "NoHarv"){cutArX <- cutArX * 0.}
-  #cutArX <- cutArX * 3
+  #cutArX <- cutArX * 0.5
   ###run PREBAS
   if(initilizeSoil){
     if(!(harvScen =="Base" & harvInten == "Base") | rcps!="CurrClim"){

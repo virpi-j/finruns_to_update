@@ -93,7 +93,7 @@ if(manualRun){
 results <- array(0,c(8,nYears,length(rids),2))
 dimnames(results) <- list(c("grossgrowth","V","Vharvested", "NEE", "Wharvested", "CH4em", "N2Oem","NBE"),1:nYears,regionNames[rids],c("sum","ave"))
 
-r_noi <- 7
+r_noi <- 4
 if(!toFile) rids <- rids[1:3]
 if(toFile) pdf(paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,".pdf"))
 for(r_noi in 1:length(rids)){
@@ -107,7 +107,7 @@ for(r_noi in 1:length(rids)){
   landClassX <- 1:2
   if(!exists("compHarvX")) compHarvX <- 0
   if(!exists("thinFactX")) thinFactX <- 0.25
-  print(paste("CompHarv =", compHarvX))
+#  print(paste("CompHarv =", compHarvX))
   source("~/finruns_to_update/settings.R")
   
   areasLandClass2015 <- as.numeric(landclass2015[which(landclass2015[,1]==rname_fi),2:3])
@@ -133,35 +133,105 @@ for(r_noi in 1:length(rids)){
   areaRegion <- totArea <- sum(data.all$area,na.rm=T)
   
   if(samplaus){
-    sampleArea <- nSegs*median(data.all$area)*1.5
+    sampleArea <- nSegs*median(data.all$area)*5
     sample_weight <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
     sample_weight_lc1 <- sample_weight/sum(sample_weight)
     ikaid <- array(0,c(nrow(data.all),1))
-    ages <- data.all$age
+    ages <- round(data.all$age)
     agelimits <- c(0,20,40,60,80,100,120,140,1e4)
-    for(ij in 1:length(agelimits)){
-      if(ij == 1){ ikaid[which(ages==agelimits[1])] <- ij
-      } else if(ij==length(agelimits)){
-        ikaid[which(ages>(agelimits[ij-1]+1))] <- ij
+    
+    agelimitsii <- 0:150
+    pagelimitsii <- pagedata <- pagesample <- array(0,c(length(agelimitsii),1))
+    pwages <- cumsum(sample_weight_lc1)
+    ii <- 1
+    for(ii in 1:length(agelimitsii)){
+      if(agelimitsii[ii]%in%agelimits){
+        iiprev <- which(agelimits==agelimitsii[ii])
+        ageprev <- agelimitsii[ii]
+        pagelimitsii[ii] <- pwages[iiprev]
       } else {
-        ikaid[which(ages>(agelimits[ij-1]+10) & ages<=agelimits[ij])]<-ij  
+        pagelimitsii[ii] <- pwages[iiprev] + 
+          (pwages[iiprev+1]-pwages[iiprev])/
+          (agelimits[iiprev+1]-(ageprev))*(agelimitsii[ii]-(ageprev))
+      }
+      pagedata[ii] <- sum(data.all$area[which(data.all$age<=agelimitsii[ii])])/totArea
+    }
+    plot(agelimitsii, pagelimitsii, type="l", xlab="age", ylab="cumsum(area)")
+    points(agelimits, pwages, pch=19)
+    lines(agelimitsii,pagedata, col="red")
+    #ri <- runif(nSegs)
+    ii <- 1
+    nirandom <- NULL
+    areashares <- array(0,c(length(agelimitsii),1))
+    pareashares <- c(pagelimitsii[1],pagelimitsii[-1]-pagelimitsii[-length(pagelimitsii)])
+    pareashares2 <- pareashares/sum(pareashares)*sampleArea
+#    pareashares2 <- pareashares/sum(pareashares)*totArea*nSegs/nrow(data.all)
+    for(ii in 1:length(agelimitsii)){
+      agei <- agelimitsii[ii]
+      ni <- which(ages==agei)
+      if(length(ni)==0){
+        ni <- which(ages==ages[which.min((data.all$age-agei)^2)[1]])
+      }
+      while(areashares[ii]<=1.5*pareashares2[ii]){
+        nii <- ni[sample(1:length(ni),1)]
+        nirandom <- c(nirandom,nii)
+        areashares[ii] <- areashares[ii]+data.all$area[nii]
       }
     }
-    ikaid[which(data.all$landclass==2)] <- 0
-    ikaid <- ikaid + 1
-    
-    w2 <- areasLandClass2015/sum(areasLandClass2015)
-    sample_weight <- c(w2[2],sample_weight_lc1*w2[1]) # prob for all landclass 2, probs for landclass 1 by age
-
-    nirandom <- NULL
-    for(id in 1:length(unique(ikaid))){
-      ni <- which(ikaid==id)
-      ni <- ni[sample(1:length(ni),nSegs,replace = T)]
-      ni <- ni[which(cumsum(data.all$area[ni])<= sample_weight[id]*sampleArea)]
+    if(FALSE){
+    for(ii in 1:length(ri)){
+      agei <- which(pagelimitsii<=ri[ii])
+      if(length(agei)>0){      
+        agei <- agelimitsii[agei[length(agei)]]
+      } else {
+        agei <- 0
+      }
+      ni <- which(ages==agei)
+      if(length(ni)==0){
+        ni <- which(ages==ages[which.min((data.all$age-agei)^2)[1]])
+      }
+      if(pareashares2[agei+1]<=areashares[agei+1]){
+        probsi <- 1/data.all$area[ni]
+        ni <- ni[sample(1:length(ni),1,prob = probsi/sum(probsi))]
+      } else {
+        ni <- ni[sample(1:length(ni),1)]
+      }
+      areashares[agei+1] <- areashares[agei+1]+ data.all$area[ni]
+      if(is.na(ni)) break
+       print(data.all$age[ni])
       nirandom <- c(nirandom,ni)
+    }}
+    print(paste("Sampled segments",length(nirandom),"versus nSegs =",nSegs))
+    if(length(nirandom)>nSegs) nirandom <- nirandom[sample(1:length(nirandom),nSegs,replace=T)]
+    dataS <- data.all[nirandom,]
+    for(ii in 1:length(agelimitsii)){
+      pagesample[ii] <- sum(dataS$area[which(dataS$age<=agelimitsii[ii])])/sum(dataS$area)
     }
-    
-    dataS <- data.all[nirandom[sample(1:length(nirandom),nSegs,replace=F)],]
+    lines(agelimitsii, pagesample, col="green")
+    if(FALSE){
+      for(ij in 1:length(agelimits)){
+        if(ij == 1){ ikaid[which(ages==agelimits[1])] <- ij
+        } else if(ij==length(agelimits)){
+          ikaid[which(ages>(agelimits[ij-1]+1))] <- ij
+        } else {
+          ikaid[which(ages>(agelimits[ij-1]+10) & ages<=agelimits[ij])]<-ij  
+        }
+      }
+      ikaid[which(data.all$landclass==2)] <- 0
+      ikaid <- ikaid + 1
+      
+      w2 <- areasLandClass2015/sum(areasLandClass2015)
+      sample_weight <- c(w2[2],sample_weight_lc1*w2[1]) # prob for all landclass 2, probs for landclass 1 by age
+      
+      nirandom <- NULL
+      for(id in 1:length(unique(ikaid))){
+        ni <- which(ikaid==id)
+        ni <- ni[sample(1:length(ni),nSegs,replace = T)]
+        ni <- ni[which(cumsum(data.all$area[ni])<= sample_weight[id]*sampleArea)]
+        nirandom <- c(nirandom,ni)
+      }
+      dataS <- data.all[nirandom[sample(1:length(nirandom),nSegs,replace=F)],]
+    }
   } else {
     dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F),]
   }
@@ -398,123 +468,3 @@ for(r_noi in 1:length(rids)){
   gc()
 }
 if(toFile) dev.off()
-
-break
-countryArea <- sum(areaAllRegions)
-
-meanScenNorm <- meanRegion
-meanScenNorm[, vars] <- 
-  meanRegion[ ,lapply(.SD, `*`, area/countryArea), .SDcols = vars]
-
-meanCountry <- meanScenNorm[ ,lapply(.SD, sum), .SDcols = vars,by=.(harScen,year,harvInten)]
-
-meanCountry$CbalState=0
-meanCountry[year %in% 2:max(meanCountry$year)]$CbalState=
-  -(meanCountry[year %in% 2:max(meanCountry$year),
-                (WtotTrees+soilC+GVw+Wdb)] -
-      meanCountry[year %in% 1:(max(meanCountry$year)-1),
-                  (WtotTrees+soilC+GVw+Wdb)])*44/12/1e9*
-  countryArea
-
-meanCountry[,CbalFluxes:=(-NEP*10+WenergyWood+WroundWood)*
-              44/12*countryArea/1e9]
-meanCountry[year ==1]$CbalState=NA
-
-save(meanCountry,meanRegion,countryArea,
-     file = paste0(outDyr,"/country",
-                   run_settings,".rdata"))
-
-# dataPlot <- meanCountry[harScen!="adaptTapio"]
-dataPlot <- meanCountry
-pdf(paste0(outDyr,"/plots/plots_country.pdf"))
-for(varX in vars){
-  # i=i+1
-  print(ggplot(dataPlot)+
-          # geom_ribbon(aes(x = year + 2016, ymin = q0.25, ymax = q0.75,fill= harScen), alpha = 0.3)+
-          geom_line(aes(x = year+ 2015, y = get(varX), color = harScen,linetype=harvInten)) + 
-          xlab("year") + ylab(varX))
-  # print(ggplot(meanCountry)+
-  #         # geom_ribbon(aes(x = year + 2016, ymin = q0.25, ymax = q0.75,fill= harScen), alpha = 0.3)+
-  #         geom_line(aes(x = year+ 2016, y = get(varX)*countryArea/1e6,
-  #                       color = harScen)) + 
-  #         xlab("year") + ylab(varX))
-}
-print(ggplot(dataPlot)+
-        # geom_ribbon(aes(x = year + 2016, ymin = q0.25, ymax = q0.75,fill= harScen), alpha = 0.3)+
-        # geom_line(aes(x = year+ 2016, y = CbalFluxes, color = harScen,linetype=harvInten)) + 
-        geom_line(aes(x = year+ 2015, y = CbalState, color = harScen,linetype=harvInten)) +
-        xlab("year") + ylab("C balance (State)"))
-print(ggplot(dataPlot)+
-        # geom_ribbon(aes(x = year + 2016, ymin = q0.25, ymax = q0.75,fill= harScen), alpha = 0.3)+
-        geom_line(aes(x = year+ 2015, y = CbalFluxes, color = harScen,linetype=harvInten)) +
-        # geom_line(aes(x = year+ 2016, y = CbalState, color = harScen,linetype=harvInten)) +
-        xlab("year") + ylab("C balance (Fluxes)"))
-dev.off()
-
-
-scens <- unique(meanRegion$harScen)
-meanRegion$region <- as.factor(meanRegion$region)
-meanRegion$regIDs <- meanRegion$region
-meanRegion$region <- NULL
-setkey(regionNames,regIDs)
-setkey(meanRegion,regIDs)
-regionNames$regIDs <- as.factor(regionNames$regIDs)
-meanRegion <- merge(meanRegion,regionNames)
-
-pdf(paste0(outDyr,"/plots/plots_ScenariosCountry.pdf"))
-for(varX in vars){
-  for(scenX in scens){
-    # i=i+1
-    print(ggplot(meanCountry[harScen==scenX])+
-            # geom_ribbon(aes(x = year + 2016, ymin = q0.25, ymax = q0.75,fill= harScen), alpha = 0.3)+
-            geom_line(aes(x = year+ 2015, y = get(varX), color = harvInten)) + 
-            xlab("year") + ylab(varX)+ ggtitle(scenX))
-  }
-}
-dev.off()
-
-# for(r_no in 1:19){
-# pdf(paste0("outSample/plots/plots_Scenarios_",
-#            regionNames[r_no]$regNames,".pdf"))
-# for(varX in vars){
-#   for(scenX in scens){
-#     # i=i+1
-#     print(ggplot(meanRegion[harScen==scenX & regIDs==r_no])+
-#             # geom_ribbon(aes(x = year + 2016, ymin = q0.25, ymax = q0.75,fill= harScen), alpha = 0.3)+
-#             geom_line(aes(x = year+ 2016, y = get(varX), color = harvInten)) + 
-#             xlab("year") + ylab(varX)+ ggtitle(scenX))
-#   }
-# }
-# dev.off()
-# }
-# 
-
-write.csv(meanCountry,file=paste0(outDyr,"/plots/MeanCountryAllRuns.csv"))
-write.csv(meanCountry[harScen=="Base" & harvInten=="Base"],
-          file=paste0(outDyr,"/plots/MeanCountryBaseRuns.csv"))
-write.csv(meanRegion,file=paste0(outDyr,"/plots/MeanRegionAllRuns.csv"))
-write.csv(meanRegion[harScen=="Base" & harvInten=="Base"],
-          file=paste0(outDyr,"/plots/MeanRegionBaseRuns.csv"))
-
-
-#####compare runs +10% cons areas vs. actual situation
-dat1 <- fread(file="outSampleHcF1.2/plots/MeanCountryAllRuns.csv")
-dat1$cons = "actual"
-
-dat2 <- fread(file="outSampleHcF1.2_cons10run/plots/MeanCountryAllRuns.csv")
-dat2$cons = "+10%"
-datAll <- rbind(dat1,dat2)
-names(dat2)
-
-scens2 <- scens#[-which(scens%in%c("adaptTapio","NoHarv"))]
-pdf(paste0(outDyr,"/plots/plots_ScenariosCountry2.pdf"))
-for(varX in vars){
-  for(scenX in scens2){
-    # i=i+1
-    print(ggplot(datAll[harScen==scenX])+
-            # geom_ribbon(aes(x = year + 2016, ymin = q0.25, ymax = q0.75,fill= harScen), alpha = 0.3)+
-            geom_line(aes(x = year+ 2015, y = get(varX), color = cons,linetype=harvInten)) +
-            xlab("year") + ylab(varX)+ ggtitle(scenX))
-  }
-}
-dev.off()
