@@ -84,7 +84,7 @@ if(manualRun){
   easyInit=FALSE; forceSaveInitSoil=F; cons10run = F
   procDrPeat=T; coeffPeat1=-240; coeffPeat2=70
   coefCH4 = 0.34; coefN20_1 = 0.23; coefN20_2 = 0.077#g m-2 y-1
-  landClassUnman=NULL; compHarvX = 0; funPreb = "regionPrebas"
+  landClassUnman=NULL; funPreb = "regionPrebas"
   initSoilCreStart=NULL; outModReStart=NULL; reStartYear=1
   sampleX=NULL; P0currclim=NA; fT0=NA
   sampleID = 1; initAge=NA; disturbanceON <- NA; ingrowth <- F; TminTmax <- NA
@@ -93,7 +93,7 @@ if(manualRun){
 results <- array(0,c(8,nYears,length(rids),2))
 dimnames(results) <- list(c("grossgrowth","V","Vharvested", "NEE", "Wharvested", "CH4em", "N2Oem","NBE"),1:nYears,regionNames[rids],c("sum","ave"))
 
-r_noi <- 4
+r_noi <- 7
 if(!toFile) rids <- rids[1:3]
 if(toFile) pdf(paste0("results_agesample",samplaus,"compHarv",compHarvX,".pdf"))
 for(r_noi in 1:length(rids)){
@@ -132,7 +132,7 @@ for(r_noi in 1:length(rids)){
   areaRegion <- totArea <- sum(data.all$area,na.rm=T)
   
   if(samplaus){
-    sampleArea <- nSegs*median(data.all$area)
+    sampleArea <- nSegs*median(data.all$area)*1.5
     sample_weight <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
     sample_weight_lc1 <- sample_weight/sum(sample_weight)
     ikaid <- array(0,c(nrow(data.all),1))
@@ -153,7 +153,7 @@ for(r_noi in 1:length(rids)){
     sample_weight <- c(w2[2],sample_weight_lc1*w2[1]) # prob for all landclass 2, probs for landclass 1 by age
 
     nirandom <- NULL
-    for(id in 1:9){
+    for(id in 1:length(unique(ikaid))){
       ni <- which(ikaid==id)
       ni <- ni[sample(1:length(ni),nSegs,replace = T)]
       ni <- ni[which(cumsum(data.all$area[ni])<= sample_weight[id]*sampleArea)]
