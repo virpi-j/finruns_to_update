@@ -1,9 +1,10 @@
-if(!exists("toFile")){
-  rm(list=ls())
-  gc()
-  if(dev.interactive()) dev.off()
-  toFile <- F
-}
+#  rm(list=ls())
+gc()
+if(dev.interactive()) dev.off()
+
+if(!exists("toFile")) toFile <- F
+if(!exists("samplaus")) samplaus <- F
+
 library(dplyr)
 library(ggplot2)
 library(data.table)
@@ -12,7 +13,7 @@ vPREBAS <- "newVersion"
 #vPREBAS <- "master"
 nSegs <- 5000
 if(toFile) nSegs <- 30000
-fmi_from_allas <- F
+if(!exists("fmi_from_allas")) fmi_from_allas <- F
 
 library(tidyverse)
 library(readxl)
@@ -94,7 +95,7 @@ dimnames(results) <- list(c("grossgrowth","V","Vharvested", "NEE", "Wharvested",
 
 r_noi <- 4
 if(!toFile) rids <- rids[1:3]
-if(toFile) pdf(paste0(outDir,"results.pdf"))
+if(toFile) pdf("results_agesample",samplaus,"compHarv",compHarvX,".pdf")
 for(r_noi in 1:length(rids)){
   toMem <- ls()
   set.seed(1)
@@ -104,7 +105,8 @@ for(r_noi in 1:length(rids)){
   rnameid <- r_nos[r_no]
   mortMod <- 13
   landClassX <- 1:2
-  compHarvX <- 2
+  if(!exists("compHarvX")) compHarvX <- 0
+  if(!exists("thinFactX")) thinFactX <- 0.25
   source("~/finruns_to_update/settings.R")
   
   areasLandClass2015 <- as.numeric(landclass2015[which(landclass2015[,1]==rname_fi),2:3])
@@ -129,7 +131,6 @@ for(r_noi in 1:length(rids)){
                               sum(data.all$area[which(data.all$landclass==2)]))  
   areaRegion <- totArea <- sum(data.all$area,na.rm=T)
   
-  samplaus <- T
   if(samplaus){
     sampleArea <- nSegs*median(data.all$area)
     sample_weight <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
@@ -235,8 +236,8 @@ for(r_noi in 1:length(rids)){
   
   deltaID <- 1; outType <- "TestRun"; harvScen="Base"; harvInten="Base"; climScen=0  
   out <- runModel(1,sampleID=1, outType = "testRun", rcps = rcps, RCP=0,
-                harvScen="Base", harvInten="Base", procDrPeat=T, thinFactX= 0.75,
-                compHarvX = 2,
+                harvScen="Base", harvInten="Base", procDrPeat=T, thinFactX= thinFactX,
+                compHarvX = compHarvX,
                 forceSaveInitSoil=F, sampleX = dataS)
   print(sum(dataS$area))
   #lapply(sampleIDs, 
@@ -277,7 +278,6 @@ for(r_noi in 1:length(rids)){
     }
     ikaluokat[ti,] <- round(ikaluokat[ti,]/sum(ikaluokat[ti,]),3)
   }
-  
   
   
   V <- colSums(apply(output[,,"V",,1],1:2,sum)*areas)/sum(areas)
@@ -341,33 +341,33 @@ for(r_noi in 1:length(rids)){
          ylim = c(0,8))
     points(c(2015,2021),ggstats,pch=19,col="red")
     lines(time, grossgrowthlc1,col="blue")
-    if(length(n_lc2)>0) lines(time, grossgrowthlc2,col="green")
+    if(length(n_lc2)>1) lines(time, grossgrowthlc2,col="green")
     #    plot(time, BA, type="l",main=paste("Region",r_no,rname))
     plot(time, NEP, type="l",main=paste("Region",r_no),
          ylim=c(min(NEP),max(NEP)))
     lines(time, NEPlc1, col="blue")
-    if(length(n_lc2)>0)lines(time, NEPlc2, col="green")
+    if(length(n_lc2)>1) lines(time, NEPlc2, col="green")
 
     plot(time, V, type="l",main=paste("Region",r_no), ylim = c(0,160))
     points(c(2015,2021),Vstats,pch=19,col="red")
     lines(time, Vlc1, col="blue")
-    if(length(n_lc2)>0) lines(time, Vlc2, col="green")
+    if(length(n_lc2)>1) lines(time, Vlc2, col="green")
     
     plot(time, Wtot, type="l",main=paste("Region",r_no), 
          ylim = c(0,60000))
     points(c(2015,2021),wstats,pch=19,col="red")
     lines(time, Wtotlc1, col="blue")
-    if(length(n_lc2)>0) lines(time, Wtotlc2, col="green")
+    if(length(n_lc2)>1) lines(time, Wtotlc2, col="green")
     
     plot(time, Vharvested, type="l",main=paste("Region",r_no), ylim=c(0,max(Vharvested)))
     points(time[1:nYears],rowSums(HarvLimMaak[1:nYears,])/totArea*1000,col="red")
     lines(time, Vharvestedlc1, col="blue")
-    if(length(n_lc2)>0)lines(time, Vharvestedlc2, col="green")
+    if(length(n_lc2)>1)lines(time, Vharvestedlc2, col="green")
     
     plot(time, NBE, type="l",ylim = 1.05*c(min(0,min(NBE)),max(max(NBE),0)),main=paste("Region",r_no))
     lines(c(time[1],time[length(time)]),c(0,0),col="black")
     lines(time, NBElc1, col="blue")
-    if(length(n_lc2)>0) lines(time, NBElc2, col="green")
+    if(length(n_lc2)>1) lines(time, NBElc2, col="green")
     
     par(mfrow=c(1,1))
     datagroups <- c("a: 0","b: 1-20","c: 21-40","d: 41-60","e: 61-80","f:81-100","g: 101-120","h: 121-140","i: 140-")
@@ -390,7 +390,8 @@ for(r_noi in 1:length(rids)){
   results_ave <- rbind(grossgrowth,V,Vharvested, NEE, Wharvested, CH4em, N2Oem, NBE)/sum(areas)
   results[,,r_noi,1] <- results_ave*totArea
   results[,,r_noi,2] <- results_ave
-  if(toFile) save(results, landclassMSNFI, file = paste0(outDir,"results.rdata"))  
+  if(toFile) save(results, landclassMSNFI, 
+                  file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,".rdata"))  
   rm(list=setdiff(ls(), toMem))
   gc()
 }
