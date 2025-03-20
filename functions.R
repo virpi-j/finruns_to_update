@@ -1061,10 +1061,10 @@ create_prebas_input.f = function(r_no, clim, data.sample, nYears,
   initVar[,6,] <- aaply(initVar,1,findHcNAs,pHcM,pCrobasX,HcModVx)[,6,]*HcFactorX
   
   # NEW: ba weighted ages:
-  ages <- initVar[,2,1]
-  nn <- which(apply(initVar[,2,],1,sum)>0)
-  initVar[nn,2,] <- initVar[nn,4,]/apply(initVar[nn,4,],1,mean)*initVar[nn,2,]
-  initVar[nn,2,] <- initVar[nn,2,]*ages[nn]/apply(initVar[nn,5,]*initVar[nn,2,]/apply(initVar[nn,5,],1,sum),1,sum)
+  #ages <- initVar[,2,1]
+  #nn <- which(apply(initVar[,2,],1,sum)>0)
+  #initVar[nn,2,] <- initVar[nn,4,]/apply(initVar[nn,4,],1,mean)*initVar[nn,2,]
+  #initVar[nn,2,] <- initVar[nn,2,]*ages[nn]/apply(initVar[nn,5,]*initVar[nn,2,]/apply(initVar[nn,5,],1,sum),1,sum)
   
   initPrebas <- InitMultiSite(nYearsMS = rep(nYears,nSites),siteInfo=siteInfo,
                               # litterSize = litterSize,#pAWEN = parsAWEN,

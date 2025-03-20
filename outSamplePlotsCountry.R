@@ -11,8 +11,7 @@ library(data.table)
 print(toFile)
 vPREBAS <- "newVersion"
 #vPREBAS <- "master"
-nSegs <- 5000
-if(toFile) nSegs <- 30000
+if(!exists("nSegs")) nSegs <- 5000
 if(!exists("fmi_from_allas")) fmi_from_allas <- F
 
 library(tidyverse)
