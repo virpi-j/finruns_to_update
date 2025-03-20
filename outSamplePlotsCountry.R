@@ -51,6 +51,10 @@ ikaluokat2015 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.x
                             sheet = "ikaluokat_metsamaa", range = "B3:L25")
 ikaluokat2021 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.xlsx",  
                             sheet = "ikaluokat_metsamaa", range = "B26:L47")
+lajiV2015 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.xlsx",  
+                            sheet = "lajitilavuudet", range = "B3:H25")
+lajiV2021 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.xlsx",  
+                        sheet = "lajitilavuudet", range = "B26:H47")
 
 landclassMSNFI <- array(0,c(length(rids),2),dimnames = list(regionNames_fi[rids],c("metsämaa","kitumaa")))
 # minDharvX = 999
@@ -93,7 +97,7 @@ if(manualRun){
 results <- array(0,c(8,nYears,length(rids),2))
 dimnames(results) <- list(c("grossgrowth","V","Vharvested", "NEE", "Wharvested", "CH4em", "N2Oem","NBE"),1:nYears,regionNames[rids],c("sum","ave"))
 
-r_noi <- 4
+r_noi <- 7
 if(!toFile) rids <- rids[1:3]
 if(toFile) pdf(paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,".pdf"))
 for(r_noi in 1:length(rids)){
@@ -126,6 +130,8 @@ for(r_noi in 1:length(rids)){
   ageclassstats <- ageclassstats[,-ncol(ageclassstats)]
   ageclassstats[1,] <- cumsum(ageclassstats[1,]/areasLandClass2015[1])
   ageclassstats[2,] <- cumsum(ageclassstats[2,]/areasLandClass2021[1])
+  lajistats2015 <- as.numeric(lajiV2015[which(lajiV2015[,1]==rname_fi),2:5])
+  lajistats2021 <- as.numeric(lajiV2021[which(lajiV2021[,1]==rname_fi),2:5])
   
   print(paste("Start running region",r_no,"/",rname))
   landclassMSNFI[r_noi,] <- c(sum(data.all$area[which(data.all$landclass==1)]),
@@ -136,13 +142,18 @@ for(r_noi in 1:length(rids)){
     sampleArea <- nSegs*median(data.all$area)*1
     sample_weight <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
     sample_weight_lc1 <- sample_weight/sum(sample_weight)
-    ikaid <- array(0,c(nrow(data.all),1))
+    #ikaid <- array(0,c(nrow(data.all),1))
     ages <- round(data.all$age)
     agelimits <- c(0,20,40,60,80,100,120,140,1e4)
     
-    agelimitsii <- 0:150
+    agelimitsii <- 0:max(150,max(data.all$age))
+    agelimits[length(agelimits)] <- agelimitsii[length(agelimitsii)]
     pagelimitsii <- pagedata <- pagesample <- array(0,c(length(agelimitsii),1))
     pwages <- cumsum(sample_weight_lc1)
+    n_lc1 <- which(data.all$landclass==1)
+    n_lc2 <- which(data.all$landclass==2)
+    ages <- ages[n_lc1]
+    totArea_lc1 <- sum(data.all$area[n_lc1])
     ii <- 1
     for(ii in 1:length(agelimitsii)){
       if(agelimitsii[ii]%in%agelimits){
@@ -150,13 +161,26 @@ for(r_noi in 1:length(rids)){
         ageprev <- agelimitsii[ii]
         pagelimitsii[ii] <- pwages[iiprev]
       } else {
+        if(FALSE){
+          pagedataprev <- sum(data.all$area[which(data.all$age[n_lc1]<=agelimits[iiprev])])/totArea_lc1
+          pagedatanext <- sum(data.all$area[which(data.all$age[n_lc1]<=agelimits[iiprev+1])])/totArea_lc1
+          pagedataii <- sum(data.all$area[which(data.all$age[n_lc1]<=agelimitsii[ii])])/totArea_lc1        
+          pageii <- pwages[iiprev] + 
+            (pwages[iiprev+1]-pwages[iiprev])/
+            (agelimits[iiprev+1]-(ageprev))*(agelimitsii[ii]-(ageprev))
+          pagelimitsii[ii] <- pwages[iiprev] + 
+            (pagedataii - pagedataprev)/
+            (pagedatanext - pagedataprev)*(pageii - pwages[iiprev])
+        }
+        if(TRUE){
         pagelimitsii[ii] <- pwages[iiprev] + 
           (pwages[iiprev+1]-pwages[iiprev])/
           (agelimits[iiprev+1]-(ageprev))*(agelimitsii[ii]-(ageprev))
+        }
       }
-      pagedata[ii] <- sum(data.all$area[which(data.all$age<=agelimitsii[ii])])/totArea
+      pagedata[ii] <- sum(data.all$area[which(data.all$age[n_lc1]<=agelimitsii[ii])])/totArea_lc1
     }
-    plot(agelimitsii, pagelimitsii, type="l", xlab="age", ylab="cumsum(area)")
+    plot(agelimitsii, pagelimitsii, type="l", xlab="age", ylab="cumsum(area) quantiles")
     points(agelimits, pwages, pch=19)
     lines(agelimitsii,pagedata, col="red")
     #ri <- runif(nSegs)
@@ -170,14 +194,18 @@ for(r_noi in 1:length(rids)){
       agei <- agelimitsii[ii]
       ni <- which(ages==agei)
       if(length(ni)==0){
-        ni <- which(ages==ages[which.min((data.all$age-agei)^2)[1]])
+        ni <- which(ages==ages[which.min((data.all$age[n_lc1]-agei)^2)[1]])
       }
       while(areashares[ii]<=1*pareashares2[ii]){
         nii <- ni[sample(1:length(ni),1)]
         nirandom <- c(nirandom,nii)
-        areashares[ii] <- areashares[ii]+data.all$area[nii]
+        areashares[ii] <- areashares[ii]+data.all$area[n_lc1[nii]]
       }
     }
+    nirandom <- n_lc1[nirandom]
+    # add landclass 2 segments
+    nLC2 <- round(length(n_lc2)/nrow(data.all)*length(nirandom))
+    nirandom <- c(nirandom,n_lc2[sample(1:length(n_lc2),nLC2,replace = T)])
     if(FALSE){
     for(ii in 1:length(ri)){
       agei <- which(pagelimitsii<=ri[ii])
@@ -202,12 +230,23 @@ for(r_noi in 1:length(rids)){
       nirandom <- c(nirandom,ni)
     }}
     print(paste("Sampled segments",length(nirandom),"versus nSegs =",nSegs))
-    if(length(nirandom)>nSegs) nirandom <- nirandom[sample(1:length(nirandom),nSegs,replace=T)]
+    if(length(nirandom)>nSegs){ 
+      nirandom <- nirandom[sample(1:length(nirandom),nSegs,replace=F)]
+    } else {
+      nirandom <- nirandom[sample(1:length(nirandom),nSegs,replace=T)]
+    }
     dataS <- data.all[nirandom,]
     for(ii in 1:length(agelimitsii)){
       pagesample[ii] <- sum(dataS$area[which(dataS$age<=agelimitsii[ii])])/sum(dataS$area)
     }
     lines(agelimitsii, pagesample, col="green")
+    legend(x = "topleft", box.col = "black", 
+           lty = c(NA,1,1,1),
+           pch = c(19,NA,NA,NA),
+           col = c("black","black","red","green"),
+           #bg ="yellow", box.lwd = 2 , #title="EQUATIONS",  
+           legend=c("VMIstats","VMIstats lin.line", "MVMI","sample"))  
+    
     if(FALSE){
       for(ij in 1:length(agelimits)){
         if(ij == 1){ ikaid[which(ages==agelimits[1])] <- ij
@@ -235,6 +274,11 @@ for(r_noi in 1:length(rids)){
   } else {
     dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F),]
   }
+  
+  #lajistats2015
+  #round(colSums(dataS[,c("pine","spruce","birch","decid")])/sum(dataS$area)*sum(data.all$area)/1e6)
+  dataS$decid <- dataS$birch + dataS$decid
+  dataS$birch <- 0
 
   if(TRUE){
     load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/maakunta_",r_no,"_IDsTab.rdata"))
@@ -444,18 +488,18 @@ for(r_noi in 1:length(rids)){
     par(mfrow=c(1,1))
     datagroups <- c("a: 0","b: 1-20","c: 21-40","d: 41-60","e: 61-80","f:81-100","g: 101-120","h: 121-140","i: 140-")
     data <- data.frame(time=rep(time,each=ncol(ikaluokat)), 
-                       osuudet = c(t(ikaluokat)), luokat =rep(datagroups,length(time)))
-    a1 <- ggplot(data, aes(x=time, y=osuudet, fill=luokat)) + 
+                       shares = c(t(ikaluokat)), classes =rep(datagroups,length(time)))
+    a1 <- ggplot(data, aes(x=time, y=shares, fill=classes)) + 
       geom_area(alpha=0.6, size=.5, colour="white") + 
       #scale_fill_viridis(discrete = T) +
       #ylim(0,600) + 
       theme_gray(base_size = 10) + 
       ggtitle(paste("Age class area share, Region",r_no, rname_fi))
     data2 <- data.frame(time=rep(c(2015,2021), each=ncol(ikaluokat)),
-                        osuudet = c(1-t(ageclassstats)), 
-                        luokat = rep(datagroups, 2))
+                        shares = c(1-t(ageclassstats)), 
+                        classes = rep(datagroups, 2))
     a2 <- geom_point(data = data2, 
-               mapping = aes(x = time, y = osuudet, colour = luokat))
+               mapping = aes(x = time, y = shares, colour = classes))
     print(a1+a2)
     
   }
@@ -464,7 +508,7 @@ for(r_noi in 1:length(rids)){
   results[,,r_noi,2] <- results_ave
   if(toFile) save(results, landclassMSNFI, ikaluokat, 
                   file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,".rdata"))  
-  rm(list=setdiff(ls(), toMem))
+ # rm(list=setdiff(ls(), toMem))
   gc()
 }
 if(toFile) dev.off()

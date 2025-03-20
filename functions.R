@@ -203,7 +203,7 @@ runModel <- function(sampleID, outType="dTabs", RCP=0, rcps = "CurrClim",
   clim = prep.climate.f(dat, data.sample, startingYear, nYears)
   Region = nfiareas[ID==r_no, Region]
   
-  print(paste("HcFactor =",HcFactor))
+  #print(paste("HcFactor =",HcFactor))
   #HcFactor <- 1
   print(paste("Ingrowth =",ingrowth))
   #if(outType=="testRun"){
@@ -806,7 +806,7 @@ sample_data.f = function(sampleX, nSample) {
 ##  for (col in colnames(data.sample)[c(3, 5:12,14)]) set(data.sample, j=col,
  #                                                    value=as.double(data.sample[[col]]))
   
-  colnams <- c("regID",  "N",      "ba",     "age",    "dbh",    "pine",   "spruce", "birch" )
+  #colnams <- c("regID",  "N",      "ba",     "age",    "dbh",    "pine",   "spruce", "birch" )
   colnams <- c("maakuntaID", "ba",  "age", "dbh", "pine", "spruce", "birch", "decid" )
   #for (col in colnames(data.sample)[c(3, 5:11)]){ 
   #print(colnames(data.sample))
@@ -825,6 +825,7 @@ sample_data.f = function(sampleX, nSample) {
   
   
   ## AVOID ZERO CASES
+#  data.sample$decid <- data.sample$decid+data.sample$birch ########## tsekkaa!!
   
   data.sample$dbh = as.double(data.sample$dbh)
   
@@ -855,6 +856,8 @@ create_prebas_input.f = function(r_no, clim, data.sample, nYears,
   #domSPrun=1 initialize model only for dominant species 
   nSites <- nrow(data.sample)
   areas <- data.sample$area
+  print(paste("HcFactor =",HcFactorX))
+  
   ###site Info matrix. nrow = nSites, cols: 1 = siteID; 2 = climID; 3=site type;
   ###4 = nLayers; 5 = nSpecies;
   ###6=SWinit;   7 = CWinit; 8 = SOGinit; 9 = Sinit
@@ -1056,6 +1059,13 @@ create_prebas_input.f = function(r_no, clim, data.sample, nYears,
   if(!exists("ftTapioParX")) ftTapioParX = ftTapio
   if(!exists("tTapioParX")) tTapioParX = tTapio
   initVar[,6,] <- aaply(initVar,1,findHcNAs,pHcM,pCrobasX,HcModVx)[,6,]*HcFactorX
+  
+  # NEW: ba weighted ages:
+  ages <- initVar[,2,1]
+  nn <- which(apply(initVar[,2,],1,sum)>0)
+  initVar[nn,2,] <- initVar[nn,4,]/apply(initVar[nn,4,],1,mean)*initVar[nn,2,]
+  initVar[nn,2,] <- initVar[nn,2,]*ages[nn]/apply(initVar[nn,5,]*initVar[nn,2,]/apply(initVar[nn,5,],1,sum),1,sum)
+  
   initPrebas <- InitMultiSite(nYearsMS = rep(nYears,nSites),siteInfo=siteInfo,
                               # litterSize = litterSize,#pAWEN = parsAWEN,
                               latitude = data.sample$lat,

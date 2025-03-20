@@ -205,7 +205,7 @@ colnames(bigregiondrain) = c('Area','1990-2013')
 rem = merge(rem, bigregiondrain)
 
 
-OldData <- T # F = Updated harvest statistics 
+OldData <- F # F = Updated harvest statistics 
 if(regSets=="maakunta" & !OldData){
   pathToHarvStats <- "/scratch/project_2000994/PREBASruns/PREBAStesting/RegionRuns/harvest.xlsx"
   #pathToHarvStats_old <- "/scratch/project_2000994/PREBASruns/metadata/maakunta/harvest.xlsx"
