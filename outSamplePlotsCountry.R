@@ -50,10 +50,10 @@ ikaluokat2015 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.x
                             sheet = "ikaluokat_metsamaa", range = "B3:L25")
 ikaluokat2021 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.xlsx",  
                             sheet = "ikaluokat_metsamaa", range = "B26:L47")
-lajiV2015 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.xlsx",  
-                            sheet = "lajitilavuudet", range = "B3:H25")
-lajiV2021 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.xlsx",  
-                        sheet = "lajitilavuudet", range = "B26:H47")
+#lajiV2015 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.xlsx",  
+#                            sheet = "lajitilavuudet", range = "B3:H25")
+#lajiV2021 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.xlsx",  
+#                        sheet = "lajitilavuudet", range = "B26:H47")
 
 landclassMSNFI <- array(0,c(length(rids),2),dimnames = list(regionNames_fi[rids],c("metsämaa","kitumaa")))
 # minDharvX = 999
@@ -129,8 +129,8 @@ for(r_noi in 1:length(rids)){
   ageclassstats <- ageclassstats[,-ncol(ageclassstats)]
   ageclassstats[1,] <- cumsum(ageclassstats[1,]/areasLandClass2015[1])
   ageclassstats[2,] <- cumsum(ageclassstats[2,]/areasLandClass2021[1])
-  lajistats2015 <- as.numeric(lajiV2015[which(lajiV2015[,1]==rname_fi),2:5])
-  lajistats2021 <- as.numeric(lajiV2021[which(lajiV2021[,1]==rname_fi),2:5])
+  lajistats2015 <- as.numeric(V2015[which(V2015[,1]==rname_fi),2:5])
+  lajistats2021 <- as.numeric(V2021[which(V2021[,1]==rname_fi),2:5])
   
   print(paste("Start running region",r_no,"/",rname))
   landclassMSNFI[r_noi,] <- c(sum(data.all$area[which(data.all$landclass==1)]),
