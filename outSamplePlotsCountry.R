@@ -291,13 +291,13 @@ for(r_noi in 1:length(rids)){
     ntabX <- tabX[,.I[which.max(y)],by=segID]$V1
     dataS <- cbind(dataS, tabX[ntabX,c("x","y")])
     
-    set_thin_PROJ6_warnings(TRUE)
+    #set_thin_PROJ6_warnings(TRUE)
     xy <- dataS[,c("segID","x","y")]
     coordinates(xy) <- c("x","y")
     proj4string(xy) <- crsX
     #cord = SpatialPoints(xy, proj4string=CRS("+init=EPSG:3067"))
     location<-as.data.frame(spTransform(xy, CRS("+init=epsg:4326")))
-    dataS$lat <- location$y
+    dataS$lat <- location$coords.x2#location$y
   }
   rcps <- "CurrClim"
   print(fmi_from_allas)
@@ -379,7 +379,9 @@ for(r_noi in 1:length(rids)){
   ikaluokat <- array(0,c(nYears,9))
   agelimits <- c(0,20,40,60,80,100,120,140,1e4)
   for(ti in 1:nYears){
-    ages <- apply(output[,ti,"age",,1]*output[,ti,"BA",,1],1,sum)/apply(output[,ti,"BA",,1],1,sum)
+#    ages <- apply(output[,ti,"age",,1]*output[,ti,"BA",,1],1,sum)/apply(output[,ti,"BA",,1],1,sum)
+    ages <- output[,ti,"age",1,1]
+    
     ages[is.na(ages)] <- 0 
     ages <- ages[n_lc1]
     for(ij in 1:length(agelimits)){
