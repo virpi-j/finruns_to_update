@@ -138,7 +138,7 @@ for(r_noi in 1:length(rids)){
   areaRegion <- totArea <- sum(data.all$area,na.rm=T)
   
   if(samplaus){
-    sampleArea <- nSegs*median(data.all$area)*1
+    sampleArea <- nSegs*median(data.all$area)*1.3
     sample_weight <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
     sample_weight_lc1 <- sample_weight/sum(sample_weight)
     #ikaid <- array(0,c(nrow(data.all),1))
@@ -147,7 +147,7 @@ for(r_noi in 1:length(rids)){
     
     agelimitsii <- 0:max(150,max(data.all$age))
     agelimits[length(agelimits)] <- agelimitsii[length(agelimitsii)]
-    pagelimitsii <- pagedata <- pagesample <- array(0,c(length(agelimitsii),1))
+    pagelimitsii <- pagedata <- pagedata_lc1 <- pagesample <- pagesample_lc1 <- array(0,c(length(agelimitsii),1))
     pwages <- cumsum(sample_weight_lc1)
     n_lc1 <- which(data.all$landclass==1)
     n_lc2 <- which(data.all$landclass==2)
@@ -160,29 +160,18 @@ for(r_noi in 1:length(rids)){
         ageprev <- agelimitsii[ii]
         pagelimitsii[ii] <- pwages[iiprev]
       } else {
-        if(FALSE){
-          pagedataprev <- sum(data.all$area[which(data.all$age[n_lc1]<=agelimits[iiprev])])/totArea_lc1
-          pagedatanext <- sum(data.all$area[which(data.all$age[n_lc1]<=agelimits[iiprev+1])])/totArea_lc1
-          pagedataii <- sum(data.all$area[which(data.all$age[n_lc1]<=agelimitsii[ii])])/totArea_lc1        
-          pageii <- pwages[iiprev] + 
-            (pwages[iiprev+1]-pwages[iiprev])/
-            (agelimits[iiprev+1]-(ageprev))*(agelimitsii[ii]-(ageprev))
-          pagelimitsii[ii] <- pwages[iiprev] + 
-            (pagedataii - pagedataprev)/
-            (pagedatanext - pagedataprev)*(pageii - pwages[iiprev])
-        }
-        if(TRUE){
         pagelimitsii[ii] <- pwages[iiprev] + 
           (pwages[iiprev+1]-pwages[iiprev])/
           (agelimits[iiprev+1]-(ageprev))*(agelimitsii[ii]-(ageprev))
-        }
       }
-      pagedata[ii] <- sum(data.all$area[which(data.all$age[n_lc1]<=agelimitsii[ii])])/totArea_lc1
+      pagedata_lc1[ii] <- sum(data.all$area[n_lc1[which(data.all$age[n_lc1]<=agelimitsii[ii])]])/totArea_lc1
+      pagedata[ii] <- sum(data.all$area[which(data.all$age<=agelimitsii[ii])])/totArea
     }
     plot(agelimitsii, pagelimitsii, type="l", xlab="age", ylab="cumsum(area) quantiles")
     points(agelimits, pwages, pch=19)
     lines(agelimitsii,pagedata, col="red")
-    #ri <- runif(nSegs)
+    lines(agelimitsii,pagedata_lc1, col="brown")
+    
     ii <- 1
     nirandom <- NULL
     areashares <- array(0,c(length(agelimitsii),1))
@@ -200,38 +189,23 @@ for(r_noi in 1:length(rids)){
         nii <- ni[sample(1:length(ni),1)]
         nirandom <- c(nirandom,nii)
         areashares[ii] <- areashares[ii]+data.all$area[n_lc1[nii]]
-        #nirandom <- c(nirandom,ni[sample(1:length(ni),1)])
-        #sum(data.all$area[n_lc1[nirandom]])
-        #areashares[ii] <- areashares[ii]+data.all$area[n_lc1[nii]]
       }
+      if(FALSE){
+        while(areashares[ii]<=pagelimitsii[ii]){
+        nirandom <- c(nirandom,ni[sample(1:length(ni),1)])
+        areashares[ii] <- sum(data.all$area[n_lc1[nirandom]])/sampleArea
+        #areashares[ii] <- areashares[ii]+data.all$area[n_lc1[nii]]
+      }}
     }
     nirandom <- n_lc1[nirandom]
+    for(ii in 1:length(agelimitsii)){
+      pagesample_lc1[ii] <- sum(data.all$area[nirandom[
+        which(data.all$age[nirandom]<=agelimitsii[ii])]])/sum(data.all$area[nirandom])
+    }
+    
     # add landclass 2 segments
     nLC2 <- round(length(n_lc2)/nrow(data.all)*length(nirandom))
     nirandom <- c(nirandom,n_lc2[sample(1:length(n_lc2),nLC2,replace = T)])
-    if(FALSE){
-    for(ii in 1:length(ri)){
-      agei <- which(pagelimitsii<=ri[ii])
-      if(length(agei)>0){      
-        agei <- agelimitsii[agei[length(agei)]]
-      } else {
-        agei <- 0
-      }
-      ni <- which(ages==agei)
-      if(length(ni)==0){
-        ni <- which(ages==ages[which.min((data.all$age-agei)^2)[1]])
-      }
-      if(pareashares2[agei+1]<=areashares[agei+1]){
-        probsi <- 1/data.all$area[ni]
-        ni <- ni[sample(1:length(ni),1,prob = probsi/sum(probsi))]
-      } else {
-        ni <- ni[sample(1:length(ni),1)]
-      }
-      areashares[agei+1] <- areashares[agei+1]+ data.all$area[ni]
-      if(is.na(ni)) break
-       print(data.all$age[ni])
-      nirandom <- c(nirandom,ni)
-    }}
     print(paste("Sampled segments",length(nirandom),"versus nSegs =",nSegs))
     if(length(nirandom)>nSegs){ 
       nirandom <- nirandom[sample(1:length(nirandom),nSegs,replace=F)]
@@ -242,13 +216,14 @@ for(r_noi in 1:length(rids)){
     for(ii in 1:length(agelimitsii)){
       pagesample[ii] <- sum(dataS$area[which(dataS$age<=agelimitsii[ii])])/sum(dataS$area)
     }
+    lines(agelimitsii, pagesample_lc1, col="blue")
     lines(agelimitsii, pagesample, col="green")
     legend(x = "topleft", box.col = "black", 
-           lty = c(NA,1,1,1),
-           pch = c(19,NA,NA,NA),
-           col = c("black","black","red","green"),
+           lty = c(NA,1,1,1,1),
+           pch = c(19,NA,NA,NA,NA),
+           col = c("black","black","red","blue","green"),
            #bg ="yellow", box.lwd = 2 , #title="EQUATIONS",  
-           legend=c("VMIstats","VMIstats lin.line", "MVMI","sample"))  
+           legend=c("VMIstats_lc1","VMIstats lin.line_lc1", "MVMI_lc1","sample_lc1","sample"))  
     
     if(FALSE){
       for(ij in 1:length(agelimits)){
