@@ -199,6 +199,7 @@ for(r_noi in 1:length(rids)){
       }}
     }
     nirandom <- n_lc1[nirandom]
+    ii<-1
     for(ii in 1:length(agelimitsii)){
       pagesample_lc1[ii] <- sum(data.all$area[nirandom[
         which(data.all$age[nirandom]<=agelimitsii[ii])]])/sum(data.all$area[nirandom])
@@ -217,14 +218,16 @@ for(r_noi in 1:length(rids)){
     for(ii in 1:length(agelimitsii)){
       pagesample[ii] <- sum(dataS$area[which(dataS$age<=agelimitsii[ii])])/sum(dataS$area)
     }
-    lines(agelimitsii, pagesample_lc1, col="blue")
+    lines(agelimitsii, pagesample_lc1, col="pink",lwd=2)
     lines(agelimitsii, pagesample, col="green")
     legend(x = "topleft", box.col = "black", 
-           lty = c(NA,1,1,1,1),
-           pch = c(19,NA,NA,NA,NA),
-           col = c("black","black","red","blue","green"),
+           lty = c(NA,1,1,1,1,1),
+           pch = c(19,NA,NA,NA,NA,NA),
+           lwd = c(1,1,1,1,1,2),
+           col = c("black","black","red","brown","green","pink"),
            #bg ="yellow", box.lwd = 2 , #title="EQUATIONS",  
-           legend=c("VMIstats_lc1","VMIstats lin.line_lc1", "MVMI_lc1","sample_lc1","sample"))  
+           legend=c("VMIstats_lc1","VMIstats lin.line_lc1", "MVMI",
+                    "MVMI_lc1","sample","sample_lc1"))  
     
     if(FALSE){
       for(ij in 1:length(agelimits)){
