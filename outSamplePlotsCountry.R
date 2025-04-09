@@ -182,7 +182,7 @@ for(r_noi in 1:length(rids)){
     for(ii in 1:length(agelimitsii)){
       agei <- agelimitsii[ii]
       ni <- which(ages==agei)
-      print(paste("age",agei,":",length(ni)))
+     #print(paste("age",agei,":",length(ni)))
       if(length(ni)==0){
         ni <- which(abs(ages-ages[which.min((ages-agei)^2)[1]])<=4)
       }
