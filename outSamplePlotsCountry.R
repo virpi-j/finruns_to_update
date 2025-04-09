@@ -97,7 +97,7 @@ results <- array(0,c(8,nYears,length(rids),2))
 dimnames(results) <- list(c("grossgrowth","V","Vharvested", "NEE", "Wharvested", "CH4em", "N2Oem","NBE"),1:nYears,regionNames[rids],c("sum","ave"))
 
 r_noi <- 7
-if(!toFile) rids <- rids[1:3]
+#if(!toFile) rids <- rids[1:3]
 if(toFile) pdf(paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,".pdf"))
 for(r_noi in 1:length(rids)){
   toMem <- ls()
@@ -192,13 +192,17 @@ for(r_noi in 1:length(rids)){
     for(ii in 1:length(agelimitsii)){
       agei <- agelimitsii[ii]
       ni <- which(ages==agei)
+      print(paste("age",agei,":",length(ni)))
       if(length(ni)==0){
-        ni <- which(ages==ages[which.min((data.all$age[n_lc1]-agei)^2)[1]])
+        ni <- which(abs(ages-ages[which.min((ages-agei)^2)[1]])<=4)
       }
       while(areashares[ii]<=1*pareashares2[ii]){
         nii <- ni[sample(1:length(ni),1)]
         nirandom <- c(nirandom,nii)
         areashares[ii] <- areashares[ii]+data.all$area[n_lc1[nii]]
+        #nirandom <- c(nirandom,ni[sample(1:length(ni),1)])
+        #sum(data.all$area[n_lc1[nirandom]])
+        #areashares[ii] <- areashares[ii]+data.all$area[n_lc1[nii]]
       }
     }
     nirandom <- n_lc1[nirandom]
