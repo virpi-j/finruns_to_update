@@ -4,7 +4,7 @@
 ## ---------------------------------------------------------------------
 ## MAIN SCRIPT: uncRun for random segments, uncSeg for random values for segments
 ## ---------------------------------------------------------------------
-runModel <- function(sampleID, outType="dTabs", RCP=0,
+runModel <- function(sampleID, outType="dTabs",
                      rcps = "CurrClim",
                      harvScen,harvInten,easyInit=FALSE,
                      forceSaveInitSoil=F, cons10run = F,
@@ -12,6 +12,7 @@ runModel <- function(sampleID, outType="dTabs", RCP=0,
                      coefCH4 = 0.34,#g m-2 y-1
                      coefN20_1 = 0.23,coefN20_2 = 0.077,#g m-2 y-1
                      landClassUnman=NULL,compHarvX = 0,
+                     climScen = 0, clcut=1,
                      funPreb = regionPrebas, ingrowth = F,
                      initSoilCreStart=NULL,thinFactX = 0.25,
                      ageHarvPriorX = 0,
@@ -24,6 +25,8 @@ runModel <- function(sampleID, outType="dTabs", RCP=0,
   # uncRun -> reports the output table for the regional uncertainty run
   # uncSeg -> reports the list of output table for the segment uncertainty run
   # cons10run -> flag for conservation areas 10% run
+  
+  print(paste("clcut =",clcut))
   setwd("/scratch/project_2000994/PREBASruns/finRuns/")
   # print(date())
   if(!is.null(sampleX)) sampleID <- 1#paste0("sampleX_",sampleID)
@@ -62,13 +65,13 @@ runModel <- function(sampleID, outType="dTabs", RCP=0,
   }
   if(procInSample){
     if(is.null(initSoilC)){
-      if(RCP>0){
-        load(paste0("initSoilCunc/forCent",r_no,"/initSoilC_uncRun_rdata"))
+      #if(RCP>0){
+      #  load(paste0("initSoilCunc/forCent",r_no,"/initSoilC_uncRun.rdata"))
       #} else {
       #  if(identical(landClassX,1:3)) load(paste0("initSoilC/forCent",r_no,"/initSoilC_",sampleID,"_LandClass1to3.rdata"))
       #  if(identical(landClassX,1:2)) load(paste0("initSoilC/forCent",r_no,"/initSoilC_",sampleID,"_LandClass1to2.rdata"))
       #  if(identical(landClassX,1)) load(paste0("initSoilC/forCent",r_no,"/initSoilC_",sampleID,"_LandClass1.rdata"))
-      }
+      #}
     }
     setnames(xDat,"nPix","N")
     xDat[,area:=N*16^2/10000]
@@ -140,10 +143,10 @@ runModel <- function(sampleID, outType="dTabs", RCP=0,
   #    coeffPeat1 <- EC1[sampleID]
   #    coeffPeat2 <- EC2[sampleID]
   #  }
-  print(paste("RCP",RCP))
-    if(RCP>0) {
-      rcps <- paste0(climMod[climModids[sampleID]],rcpx[RCP])
-    } #else {rcps <- "CurrClim"}
+  #print(paste("RCP",RCP))
+    #if(RCP>0) {
+    #  rcps <- paste0(climMod[climModids[sampleID]],rcpx[RCP])
+    #} #else {rcps <- "CurrClim"}
     print(paste0("Climate model ",sampleID,": ",rcps))
   #} else {
   #  sampleX[,area := N*16^2/10000] 
@@ -158,9 +161,9 @@ runModel <- function(sampleID, outType="dTabs", RCP=0,
   ## ---------------------------------------------------------
   i = 0
   rcpfile = rcps
-  
-  print("Load clim data")
+  print(paste("ClimScen",climScen))
   if(rcpfile=="CurrClim"){
+    print(paste("Load",rcpfile,"data."))
     load(paste(climatepath, rcpfile,".rdata", sep=""))  
     #####process data considering only current climate###
     # dat <- dat[rday %in% 1:10958] #uncomment to select some years (10958 needs to be modified)
@@ -180,6 +183,7 @@ runModel <- function(sampleID, outType="dTabs", RCP=0,
     #}
     dat[,rday:=xday]
   } else if(rcpfile=="CurrClim_fmi"){
+    print(paste("Load",rcpfile,"data."))
     datname <- load(paste0(workdir, fmi_vars_PREBAS_file))#"fmi_vars_PREBAS.rdata"))
     assign("dat",get(datname))
     lookupname <- load(paste0(workdir, climID_lookup_file))#"climID_lookup.rdata"))
@@ -208,7 +212,10 @@ runModel <- function(sampleID, outType="dTabs", RCP=0,
     TminTmax[,,2] <- t( dcast(dat[, list(id, rday, tmax)], rday ~ id,
                               value.var="tmax")[, -1])
     print("done.")
-  } else if(climScen>=0){
+  } else if(climScen>0){
+    print(paste("Load",rcpfile,"data."))
+    climatepath = "/scratch/project_2000994/RCP/"
+    load(paste(climatepath, rcpfile,".rdata", sep=""))
     missingIDs <- setdiff(unique(sampleX$id), unique(dat$id))
     if(length(missingIDs)>0){
       coords <- fread("/scratch/project_2000994/RCP/coordinates")
@@ -227,7 +234,8 @@ runModel <- function(sampleID, outType="dTabs", RCP=0,
   ## Prepare the same initial state for all harvest scenarios that are simulated in a loop below
   data.sample <- sample_data.f(sampleX, nSample)
   if(rcpfile%in%c("CurrClim")) data.sample$id <- data.sample$CurrClimID
-  if(rcpfile%in%c("CurrClim_fmi")) data.sample$id <- data.sample$climID <- data.sample$CurrClimID <- lookup$climID[((sampleID-1)*nSample+1):(sampleID*nSample)] # dat-tiedostossa uudet clim-coordinaatit
+  if(rcpfile%in%c("CurrClim_fmi")) data.sample$id <- data.sample$climID <- 
+    data.sample$CurrClimID <- lookup$climID[((sampleID-1)*nSample+1):(sampleID*nSample)] # dat-tiedostossa uudet clim-coordinaatit
   
   areas <- data.sample$area
   totAreaSample <- sum(data.sample$area)
@@ -237,12 +245,19 @@ runModel <- function(sampleID, outType="dTabs", RCP=0,
   Region = nfiareas[ID==r_no, Region]
   rm("dat")
   gc()
+  if(harvScen=="NoHarv" & !is.na(disturbanceON[1]) & climScen>0){
+    clcut <- -1
+    print(paste("set clcut =",clcut))
+  } 
+  
   
   print(paste("Ingrowth =",ingrowth))
   print("Disturbances")
   print(disturbanceON)
+  print("initPrebas...")
   initPrebas = create_prebas_input_tmp.f(r_no, clim, data.sample, nYears, 
                                          harv=harvScen,
+                                         ClCut=clcut,
                                          HcFactorX=HcFactor, 
                                          climScen=climScen, 
                                          ingrowth=ingrowth,
@@ -250,6 +265,7 @@ runModel <- function(sampleID, outType="dTabs", RCP=0,
                                          P0currclim=NA, fT0=NA, 
                                          TminTmax=TminTmax,
                                          disturbanceON = disturbanceON)
+  print("... done.")
   
  # initPrebas = create_prebas_input.f(r_no, clim, data.sample, nYears = nYears,
 #                                           startingYear = startingYear,domSPrun=domSPrun,
@@ -358,11 +374,12 @@ runModel <- function(sampleID, outType="dTabs", RCP=0,
     #      HarvLim  = (nSample/1000) / nfiareas[ID == r_no, AREA] * 1e3 *HarvLim
     if(year1harv==1){
       HarvLim1 <- HarvLimX
+      #clcut <- 1
       if(harvInten == "Low"){ HarvLim1 <- HarvLimX * 0.6}
       if(harvInten == "MaxSust"){HarvLim1 <- HarvLimX * 1.2}
       if(harvScen == "NoHarv"){
         HarvLim1 <- HarvLimX * 0.
-        if(!exists("clcut") & !is.na(disturbanceON[1])) clcut <- -1
+        if(!is.na(disturbanceON[1]) & climScen>0) clcut <- -1
         initPrebas$ClCut = initPrebas$defaultThin = rep(0,nSample)
         harvInten = harvScen
       }
@@ -389,17 +406,22 @@ runModel <- function(sampleID, outType="dTabs", RCP=0,
   ###calculate clearcutting area for the sample
   #if(!is.na(cutArX)){
   print("calculating clearcutting areas")
+
   clcutArX <- clcutAr * sum(areas)/totArea
   if(length(clcutArX)<nYears) clcutArX<-c(clcutArX,clcutArX[rep(length(clcutArX),nYears-length(clcutArX))])
   clcutArX <- cbind(clcutArX[1:nYears],0.)
+  
   tendX <- tendingAr * sum(areas)/totArea
   if(length(tendX)<nYears) tendX<-c(tendX,tendX[rep(length(tendX),nYears-length(tendX))])
   tendX <- cbind(tendX[1:nYears],0.)
+  
   fThinX <- firstThinAr * sum(areas)/totArea
   if(length(fThinX)<nYears) fThinX<-c(fThinX,fThinX[rep(length(fThinX),nYears-length(fThinX))])
   fThinX <- cbind(fThinX[1:nYears],0.)
+  
   cutArX <- cbind(clcutArX,tendX)
   cutArX <- cbind(cutArX,fThinX)
+  
   if(harvInten == "Low"){ cutArX <- cutArX * 1}
   if(harvInten == "MaxSust"){cutArX <- cutArX * 1.2}
   if(harvScen == "NoHarv"){cutArX <- cutArX * 0.}
@@ -497,7 +519,14 @@ runModel <- function(sampleID, outType="dTabs", RCP=0,
                         startSimYear=reStartYear)
     }
   }else{
+    savings <- T
+    if(savings){
+      print("save regionPrebas input")
+      save(initPrebas, HarvLimX, minDharvX,cutArX,ageHarvPriorX,compHarvX,thinFactX,reStartYear,
+           file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/testRun_",harvScen,"_",climScen,".rdata"))
+    }
     if(harvScen=="baseTapio"){
+      savings <- T
       region <- funPreb(initPrebas,compHarv=compHarvX,
                         startSimYear=reStartYear)
     }else{
@@ -507,14 +536,12 @@ runModel <- function(sampleID, outType="dTabs", RCP=0,
                           cutAreas =cutArX,compHarv=compHarvX,
                           startSimYear=reStartYear)
       } else {
-        #print("save regionPrebas input")
-        #save(initPrebas, HarvLimX, minDharvX,cutArX,compHarvX,
-        #     file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/testRunHiilikartta.rdata"))
         print(paste("compHarv =",compHarvX," thinFact =",thinFactX,"ageHarvPrior =", ageHarvPriorX))
         print("start regionPrebas...")
+        
         region <- regionPrebas(initPrebas, HarvLim = as.numeric(HarvLimX),
                           minDharv = minDharvX,cutAreas =cutArX,
-                          ageHarvPrior = ageHarvPriorX,
+                          ageHarvPrior = ageHarvPriorX, 
                           compHarv=compHarvX, thinFact = thinFactX, 
                           startSimYear=reStartYear)
       }
@@ -891,7 +918,7 @@ sample_data.f = function(sampleX, nSample) {
 
 
 create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
-                                     startingYear=0, domSPrun=0, clcut=1,
+                                     startingYear=0, domSPrun=0, ClCut=1,
                                      outModReStart=NULL, initSoilC=NULL,
                                      reStartYear=1,
                                      HcFactorX=HcFactor, climScen=climScen, 
@@ -1096,10 +1123,14 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
   initVar[nLay1,3:6,2:3] <- 0
   initVar[nLay2,3:6,3] <- 0
   
+  #siteInfo[, 2]  = match(as.numeric(siteInfo[, 2]), clim$id)#as.numeric(rownames(clim[[1]])))
   siteInfo[, 2]  = match(as.numeric(siteInfo[, 2]), as.numeric(rownames(clim[[1]])))
-
-  defaultThin=as.numeric(1-data.sample[, cons])
-  energyCut <- ClCut <- as.numeric(1-data.sample[, cons])
+  
+  defaultThin = as.numeric(1-data.sample[, cons])
+  print(paste("ClCut = ",ClCut))
+  energyCut <- as.numeric(1-data.sample[, cons])
+  if(ClCut > 0) ClCut <- as.numeric(1-data.sample[, cons])
+  
   ## Set to match climate data years
   if(!exists("ftTapioParX")) ftTapioParX = ftTapio
   if(!exists("tTapioParX")) tTapioParX = tTapio
@@ -1134,7 +1165,8 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
   #nn <- which(apply(initVar[,2,],1,sum)>0)
   #initVar[nn,2,] <- initVar[nn,4,]/apply(initVar[nn,4,],1,mean)*initVar[nn,2,]
   #initVar[nn,2,] <- initVar[nn,2,]*ages[nn]/apply(initVar[nn,5,]*initVar[nn,2,]/apply(initVar[nn,5,],1,sum),1,sum)
-  head(data.sample$lat)
+  print("latitudes...")
+  print(lat[1:5])
   initPrebas <- InitMultiSite(nYearsMS = rep(nYears,nSites),
                               siteInfo=siteInfo,
                               siteInfoDist = sid,
@@ -1142,7 +1174,8 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
                               latitude = lat,#data.sample$lat,
                               pCROBAS = pCrobasX,
                               defaultThin=defaultThin,
-                              ClCut = ClCut, areas =areas,
+                              ClCut = ClCut, 
+                              areas =areas,
                               energyCut = energyCut, 
                               ftTapioPar = ftTapioParX,
                               tTapioPar = tTapioParX,
