@@ -1,13 +1,50 @@
-devtools::source_url("https://raw.githubusercontent.com/ForModLabUHel/IBCcarbon_runs/master/finRuns/Rsrc/settings.r")
-source_url("https://raw.githubusercontent.com/ForModLabUHel/IBCcarbon_runs/master/general/functions.r")
+rm(list=ls())
+gc()
 
+#devtools::source_url("https://raw.githubusercontent.com/ForModLabUHel/IBCcarbon_runs/master/finRuns/Rsrc/settings.r")
+#source_url("https://raw.githubusercontent.com/ForModLabUHel/IBCcarbon_runs/master/general/functions.r")
+
+CSCrun <- T
+r_no <- 1
+source("~/finruns_to_update/settings.R")
+source("~/finruns_to_update/functions.R")
+#devtools::source_url("https://raw.githubusercontent.com/virpi-j/finruns_to_update/master/settings.R")
+#devtools::source_url("https://raw.githubusercontent.com/virpi-j/finruns_to_update/master/functions.R")
+
+
+if(TRUE){
+  load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/maakunta_",r_no,"_IDsTab.rdata"))
+  data.IDs <- data.IDs[segID!=0]
+  data.IDs$segID <- data.IDs$maakuntaID
+  setkey(data.IDs,segID)
+  setkey(data.all,segID)
+  #setkey(data.IDs,maakuntaID)
+  
+  tabX <- merge(data.IDs,data.all)
+  ntabX <- tabX[,.I[which.max(y)],by=segID]$V1
+  data.all <- cbind(data.all, tabX[ntabX,c("x","y")])
+  
+  #set_thin_PROJ6_warnings(TRUE)
+  xy <- data.all[,c("segID","x","y")]
+  coordinates(xy) <- c("x","y")
+  proj4string(xy) <- crsX
+  #cord = SpatialPoints(xy, proj4string=CRS("+init=EPSG:3067"))
+  location<-as.data.frame(spTransform(xy, CRS("+init=epsg:4326")))
+  data.all$lat <- location$coords.x2#location$y
+}
+
+nSitesRun <- 10000
 nSamples <- ceiling(dim(data.all)[1]/nSitesRun)
+nSetRuns <- 10
+setX <- 10
 sampleIDs <- split(1:nSamples,             # Applying split() function
                    cut(seq_along(1:nSamples),
                        nSetRuns,
                        labels = FALSE))[[setX]]
 set.seed(1)
 ops <- split(data.all, sample(1:nSamples, nrow(data.all), replace=T))
+
+totArea <- sum(data.all$area)
 # test
 toMem <- ls()
 ###check and run missing sampleIDs 
@@ -16,6 +53,17 @@ toMem <- ls()
 # sampleIDs <- which(!1:nSamples %in%  as.numeric(stri_extract_last(fileX, regex = "(\\d+)")))
 # print(sampleIDs)
 # sampleIDs <- c(66,342,395)
+jx<-1
+
+out <- runModel(sampleID = jx, outType = "testRun", 
+         rcps = rcps, climScen = 0, 
+         harvScen="Base", harvInten="Base", procDrPeat=T, 
+         thinFactX= thinFactX,
+         compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
+         forceSaveInitSoil=F, sampleX = ops[[jx]])
+
+break
+
 mclapply(sampleIDs, function(jx) {
   runModel(
     jx,compHarvX = compHarvX,
@@ -25,6 +73,12 @@ mclapply(sampleIDs, function(jx) {
     # outModReStart = reStartMod, initSoilCreStart = reStartSoil,
     # funPreb = reStartRegionPrebas,reStartYear = reStartYearX
   )
+  runModel(sampleID = jx, outType = "testRun", 
+           rcps = rcps, climScen = 0, 
+           harvScen="Base", harvInten="Base", procDrPeat=T, 
+           thinFactX= thinFactX,
+           compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
+           forceSaveInitSoil=F, sampleX = ops[[jx]])
   
 }, mc.cores = nCores,mc.silent=FALSE)      
 

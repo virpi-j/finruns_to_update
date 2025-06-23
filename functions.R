@@ -17,7 +17,8 @@ runModel <- function(sampleID, outType="dTabs",
                      initSoilCreStart=NULL,thinFactX = 0.25,
                      ageHarvPriorX = 0,
                      outModReStart=NULL,reStartYear=1,climdata=NULL,
-                     sampleX=NULL,P0currclim=NA, fT0=NA, disturbanceON=NA){
+                     sampleX=NULL,P0currclim=NA, fT0=NA, 
+                     disturbanceON=NA, TminTmax=NA){
   # outType determines the type of output:
   # dTabs -> standard run, mod outputs saved as data.tables 
   # testRun-> test run reports the mod out and initPrebas as objects
