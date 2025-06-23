@@ -1,16 +1,23 @@
-rm(list=ls())
-gc()
 
-#devtools::source_url("https://raw.githubusercontent.com/ForModLabUHel/IBCcarbon_runs/master/finRuns/Rsrc/settings.r")
-#source_url("https://raw.githubusercontent.com/ForModLabUHel/IBCcarbon_runs/master/general/functions.r")
+#rm(list=ls())
+#gc()
 
-CSCrun <- T
-r_no <- 1
-source("~/finruns_to_update/settings.R")
-source("~/finruns_to_update/functions.R")
-#devtools::source_url("https://raw.githubusercontent.com/virpi-j/finruns_to_update/master/settings.R")
-#devtools::source_url("https://raw.githubusercontent.com/virpi-j/finruns_to_update/master/functions.R")
+#CSCrun <- F
+#r_no <- 1
+#setX <- 1
+#rcps = rcps 
+#climScen = 0 
+#harvScen="Base"
+#harvInten="Base"
 
+
+if(!CSCrun){
+  source("~/finruns_to_update/settings.R")
+  source("~/finruns_to_update/functions.R")
+} else {
+  devtools::source_url("https://raw.githubusercontent.com/virpi-j/finruns_to_update/master/settings.R")
+  devtools::source_url("https://raw.githubusercontent.com/virpi-j/finruns_to_update/master/functions.R")
+}
 
 if(TRUE){
   load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/maakunta_",r_no,"_IDsTab.rdata"))
@@ -36,7 +43,6 @@ if(TRUE){
 nSitesRun <- 10000
 nSamples <- ceiling(dim(data.all)[1]/nSitesRun)
 nSetRuns <- 10
-setX <- 10
 sampleIDs <- split(1:nSamples,             # Applying split() function
                    cut(seq_along(1:nSamples),
                        nSetRuns,
@@ -55,12 +61,33 @@ toMem <- ls()
 # sampleIDs <- c(66,342,395)
 jx<-1
 
-out <- runModel(sampleID = jx, outType = "testRun", 
-         rcps = rcps, climScen = 0, 
-         harvScen="Base", harvInten="Base", procDrPeat=T, 
-         thinFactX= thinFactX,
-         compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
-         forceSaveInitSoil=F, sampleX = ops[[jx]])
+# Initialize soil & deadwood
+if(harvScen == "Base" & harvInten == "Base"){
+  out <- runModel(sampleID = jx, outType = "testRun", 
+                  rcps = "currClim", climScen = 0, 
+                  harvScen = "Base", harvInten = "Base", procDrPeat=T, 
+                  thinFactX= thinFactX,
+                  compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
+                  forceSaveInitSoil=F, sampleX = ops[[jx]])
+}
+
+if(!CSCrun){
+  out <- runModel(sampleID = jx, outType = "testRun", 
+                rcps = rcps, climScen = climScen, 
+                harvScen = harvScen, harvInten =harvInten, procDrPeat=T, 
+                thinFactX= thinFactX,
+                compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
+                forceSaveInitSoil=F, sampleX = ops[[jx]])
+} else {
+  mclapply(sampleIDs, function(jx) {
+    runModel(sampleID = jx, outType = "testRun", 
+             rcps = rcps, climScen = climScen, 
+             harvScen = harvScen, harvInten =harvInten, procDrPeat=T, 
+             thinFactX= thinFactX,
+             compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
+             forceSaveInitSoil=F, sampleX = ops[[jx]])}, 
+    mc.cores = nCores,mc.silent=FALSE)      
+}
 
 break
 
@@ -72,15 +99,8 @@ mclapply(sampleIDs, function(jx) {
     procDrPeat=procDrPeat
     # outModReStart = reStartMod, initSoilCreStart = reStartSoil,
     # funPreb = reStartRegionPrebas,reStartYear = reStartYearX
-  )
-  runModel(sampleID = jx, outType = "testRun", 
-           rcps = rcps, climScen = 0, 
-           harvScen="Base", harvInten="Base", procDrPeat=T, 
-           thinFactX= thinFactX,
-           compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
-           forceSaveInitSoil=F, sampleX = ops[[jx]])
-  
-}, mc.cores = nCores,mc.silent=FALSE)      
+  )}, 
+  mc.cores = nCores,mc.silent=FALSE)      
 
 # models outputs to NAs, outputDT, initSoilC and plots
 Sys.chmod(list.dirs("NAs"), "0777",use_umask=FALSE)
