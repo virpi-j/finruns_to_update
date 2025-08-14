@@ -9,35 +9,39 @@ library(readxl)
 ###load packages in CSC project folder
 # if(CSCrun){
 if(!exists("vPREBAS")) vPREBAS = "newVersion"  #### choose PREBAS version to run the model "master" "v0.2.x"
-
-if(CSCrun & vPREBAS == "newVersion") {
-  RprebassoFolder = "/projappl/project_2000994/Rpackages/Rprebasso_newV"
-  .libPaths(c(RprebassoFolder,
-              "/projappl/project_2000994/Rpackages/project_rpackages",
-              .libPaths()))
-} else if(CSCrun & vPREBAS == "master"){
-  RprebassoFolder = "/projappl/project_2000994/Rpackages/Rprebasso_master"
-  .libPaths(c(RprebassoFolder,
-              "/projappl/project_2000994/Rpackages/project_rpackages",
-              .libPaths()))
+###load packages in CSC project folder
+# if(CSCrun){
+if(vPREBAS=="newVersion"){
+  #.libPaths(c("/scratch/project_2000994/newV", .libPaths()))
+  .libPaths(c("/scratch/project_2000994/tmpV", .libPaths()))
+  libpath <- .libPaths()[1]
+} else {
+  .libPaths(c("/scratch/project_2000994/project_rpackages", .libPaths()))
+  libpath <- .libPaths()[1]
 }
-
-#if(CSCrun){
-#  .libPaths(c("/projappl/project_2000994/project_rpackages", .libPaths()))
-libpath <- .libPaths()[1]
-#}
 require(devtools)
 require(data.table)
 require(plyr)
 require(dplyr)
 require(abind)
 require(sm)
-
 # ###choose PREBAS version
-# vPREBAS <- "master"   #### choose PREBAS version to run the model  "master" "v0.2.x"
-install_github("ForModLabUHel/Rprebasso", ref=vPREBAS, force = T)
-
+print("Install Prebas")
+install_github("ForModLabUHel/Rprebasso", ref=vPREBAS, force = F)
+print(paste("PREBAS version",vPREBAS))
 require(Rprebasso)
+
+#if(CSCrun & vPREBAS == "newVersion") {
+#  RprebassoFolder = "/projappl/project_2000994/Rpackages/Rprebasso_newV"
+#  .libPaths(c(RprebassoFolder,
+#              "/projappl/project_2000994/Rpackages/project_rpackages",
+#              .libPaths()))
+#} else if(CSCrun & vPREBAS == "master"){
+#  RprebassoFolder = "/projappl/project_2000994/Rpackages/Rprebasso_master"
+#  .libPaths(c(RprebassoFolder,
+#              "/projappl/project_2000994/Rpackages/project_rpackages",
+#              .libPaths()))
+#}
 
 # library(Rprebasso)
 library(DescTools)

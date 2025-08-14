@@ -19,6 +19,7 @@ if(!CSCrun){
   devtools::source_url("https://raw.githubusercontent.com/virpi-j/finruns_to_update/master/functions.R")
 }
 
+# load data
 if(TRUE){
   load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/maakunta_",r_no,"_IDsTab.rdata"))
   data.IDs <- data.IDs[segID!=0]
@@ -64,7 +65,7 @@ jx<-1
 # Initialize soil & deadwood
 if(harvScen == "Base" & harvInten == "Base"){
   out <- runModel(sampleID = jx, outType = "testRun", 
-                  rcps = "currClim", climScen = 0, 
+                  rcps = "CurrClim", climScen = 0, 
                   harvScen = "Base", harvInten = "Base", procDrPeat=T, 
                   thinFactX= thinFactX,
                   compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
