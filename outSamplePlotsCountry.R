@@ -332,7 +332,7 @@ for(r_noi in 1:length(rids)){
   source("~/finruns_to_update/functions.R")
   
   deltaID <- 1; outType <- "TestRun"; harvScen="Base"; harvInten="Base"; climScen=0  
-  out <- runModel(1,sampleID=1, outType = "testRun", rcps = rcps, RCP=0,
+  out <- runModel(1,sampleID=1, outType = "testRun", rcps = rcps, climScen = 0,#RCP=0,
                 harvScen="Base", harvInten="Base", procDrPeat=T, 
                 thinFactX= thinFactX,
                 compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
