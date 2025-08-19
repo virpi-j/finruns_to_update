@@ -1133,7 +1133,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
   #defaultThin <- energyCut <- rep(0,nSites)
   #defaultThin[data.sample[,cons]==1] = 0 #as.numeric(1-data.sample[, cons])
   #energyCut[data.sample[,cons]==1] <- 0# as.numeric(1-data.sample[, cons])
-  energyCut <- defaultThin <- as.numeric(1-data.sample[, cons])
+  energyCut <- ClCuts <- defaultThin <- as.numeric(1-data.sample[, cons])
   if(harv == "NoHarv" & !rcps%in%c("CurrClim_fmis")) defaultThin <- energyCut <- rep(0,nSites)
   #if(harv == "NoHarv" & !rcps%in%c("CurrClim_fmi")) defaultThin <- energyCut <- rep(0,nSites) 
   
@@ -1174,10 +1174,9 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
   print("latitudes...")
   print(lat[1:5])
     
-  ClCuts <- 1
-  if(harv == "NoHarv"  & !rcps%in%c("CurrClim_fmis")) ClCuts <- -1
+  if(harv == "NoHarv"  & !rcps%in%c("CurrClim_fmis")) ClCuts <- -1+0*ClCuts
   #if(harv == "NoHarv" & !rcps%in%c("CurrClim_fmi")) ClCuts <- -1
-  print(paste("ClCuts",ClCuts))  
+  #print(paste("ClCuts",ClCuts))  
   initPrebas <- InitMultiSite(nYearsMS = rep(nYears,nSites),
                               siteInfo=siteInfo,
                               siteInfoDist = sid,
@@ -1205,7 +1204,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
   #if(harv == "NoHarv" & !rcps%in%c("CurrClim_fmi")){
       initPrebas$ClCut = rep(-1, nSites) 
   }
-  print(initPrebas$ClCut[1:4])
+  print(initPrebas$ClCut[1:20])
   
   if(!is.null(outModReStart)){
     
@@ -1440,8 +1439,8 @@ create_prebas_input.f = function(r_no, clim, data.sample, nYears,
   # }
   # siteInfo[, 2]  = match(siteInfo[,2], unique(dat$id))
   
-  defaultThin=as.numeric(1-data.sample[, "cons"])
-  energyCut <- ClCut <- as.numeric(1-data.sample[, "cons"])
+  defaultThin=as.numeric(1-data.sample[, cons])
+  energyCut <- ClCut <- as.numeric(1-data.sample[, cons])
   ## Set to match climate data years
   if(!exists("ftTapioParX")) ftTapioParX = ftTapio
   if(!exists("tTapioParX")) tTapioParX = tTapio
@@ -1471,7 +1470,9 @@ create_prebas_input.f = function(r_no, clim, data.sample, nYears,
                               CO2=clim$CO2[, 1:(nYears*365)],
                               yassoRun = 1,
                               mortMod = mortMod)
-
+initPrebas$ClCut <- as.numeric(1-data.sample[, cons])
+ print(initPrebas$ClCut) 
+ 
   if(!is.null(outModReStart)){
     
     ####set the mortality model

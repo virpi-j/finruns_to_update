@@ -352,7 +352,12 @@ for(r_noi in 1:length(rids)){
   
   source("~/finruns_to_update/functions.R")
   
-  deltaID <- 1; outType <- "TestRun"; harvScen="Base"; harvInten="Base"; climScen=0  
+  MANUALRUN <- F
+  if(MANUALRUN){
+    easyInit=FALSE; forceSaveInitSoil=F; cons10run = F; coeffPeat1=-240; coeffPeat2=70; coefCH4 = 0.34; coefN20_1 = 0.23; coefN20_2 = 0.077; climScen = 0; clcut=1;  funPreb = regionPrebas; ingrowth = F; initSoilCreStart=NULL; outModReStart=NULL; reStartYear=1; climdata=NULL; sampleX=dataS; P0currclim=NA; fT0=NA; disturbanceON=NA; TminTmax=NA
+    deltaID <- 1; outType <- "TestRun"; harvScen="Base"; harvInten="Base"; climScen=0  
+    procDrPeat=T; landClassUnman = 2; forceSaveInitSoil=F; sampleX = dataS  
+  }
   out <- runModel(1,sampleID=1, outType = "testRun", rcps = rcps, climScen = 0,#RCP=0,
                 harvScen="Base", harvInten="Base", procDrPeat=T, 
                 thinFactX= thinFactX, landClassUnman = 2,
@@ -457,10 +462,10 @@ for(r_noi in 1:length(rids)){
   N2Oemlc1 <- sum(out$region$N2OemisDrPeat_kgyear[n_lc1]*areas1)/sum(areas1)  
   CH4emlc2 <- sum(out$region$CH4emisDrPeat_kgyear[n_lc2]*areas2)/sum(areas2)  
   N2Oemlc2 <- sum(out$region$N2OemisDrPeat_kgyear[n_lc2]*areas2)/sum(areas2)  
-  
-  NBE <- NEE + Wharvested
-  NBElc1 <- NEElc1 + Wharvestedlc1
-  NBElc2 <- NEElc2 + Wharvestedlc2
+
+  NBE <- 44/12*(NEE + Wharvested) + 298*N2Oem + 25*CH4em
+  NBElc1 <- 44/12*(NEElc1 + Wharvestedlc1) + 298*N2Oemlc1 + 25*CH4emlc1
+  NBElc2 <- 44/12*(NEElc2 + Wharvestedlc2) + 298*N2Oemlc2 + 25*CH4emlc2
   
   VroundWood <- colSums(apply(output[,,"VroundWood",,1],1:2,sum)*areas)/sum(areas)
   VroundWoodlc1 <- colSums(apply(output[n_lc1,,"VroundWood",,1],1:2,sum)*areas1)/sum(areas1)
@@ -477,48 +482,50 @@ for(r_noi in 1:length(rids)){
   
   KUVA <- T
   if(KUVA){
-    par(mfrow=c(3,2))
+    par(mfrow=c(2,2))
     plot(time, grossgrowth, type="l",main=paste("Region",r_no,rname), 
-         ylim = c(0,9))
+         ylim = c(0,9), ylab = "grossgrowth, m3/ha")
     points(c(2015,2021),ggstats,pch=19,col="red")
     lines(time, grossgrowthlc1,col="blue")
     if(length(n_lc2)>1) lines(time, grossgrowthlc2,col="green")
-    legend("topright",c(paste0("all, ",round(sum(areas)),"000 ha"),
-                        paste0(sortVarnams[1]," ",round(sum(areas1)),"000 ha"),
-                        paste0(sortVarnams[2]," ",round(sum(areas2)),"000 ha")),
-           pch=c(1,1,1),cex=0.8,
+    legend("bottomright",c(paste0("all, ",round(sum(areas)),"kha"),
+                        paste0(sortVarnams[1],", ",round(sum(areas1)),"kha"),
+                        paste0(sortVarnams[2],", ",round(sum(areas2)),"kha")),
+           pch=c(1,1,1),cex=0.7,
            col=c("black","blue","green"))
     
     #    plot(time, BA, type="l",main=paste("Region",r_no,rname))
-    plot(time, NEP, type="l",main=paste("Region",r_no),
+    plot(time, NEP, type="l",main=paste("Region",r_no), 
+         ylab = "NEP, g/m2",
          ylim=c(min(c(NEP,NEPlc1,NEPlc2)),1.1*max(c(NEP,NEPlc1,NEPlc2))))
     lines(time, NEPlc1, col="blue")
     if(length(n_lc2)>1) lines(time, NEPlc2, col="green")
 
-    plot(time, V, type="l",main=paste("Region",r_no), ylim = c(0,180))
+    plot(time, V, type="l",main=paste("Region",r_no), 
+         ylab = "V, m3/ha", ylim = c(0,max(c(V,Vlc1,Vlc2))))
     points(c(2015,2021),Vstats,pch=19,col="red")
     lines(time, Vlc1, col="blue")
     if(length(n_lc2)>1) lines(time, Vlc2, col="green")
     
     plot(time, age, type="l",main=paste("Region",r_no), 
-         ylim = c(0,max(c(age,agelc1,agelc2))))
+         ylab = "years", ylim = c(0,max(c(age,agelc1,agelc2))))
     lines(time, agelc1, col="blue")
     if(length(n_lc2)>1) lines(time, agelc2, col="green")
 
     plot(time, Wtot, type="l",main=paste("Region",r_no), 
-         ylim = c(0,70000))
+         ylab = "Wtot, kg C/ha", ylim = c(0,max(c(Wtot,Wtotlc1,Wtotlc2))))
     points(c(2015,2021),wstats,pch=19,col="red")
     lines(time, Wtotlc1, col="blue")
     if(length(n_lc2)>1) lines(time, Wtotlc2, col="green")
     
     plot(time, Vharvested, type="l",main=paste("Region",r_no), 
-         ylim=c(0,max(Vharvested)*1.1),ylab="Vharv, m3/ha")
+          ylim=c(0,max(Vharvested)*1.1),ylab="Vharv, m3/ha")
     points(time[1:nYears],rowSums(HarvLimMaak[1:nYears,])/totArea*1000,col="red")
     lines(time, Vharvestedlc1, col="blue")
     if(length(n_lc2)>1)lines(time, Vharvestedlc2, col="green")
     
-    if(FALSE){
-      plot(time, NBE, type="l",
+    if(TRUE){
+      plot(time, NBE, type="l", ylab = "NBE, kg CO2eq/ha",
            ylim = 1.1*c(min(0,min(c(NBE,NBElc1,NBElc2))),
                         max(max(c(NBE,NBElc1,NBElc2)),0)),main=paste("Region",r_no))
       lines(c(time[1],time[length(time)]),c(0,0),col="black")
