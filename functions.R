@@ -1440,8 +1440,8 @@ create_prebas_input.f = function(r_no, clim, data.sample, nYears,
   # }
   # siteInfo[, 2]  = match(siteInfo[,2], unique(dat$id))
   
-  defaultThin=as.numeric(1-data.sample[, cons])
-  energyCut <- ClCut <- as.numeric(1-data.sample[, cons])
+  defaultThin=as.numeric(1-data.sample[, "cons"])
+  energyCut <- ClCut <- as.numeric(1-data.sample[, "cons"])
   ## Set to match climate data years
   if(!exists("ftTapioParX")) ftTapioParX = ftTapio
   if(!exists("tTapioParX")) tTapioParX = tTapio
