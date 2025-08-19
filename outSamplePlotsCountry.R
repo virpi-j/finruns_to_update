@@ -388,7 +388,8 @@ for(r_noi in 1:length(rids)){
     ages <- output[,ti,"age",1,1]
     
     ages[is.na(ages)] <- 0 
-    ages <- ages[n_lc1]
+    ages <- ages[which(dataS$landclass==1)]
+    areas1 <- areas[which(dataS$landclass==1)]
     for(ij in 1:length(agelimits)){
       if(ij == 1){ 
         ikaluokat[ti,ij] <- sum(areas1[which(ages==agelimits[1])])
@@ -421,21 +422,20 @@ for(r_noi in 1:length(rids)){
   
 
   sortVar <- c("landclass","peatID","cons")
-  if(sortid==1){
-    n_lc1 <- which(dataS$landclass==1)
-    n_lc2 <- which(dataS$landclass==2)
-    sortVarnams <- c("forest","poorly productive")
-  } else if(sortid==2) {
-    n_lc1 <- which(dataS$peatID==0)
-    n_lc2 <- which(dataS$peatID==1)
-    sortVarnams <- c("min","ditched org")
-  } else if(sortid==3) {
-    n_lc1 <- which(dataS$cons==0)
-    n_lc2 <- which(dataS$cons==1)
-    sortVarnams <- c("managed","cons")
-  }    
-  
   for(sortid in 1:3){
+    if(sortid==1){
+      n_lc1 <- which(dataS$landclass==1)
+      n_lc2 <- which(dataS$landclass==2)
+      sortVarnams <- c("forest","poorly productive")
+    } else if(sortid==2) {
+      n_lc1 <- which(dataS$peatID==0)
+      n_lc2 <- which(dataS$peatID==1)
+      sortVarnams <- c("min","ditched org")
+    } else if(sortid==3) {
+      n_lc1 <- which(dataS$cons==0)
+      n_lc2 <- which(dataS$cons==1)
+      sortVarnams <- c("managed","cons")
+    }    
     
     areas1 <- areas[n_lc1]
     areas2 <- areas[n_lc2]
@@ -539,7 +539,7 @@ for(r_noi in 1:length(rids)){
       if(length(n_lc2)>1) lines(time, Wtotlc2, col="green")
       
       plot(time, Vharvested, type="l",main=paste("Region",r_no), 
-           ylim=c(0,max(Vharvested)*1.1),ylab="Vharv, m3/ha")
+           ylim=c(0,max(c(Vharvested,Vharvestedlc1,Vharvestedlc2))*1.1),ylab="Vharv, m3/ha")
       points(time[1:nYears],rowSums(HarvLimMaak[1:nYears,])/totArea*1000,col="red")
       lines(time, Vharvestedlc1, col="blue")
       if(length(n_lc2)>1)lines(time, Vharvestedlc2, col="green")
