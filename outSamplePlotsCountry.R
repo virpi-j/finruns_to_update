@@ -281,6 +281,27 @@ for(r_noi in 1:length(rids)){
     #cord = SpatialPoints(xy, proj4string=CRS("+init=EPSG:3067"))
     location<-as.data.frame(spTransform(xy, CRS("+init=epsg:4326")))
     dataS$lat <- location$coords.x2#location$y
+    
+    #data.all <- cbind(data.all,data.IDs[match(data.all$segID, data.IDs$maakuntaID),4:5])
+    finPeats <- raster("/scratch/project_2000994/MVMIsegments/segment-IDs/pseudopty.img")
+    drPeatID <- 400 # ID = 400 for luke database; drained peatland
+    print(drPeatID)
+    undrPeatID <- 700  ### ID = 700 for luke database; undrained peatland
+    if(FALSE){#file.exists(paste0("uncRuns/peatID_reg",r_no,".rdata"))){
+      load(paste0("uncRuns/peatID_reg",r_no,".rdata"))
+    } else {
+      print("Extract peatIDs...")
+      peatIDs <-extract(finPeats, cbind(dataS$x,dataS$y))
+      #peatIDs <-extract(finPeats, cbind(data.all$x,data.all$y))
+      #print("Save peatIDs.")
+      #save(peatIDs, file=paste0("uncRuns/peatID_reg",r_no,".rdata"))
+    }
+    #data.all[,peatID:=peatIDs]
+    dataS[,peatID:=peatIDs]
+    dataS$peatID[which(dataS$peatID==100)]<-0
+    dataS$peatID[which(dataS$peatID==400)]<-1
+    dataS$peatID[which(dataS$peatID==700)]<-2
+    
   }
   rcps <- "CurrClim"
   print(fmi_from_allas)
@@ -334,10 +355,10 @@ for(r_noi in 1:length(rids)){
   deltaID <- 1; outType <- "TestRun"; harvScen="Base"; harvInten="Base"; climScen=0  
   out <- runModel(1,sampleID=1, outType = "testRun", rcps = rcps, climScen = 0,#RCP=0,
                 harvScen="Base", harvInten="Base", procDrPeat=T, 
-                thinFactX= thinFactX,
+                thinFactX= thinFactX, landClassUnman = 2,
                 compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
                 forceSaveInitSoil=F, sampleX = dataS)
-  print(sum(dataS$area))
+  print(paste("Sample area:",sum(dataS$area)))
   #lapply(sampleIDs, 
   #       function(jx) { 
   #         runModelAdapt(1,sampleID=jx, outType = outType, rcps = "CurrClim_fmi",
@@ -351,12 +372,26 @@ for(r_noi in 1:length(rids)){
   output <- out$region$multiOut
   areas <- dataS$area
   time <- (1:dim(output)[2])+2015
-  
-  
-  n_lc1 <- which(dataS$landclass==1)
-  n_lc2 <- which(dataS$landclass==2)
+
+  sortVar <- c("landclass","peatID","cons")
+  sortid <- 3
+  if(sortid==1){
+    n_lc1 <- which(dataS$landclass==1)
+    n_lc2 <- which(dataS$landclass==2)
+    sortVarnams <- c("forest","poorly productive")
+  } else if(sortid==2) {
+    n_lc1 <- which(dataS$peatID==0)
+    n_lc2 <- which(dataS$peatID==1)
+    sortVarnams <- c("min","ditched org")
+  } else if(sortid==3) {
+    n_lc1 <- which(dataS$cons==0)
+    n_lc2 <- which(dataS$cons==1)
+    sortVarnams <- c("managed","cons")
+  }    
   areas1 <- areas[n_lc1]
   areas2 <- areas[n_lc2]
+  
+  out$region <- peat_regression_model_multiSite_vj(out$region,which(dataS$peatID==1)) 
   
   ti <- 1
   ikaluokat <- array(0,c(nYears,9))
@@ -383,6 +418,10 @@ for(r_noi in 1:length(rids)){
   V <- colSums(apply(output[,,"V",,1],1:2,sum)*areas)/sum(areas)
   Vlc1 <- colSums(apply(output[n_lc1,,"V",,1],1:2,sum)*areas1)/sum(areas1)
   Vlc2 <- colSums(apply(output[n_lc2,,"V",,1],1:2,sum)*areas2)/sum(areas2)
+
+  age <- colSums(apply(output[,,"age",,1],1:2,mean)*areas)/sum(areas)
+  agelc1 <- colSums(apply(output[n_lc1,,"age",,1],1:2,mean)*areas1)/sum(areas1)
+  agelc2 <- colSums(apply(output[n_lc2,,"age",,1],1:2,mean)*areas2)/sum(areas2)
   
   Wtot <-   colSums(apply(output[,,c(24,25,31,32,33),,1],1:2,sum)*areas)/sum(areas)
   Wtotlc1 <-   colSums(apply(output[n_lc1,,c(24,25,31,32,33),,1],1:2,sum)*areas1)/sum(areas1)
@@ -434,40 +473,58 @@ for(r_noi in 1:length(rids)){
   Vharvested <- VroundWood+VenergyWood
   Vharvestedlc1 <- VroundWoodlc1+VenergyWoodlc1
   Vharvestedlc2 <- VroundWoodlc2+VenergyWoodlc2
+  
+  
   KUVA <- T
   if(KUVA){
     par(mfrow=c(3,2))
     plot(time, grossgrowth, type="l",main=paste("Region",r_no,rname), 
-         ylim = c(0,8))
+         ylim = c(0,9))
     points(c(2015,2021),ggstats,pch=19,col="red")
     lines(time, grossgrowthlc1,col="blue")
     if(length(n_lc2)>1) lines(time, grossgrowthlc2,col="green")
+    legend("topright",c(paste0("all, ",round(sum(areas)),"000 ha"),
+                        paste0(sortVarnams[1]," ",round(sum(areas1)),"000 ha"),
+                        paste0(sortVarnams[2]," ",round(sum(areas2)),"000 ha")),
+           pch=c(1,1,1),cex=0.8,
+           col=c("black","blue","green"))
+    
     #    plot(time, BA, type="l",main=paste("Region",r_no,rname))
     plot(time, NEP, type="l",main=paste("Region",r_no),
-         ylim=c(min(NEP),max(NEP)))
+         ylim=c(min(c(NEP,NEPlc1,NEPlc2)),1.1*max(c(NEP,NEPlc1,NEPlc2))))
     lines(time, NEPlc1, col="blue")
     if(length(n_lc2)>1) lines(time, NEPlc2, col="green")
 
-    plot(time, V, type="l",main=paste("Region",r_no), ylim = c(0,160))
+    plot(time, V, type="l",main=paste("Region",r_no), ylim = c(0,180))
     points(c(2015,2021),Vstats,pch=19,col="red")
     lines(time, Vlc1, col="blue")
     if(length(n_lc2)>1) lines(time, Vlc2, col="green")
     
+    plot(time, age, type="l",main=paste("Region",r_no), 
+         ylim = c(0,max(c(age,agelc1,agelc2))))
+    lines(time, agelc1, col="blue")
+    if(length(n_lc2)>1) lines(time, agelc2, col="green")
+
     plot(time, Wtot, type="l",main=paste("Region",r_no), 
-         ylim = c(0,60000))
+         ylim = c(0,70000))
     points(c(2015,2021),wstats,pch=19,col="red")
     lines(time, Wtotlc1, col="blue")
     if(length(n_lc2)>1) lines(time, Wtotlc2, col="green")
     
-    plot(time, Vharvested, type="l",main=paste("Region",r_no), ylim=c(0,max(Vharvested)))
+    plot(time, Vharvested, type="l",main=paste("Region",r_no), 
+         ylim=c(0,max(Vharvested)*1.1),ylab="Vharv, m3/ha")
     points(time[1:nYears],rowSums(HarvLimMaak[1:nYears,])/totArea*1000,col="red")
     lines(time, Vharvestedlc1, col="blue")
     if(length(n_lc2)>1)lines(time, Vharvestedlc2, col="green")
     
-    plot(time, NBE, type="l",ylim = 1.05*c(min(0,min(NBE)),max(max(NBE),0)),main=paste("Region",r_no))
-    lines(c(time[1],time[length(time)]),c(0,0),col="black")
-    lines(time, NBElc1, col="blue")
-    if(length(n_lc2)>1) lines(time, NBElc2, col="green")
+    if(FALSE){
+      plot(time, NBE, type="l",
+           ylim = 1.1*c(min(0,min(c(NBE,NBElc1,NBElc2))),
+                        max(max(c(NBE,NBElc1,NBElc2)),0)),main=paste("Region",r_no))
+      lines(c(time[1],time[length(time)]),c(0,0),col="black")
+      lines(time, NBElc1, col="blue")
+      if(length(n_lc2)>1) lines(time, NBElc2, col="green")
+    }
     
     par(mfrow=c(1,1))
     datagroups <- c("a: 0","b: 1-20","c: 21-40","d: 41-60","e: 61-80","f:81-100","g: 101-120","h: 121-140","i: 140-")
