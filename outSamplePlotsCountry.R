@@ -378,24 +378,6 @@ for(r_noi in 1:length(rids)){
   areas <- dataS$area
   time <- (1:dim(output)[2])+2015
 
-  sortVar <- c("landclass","peatID","cons")
-  sortid <- 3
-  if(sortid==1){
-    n_lc1 <- which(dataS$landclass==1)
-    n_lc2 <- which(dataS$landclass==2)
-    sortVarnams <- c("forest","poorly productive")
-  } else if(sortid==2) {
-    n_lc1 <- which(dataS$peatID==0)
-    n_lc2 <- which(dataS$peatID==1)
-    sortVarnams <- c("min","ditched org")
-  } else if(sortid==3) {
-    n_lc1 <- which(dataS$cons==0)
-    n_lc2 <- which(dataS$cons==1)
-    sortVarnams <- c("managed","cons")
-  }    
-  areas1 <- areas[n_lc1]
-  areas2 <- areas[n_lc2]
-  
   out$region <- peat_regression_model_multiSite_vj(out$region,which(dataS$peatID==1)) 
   
   ti <- 1
@@ -417,121 +399,6 @@ for(r_noi in 1:length(rids)){
       }
     }
     ikaluokat[ti,] <- round(ikaluokat[ti,]/sum(ikaluokat[ti,]),3)
-  }
-  
-  
-  V <- colSums(apply(output[,,"V",,1],1:2,sum)*areas)/sum(areas)
-  Vlc1 <- colSums(apply(output[n_lc1,,"V",,1],1:2,sum)*areas1)/sum(areas1)
-  Vlc2 <- colSums(apply(output[n_lc2,,"V",,1],1:2,sum)*areas2)/sum(areas2)
-
-  age <- colSums(apply(output[,,"age",,1],1:2,mean)*areas)/sum(areas)
-  agelc1 <- colSums(apply(output[n_lc1,,"age",,1],1:2,mean)*areas1)/sum(areas1)
-  agelc2 <- colSums(apply(output[n_lc2,,"age",,1],1:2,mean)*areas2)/sum(areas2)
-  
-  Wtot <-   colSums(apply(output[,,c(24,25,31,32,33),,1],1:2,sum)*areas)/sum(areas)
-  Wtotlc1 <-   colSums(apply(output[n_lc1,,c(24,25,31,32,33),,1],1:2,sum)*areas1)/sum(areas1)
-  Wtotlc2 <-   colSums(apply(output[n_lc2,,c(24,25,31,32,33),,1],1:2,sum)*areas2)/sum(areas2)
-  
-  BA <- colSums(apply(output[,,"BA",,1],1:2,sum)*areas)/sum(areas)
-  BAlc1 <- colSums(apply(output[n_lc1,,"BA",,1],1:2,sum)*areas1)/sum(areas1)
-  BAlc2 <- colSums(apply(output[n_lc2,,"BA",,1],1:2,sum)*areas2)/sum(areas2)
-  
-  grossgrowth <- colSums(apply(output[,,43,,1],1:2,sum)*areas)/sum(areas)#grossgrowth
-  grossgrowthlc1 <- colSums(apply(output[n_lc1,,43,,1],1:2,sum)*areas1)/sum(areas1)#grossgrowth
-  grossgrowthlc2 <- colSums(apply(output[n_lc2,,43,,1],1:2,sum)*areas2)/sum(areas2)#grossgrowth
-  
-  NEP <- colSums(apply(output[,,"NEP/SMI[layer_1]",,1],1:2,sum)*areas)/sum(areas)
-  NEPlc1 <- colSums(apply(output[n_lc1,,"NEP/SMI[layer_1]",,1],1:2,sum)*areas1)/sum(areas1)
-  NEPlc2 <- colSums(apply(output[n_lc2,,"NEP/SMI[layer_1]",,1],1:2,sum)*areas2)/sum(areas2)
-  
-  NEE <- -NEP*ha_to_m2/g_to_kg
-  NEElc1 <- -NEPlc1*ha_to_m2/g_to_kg
-  NEElc2 <- -NEPlc2*ha_to_m2/g_to_kg
-  #NEE <- -colSums(apply(output[,,"NEP/SMI[layer_1]",,1],1:2,sum)*areas*ha_to_m2/g_to_kg)/sum(areas)
-  Wharvested <- colSums(apply(output[,,"WroundWood",,1],1:2,sum)*areas+
-                          apply(out$region$multiEnergyWood[,,,2],1:2,sum)*areas)/sum(areas)
-  Wharvestedlc1 <- colSums(apply(output[n_lc1,,"WroundWood",,1],1:2,sum)*areas1+
-                          apply(out$region$multiEnergyWood[n_lc1,,,2],1:2,sum)*areas1)/sum(areas1)
-  Wharvestedlc2 <- colSums(apply(output[n_lc2,,"WroundWood",,1],1:2,sum)*areas2+
-                          apply(out$region$multiEnergyWood[n_lc2,,,2],1:2,sum)*areas2)/sum(areas2)
-  
-  CH4em <- sum(out$region$CH4emisDrPeat_kgyear*areas)/sum(areas)  
-  N2Oem <- sum(out$region$N2OemisDrPeat_kgyear*areas)/sum(areas)  
-  
-  CH4emlc1 <- sum(out$region$CH4emisDrPeat_kgyear[n_lc1]*areas1)/sum(areas1)  
-  N2Oemlc1 <- sum(out$region$N2OemisDrPeat_kgyear[n_lc1]*areas1)/sum(areas1)  
-  CH4emlc2 <- sum(out$region$CH4emisDrPeat_kgyear[n_lc2]*areas2)/sum(areas2)  
-  N2Oemlc2 <- sum(out$region$N2OemisDrPeat_kgyear[n_lc2]*areas2)/sum(areas2)  
-
-  NBE <- 44/12*(NEE + Wharvested) + 298*N2Oem + 25*CH4em
-  NBElc1 <- 44/12*(NEElc1 + Wharvestedlc1) + 298*N2Oemlc1 + 25*CH4emlc1
-  NBElc2 <- 44/12*(NEElc2 + Wharvestedlc2) + 298*N2Oemlc2 + 25*CH4emlc2
-  
-  VroundWood <- colSums(apply(output[,,"VroundWood",,1],1:2,sum)*areas)/sum(areas)
-  VroundWoodlc1 <- colSums(apply(output[n_lc1,,"VroundWood",,1],1:2,sum)*areas1)/sum(areas1)
-  VroundWoodlc2 <- colSums(apply(output[n_lc2,,"VroundWood",,1],1:2,sum)*areas2)/sum(areas2)
-  
-  VenergyWood <- colSums(apply(out$region$multiEnergyWood[,,,1],1:2,sum)*areas)/sum(areas)
-  VenergyWoodlc1 <- colSums(apply(out$region$multiEnergyWood[n_lc1,,,1],1:2,sum)*areas1)/sum(areas1)
-  VenergyWoodlc2 <- colSums(apply(out$region$multiEnergyWood[n_lc2,,,1],1:2,sum)*areas2)/sum(areas2)
-  
-  Vharvested <- VroundWood+VenergyWood
-  Vharvestedlc1 <- VroundWoodlc1+VenergyWoodlc1
-  Vharvestedlc2 <- VroundWoodlc2+VenergyWoodlc2
-  
-  
-  KUVA <- T
-  if(KUVA){
-    par(mfrow=c(2,2))
-    plot(time, grossgrowth, type="l",main=paste("Region",r_no,rname), 
-         ylim = c(0,9), ylab = "grossgrowth, m3/ha")
-    points(c(2015,2021),ggstats,pch=19,col="red")
-    lines(time, grossgrowthlc1,col="blue")
-    if(length(n_lc2)>1) lines(time, grossgrowthlc2,col="green")
-    legend("bottomright",c(paste0("all, ",round(sum(areas)),"kha"),
-                        paste0(sortVarnams[1],", ",round(sum(areas1)),"kha"),
-                        paste0(sortVarnams[2],", ",round(sum(areas2)),"kha")),
-           pch=c(1,1,1),cex=0.7,
-           col=c("black","blue","green"))
-    
-    #    plot(time, BA, type="l",main=paste("Region",r_no,rname))
-    plot(time, NEP, type="l",main=paste("Region",r_no), 
-         ylab = "NEP, g/m2",
-         ylim=c(min(c(NEP,NEPlc1,NEPlc2)),1.1*max(c(NEP,NEPlc1,NEPlc2))))
-    lines(time, NEPlc1, col="blue")
-    if(length(n_lc2)>1) lines(time, NEPlc2, col="green")
-
-    plot(time, V, type="l",main=paste("Region",r_no), 
-         ylab = "V, m3/ha", ylim = c(0,max(c(V,Vlc1,Vlc2))))
-    points(c(2015,2021),Vstats,pch=19,col="red")
-    lines(time, Vlc1, col="blue")
-    if(length(n_lc2)>1) lines(time, Vlc2, col="green")
-    
-    plot(time, age, type="l",main=paste("Region",r_no), 
-         ylab = "years", ylim = c(0,max(c(age,agelc1,agelc2))))
-    lines(time, agelc1, col="blue")
-    if(length(n_lc2)>1) lines(time, agelc2, col="green")
-
-    plot(time, Wtot, type="l",main=paste("Region",r_no), 
-         ylab = "Wtot, kg C/ha", ylim = c(0,max(c(Wtot,Wtotlc1,Wtotlc2))))
-    points(c(2015,2021),wstats,pch=19,col="red")
-    lines(time, Wtotlc1, col="blue")
-    if(length(n_lc2)>1) lines(time, Wtotlc2, col="green")
-    
-    plot(time, Vharvested, type="l",main=paste("Region",r_no), 
-          ylim=c(0,max(Vharvested)*1.1),ylab="Vharv, m3/ha")
-    points(time[1:nYears],rowSums(HarvLimMaak[1:nYears,])/totArea*1000,col="red")
-    lines(time, Vharvestedlc1, col="blue")
-    if(length(n_lc2)>1)lines(time, Vharvestedlc2, col="green")
-    
-    if(TRUE){
-      plot(time, NBE, type="l", ylab = "NBE, kg CO2eq/ha",
-           ylim = 1.1*c(min(0,min(c(NBE,NBElc1,NBElc2))),
-                        max(max(c(NBE,NBElc1,NBElc2)),0)),main=paste("Region",r_no))
-      lines(c(time[1],time[length(time)]),c(0,0),col="black")
-      lines(time, NBElc1, col="blue")
-      if(length(n_lc2)>1) lines(time, NBElc2, col="green")
-    }
     
     par(mfrow=c(1,1))
     datagroups <- c("a: 0","b: 1-20","c: 21-40","d: 41-60","e: 61-80","f:81-100","g: 101-120","h: 121-140","i: 140-")
@@ -547,9 +414,145 @@ for(r_noi in 1:length(rids)){
                         shares = c(1-t(ageclassstats)), 
                         classes = rep(datagroups, 2))
     a2 <- geom_point(data = data2, 
-               mapping = aes(x = time, y = shares, colour = classes))
+                     mapping = aes(x = time, y = shares, colour = classes))
     print(a1+a2)
     
+  }
+  
+
+  sortVar <- c("landclass","peatID","cons")
+  if(sortid==1){
+    n_lc1 <- which(dataS$landclass==1)
+    n_lc2 <- which(dataS$landclass==2)
+    sortVarnams <- c("forest","poorly productive")
+  } else if(sortid==2) {
+    n_lc1 <- which(dataS$peatID==0)
+    n_lc2 <- which(dataS$peatID==1)
+    sortVarnams <- c("min","ditched org")
+  } else if(sortid==3) {
+    n_lc1 <- which(dataS$cons==0)
+    n_lc2 <- which(dataS$cons==1)
+    sortVarnams <- c("managed","cons")
+  }    
+  
+  for(sortid in 1:3){
+    
+    areas1 <- areas[n_lc1]
+    areas2 <- areas[n_lc2]
+    
+    V <- colSums(apply(output[,,"V",,1],1:2,sum)*areas)/sum(areas)
+    Vlc1 <- colSums(apply(output[n_lc1,,"V",,1],1:2,sum)*areas1)/sum(areas1)
+    Vlc2 <- colSums(apply(output[n_lc2,,"V",,1],1:2,sum)*areas2)/sum(areas2)
+    
+    age <- colSums(apply(output[,,"age",,1],1:2,mean)*areas)/sum(areas)
+    agelc1 <- colSums(apply(output[n_lc1,,"age",,1],1:2,mean)*areas1)/sum(areas1)
+    agelc2 <- colSums(apply(output[n_lc2,,"age",,1],1:2,mean)*areas2)/sum(areas2)
+    
+    Wtot <-   colSums(apply(output[,,c(24,25,31,32,33),,1],1:2,sum)*areas)/sum(areas)
+    Wtotlc1 <-   colSums(apply(output[n_lc1,,c(24,25,31,32,33),,1],1:2,sum)*areas1)/sum(areas1)
+    Wtotlc2 <-   colSums(apply(output[n_lc2,,c(24,25,31,32,33),,1],1:2,sum)*areas2)/sum(areas2)
+    
+    BA <- colSums(apply(output[,,"BA",,1],1:2,sum)*areas)/sum(areas)
+    BAlc1 <- colSums(apply(output[n_lc1,,"BA",,1],1:2,sum)*areas1)/sum(areas1)
+    BAlc2 <- colSums(apply(output[n_lc2,,"BA",,1],1:2,sum)*areas2)/sum(areas2)
+    
+    grossgrowth <- colSums(apply(output[,,43,,1],1:2,sum)*areas)/sum(areas)#grossgrowth
+    grossgrowthlc1 <- colSums(apply(output[n_lc1,,43,,1],1:2,sum)*areas1)/sum(areas1)#grossgrowth
+    grossgrowthlc2 <- colSums(apply(output[n_lc2,,43,,1],1:2,sum)*areas2)/sum(areas2)#grossgrowth
+    
+    NEP <- colSums(apply(output[,,"NEP/SMI[layer_1]",,1],1:2,sum)*areas)/sum(areas)
+    NEPlc1 <- colSums(apply(output[n_lc1,,"NEP/SMI[layer_1]",,1],1:2,sum)*areas1)/sum(areas1)
+    NEPlc2 <- colSums(apply(output[n_lc2,,"NEP/SMI[layer_1]",,1],1:2,sum)*areas2)/sum(areas2)
+    
+    NEE <- -NEP*ha_to_m2/g_to_kg
+    NEElc1 <- -NEPlc1*ha_to_m2/g_to_kg
+    NEElc2 <- -NEPlc2*ha_to_m2/g_to_kg
+    #NEE <- -colSums(apply(output[,,"NEP/SMI[layer_1]",,1],1:2,sum)*areas*ha_to_m2/g_to_kg)/sum(areas)
+    Wharvested <- colSums(apply(output[,,"WroundWood",,1],1:2,sum)*areas+
+                            apply(out$region$multiEnergyWood[,,,2],1:2,sum)*areas)/sum(areas)
+    Wharvestedlc1 <- colSums(apply(output[n_lc1,,"WroundWood",,1],1:2,sum)*areas1+
+                               apply(out$region$multiEnergyWood[n_lc1,,,2],1:2,sum)*areas1)/sum(areas1)
+    Wharvestedlc2 <- colSums(apply(output[n_lc2,,"WroundWood",,1],1:2,sum)*areas2+
+                               apply(out$region$multiEnergyWood[n_lc2,,,2],1:2,sum)*areas2)/sum(areas2)
+    
+    CH4em <- sum(out$region$CH4emisDrPeat_kgyear*areas)/sum(areas)  
+    N2Oem <- sum(out$region$N2OemisDrPeat_kgyear*areas)/sum(areas)  
+    
+    CH4emlc1 <- sum(out$region$CH4emisDrPeat_kgyear[n_lc1]*areas1)/sum(areas1)  
+    N2Oemlc1 <- sum(out$region$N2OemisDrPeat_kgyear[n_lc1]*areas1)/sum(areas1)  
+    CH4emlc2 <- sum(out$region$CH4emisDrPeat_kgyear[n_lc2]*areas2)/sum(areas2)  
+    N2Oemlc2 <- sum(out$region$N2OemisDrPeat_kgyear[n_lc2]*areas2)/sum(areas2)  
+    
+    NBE <- 44/12*(NEE + Wharvested) + 298*N2Oem + 25*CH4em
+    NBElc1 <- 44/12*(NEElc1 + Wharvestedlc1) + 298*N2Oemlc1 + 25*CH4emlc1
+    NBElc2 <- 44/12*(NEElc2 + Wharvestedlc2) + 298*N2Oemlc2 + 25*CH4emlc2
+    
+    VroundWood <- colSums(apply(output[,,"VroundWood",,1],1:2,sum)*areas)/sum(areas)
+    VroundWoodlc1 <- colSums(apply(output[n_lc1,,"VroundWood",,1],1:2,sum)*areas1)/sum(areas1)
+    VroundWoodlc2 <- colSums(apply(output[n_lc2,,"VroundWood",,1],1:2,sum)*areas2)/sum(areas2)
+    
+    VenergyWood <- colSums(apply(out$region$multiEnergyWood[,,,1],1:2,sum)*areas)/sum(areas)
+    VenergyWoodlc1 <- colSums(apply(out$region$multiEnergyWood[n_lc1,,,1],1:2,sum)*areas1)/sum(areas1)
+    VenergyWoodlc2 <- colSums(apply(out$region$multiEnergyWood[n_lc2,,,1],1:2,sum)*areas2)/sum(areas2)
+    
+    Vharvested <- VroundWood+VenergyWood
+    Vharvestedlc1 <- VroundWoodlc1+VenergyWoodlc1
+    Vharvestedlc2 <- VroundWoodlc2+VenergyWoodlc2
+    
+    
+    KUVA <- T
+    if(KUVA){
+      par(mfrow=c(2,2))
+      plot(time, grossgrowth, type="l",main=paste("Region",r_no,rname), 
+           ylim = c(0,9), ylab = "grossgrowth, m3/ha")
+      points(c(2015,2021),ggstats,pch=19,col="red")
+      lines(time, grossgrowthlc1,col="blue")
+      if(length(n_lc2)>1) lines(time, grossgrowthlc2,col="green")
+      legend("bottomright",c(paste0("all, ",round(sum(areas)),"kha"),
+                             paste0(sortVarnams[1],", ",round(sum(areas1)),"kha"),
+                             paste0(sortVarnams[2],", ",round(sum(areas2)),"kha")),
+             pch=c(1,1,1),cex=0.7,
+             col=c("black","blue","green"))
+      
+      #    plot(time, BA, type="l",main=paste("Region",r_no,rname))
+      plot(time, NEP, type="l",main=paste("Region",r_no), 
+           ylab = "NEP, g/m2",
+           ylim=c(min(c(NEP,NEPlc1,NEPlc2)),1.1*max(c(NEP,NEPlc1,NEPlc2))))
+      lines(time, NEPlc1, col="blue")
+      if(length(n_lc2)>1) lines(time, NEPlc2, col="green")
+      
+      plot(time, V, type="l",main=paste("Region",r_no), 
+           ylab = "V, m3/ha", ylim = c(0,max(c(V,Vlc1,Vlc2))))
+      points(c(2015,2021),Vstats,pch=19,col="red")
+      lines(time, Vlc1, col="blue")
+      if(length(n_lc2)>1) lines(time, Vlc2, col="green")
+      
+      plot(time, age, type="l",main=paste("Region",r_no), 
+           ylab = "years", ylim = c(0,max(c(age,agelc1,agelc2))))
+      lines(time, agelc1, col="blue")
+      if(length(n_lc2)>1) lines(time, agelc2, col="green")
+      
+      plot(time, Wtot, type="l",main=paste("Region",r_no), 
+           ylab = "Wtot, kg C/ha", ylim = c(0,max(c(Wtot,Wtotlc1,Wtotlc2))))
+      points(c(2015,2021),wstats,pch=19,col="red")
+      lines(time, Wtotlc1, col="blue")
+      if(length(n_lc2)>1) lines(time, Wtotlc2, col="green")
+      
+      plot(time, Vharvested, type="l",main=paste("Region",r_no), 
+           ylim=c(0,max(Vharvested)*1.1),ylab="Vharv, m3/ha")
+      points(time[1:nYears],rowSums(HarvLimMaak[1:nYears,])/totArea*1000,col="red")
+      lines(time, Vharvestedlc1, col="blue")
+      if(length(n_lc2)>1)lines(time, Vharvestedlc2, col="green")
+      
+      if(TRUE){
+        plot(time, NBE, type="l", ylab = "NBE, kg CO2eq/ha",
+             ylim = 1.1*c(min(0,min(c(NBE,NBElc1,NBElc2))),
+                          max(max(c(NBE,NBElc1,NBElc2)),0)),main=paste("Region",r_no))
+        lines(c(time[1],time[length(time)]),c(0,0),col="black")
+        lines(time, NBElc1, col="blue")
+        if(length(n_lc2)>1) lines(time, NBElc2, col="green")
+      }
+    }
   }
   results_ave <- rbind(grossgrowth,V,Vharvested, NEE, Wharvested, CH4em, N2Oem, NBE)/sum(areas)
   results[,,r_noi,1] <- results_ave*totArea
