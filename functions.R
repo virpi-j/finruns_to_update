@@ -8,11 +8,12 @@ runModel <- function(sampleID, outType="dTabs",
                      rcps = "CurrClim",
                      harvScen,harvInten,easyInit=FALSE,
                      forceSaveInitSoil=F, cons10run = F,
-                     procDrPeat=F,coeffPeat1=-240,coeffPeat2=70,
+                     BioIndCalc=F, HSIruns=F, procDrPeat=F,
+                     coeffPeat1=-240,coeffPeat2=70,
                      coefCH4 = 0.34,#g m-2 y-1
                      coefN20_1 = 0.23,coefN20_2 = 0.077,#g m-2 y-1
                      landClassUnman=NULL,compHarvX = 0,
-                     climScen = 0, clcut=1,
+                     climScen = 0,  CO2fixed=0, clcut=1,
                      funPreb = regionPrebas, ingrowth = F,
                      initSoilCreStart=NULL,thinFactX = 0.25,
                      ageHarvPriorX = 0,
@@ -229,6 +230,53 @@ runModel <- function(sampleID, outType="dTabs",
         print(paste("Clim model ID",sampleID,"clim ids: ",missingIDs[i], "was replaced with",idX))
       }
     }
+  } else {
+    climatepath_adapt <- "/scratch/project_2000994/PREBASruns/adaptFirst/tempData/"
+    #read.csv2(file=paste0(climatepath,rcpsFile),sep = ",")
+    dat2 <- read.csv(paste0(climatepath_adapt, rcpfile)) 
+    dat2 <- dat2[which(dat2$Year2>=startingYear & 
+                         dat2$deltaT==deltaTP[1,deltaID] & 
+                         dat2$Pchange==deltaTP[2,deltaID]),]
+    climIDs <- unique(sampleX$climID)
+    # TminTmax array, repeat Tmin and Tmax for all climIDs
+    dat1 <- read.csv(paste0(climatepath_adapt, str_replace(rcpfile, "v1","tmin_and_tmax")))
+    dat1 <- dat1[which(dat1$Year2>=startingYear & 
+                         dat1$deltaT==deltaTP[1,deltaID] & 
+                         dat1$Pchange==deltaTP[2,deltaID]),]
+    TminTmax <- array(0,c(length(climIDs),dim(dat1)[1],2))
+    TminTmax[,,1] <- t(array(dat1$Tmin_perturbed,c(dim(dat1)[1],length(climIDs))))
+    TminTmax[,,2] <- t(array(dat1$Tmax_perturbed,c(dim(dat1)[1],length(climIDs))))
+    print("Run with Tmin Tmax values.")
+    # CO2 array
+    CO2<-as.numeric(sub(",",".",CO2_RCPyears[match(dat2$Year2,CO2_RCPyears$year),(Co2Col+1)]))
+    if(CO2fixed==0){
+      dat2 <- data.table(id=sampleX$climID[1],rday=1:nrow(dat2),
+                         #PAR=-0.894+1.8*dat2$GLOB,
+                         PAR=1.8*dat2$GLOB/1000,
+                         TAir=dat2$Tmean_constant,#detrended,
+                         VPD=dat2$VPdef_constant,#detrended,
+                         Precip=dat2$Pre_constant,
+                         CO2=CO2)
+    } else {
+      dat2 <- data.table(id=sampleX$climID[1],
+                         rday=1:nrow(dat2),
+                         #PAR=-0.894+1.8*dat2$GLOB,
+                         PAR=1.8*dat2$GLOB/1000,
+                         TAir=dat2$Tmean_seasonal,#detrended,
+                         VPD=dat2$VPdef_seasonal,#detrended,
+                         Precip=dat2$Pre_seasonal,
+                         CO2=CO2)
+    }
+    nr <- length(climIDs)
+    clim <- list(PAR = t(replicate(nr,dat2$PAR)),
+                 TAir = t(replicate(nr,dat2$TAir)),
+                 VPD = t(replicate(nr,dat2$VPD)),
+                 Precip = t(replicate(nr,dat2$Precip)),
+                 CO2 = t(replicate(nr,dat2$CO2)),
+                 id = climIDs)
+    rownames(clim$PAR)<-climIDs     
+    colnames(clim$PAR)<-1:ncol(clim$PAR)    
+    rm(list="dat2")
   }
   gc()
   
@@ -242,9 +290,11 @@ runModel <- function(sampleID, outType="dTabs",
   totAreaSample <- sum(data.sample$area)
   print(paste("Simulate for ",nYears,"years."))
   #clim = prep.climate.f(dat, data.sample, startingYear, nYears, rcps)
-  if(rcpfile%in%c("CurrClim","CurrClim_fmi") | climScen >0) clim <-prep.climate.f(dat, data.sample, startingYear, nYears, rcps = rcpfile)
+  if(rcpfile%in%c("CurrClim","CurrClim_fmi") | climScen >0) {
+    clim <-prep.climate.f(dat, data.sample, startingYear, nYears, rcps = rcpfile)
+    rm("dat")
+  }  
   Region = nfiareas[ID==r_no, Region]
-  rm("dat")
   gc()
   
   print(paste("Ingrowth =",ingrowth))
@@ -599,22 +649,22 @@ runModel <- function(sampleID, outType="dTabs",
     region$CH4emisDrPeat_kgyear[siteDrPeat2] = coefCH4 #  sum(coefCH4*region$areas[siteDrPeat2])
     region$N2OemisDrPeat_kgyear[siteDrPeat1] <- coefN20_1 
     region$N2OemisDrPeat_kgyear[siteDrPeat2] <- coefN20_2 
-    #region$N2OemisDrPeat_kgyear = sum(coefN20_1*region$areas[siteDrPeat1]) +
-    #  sum(coefN20_2*region$areas[siteDrPeat2])
-    
-    region$multiOut[siteDrPeat1,,46,,1] = 0.
-    region$multiOut[siteDrPeat1,,46,,1] = region$multiOut[siteDrPeat1,,18,,1] - 
-      region$multiOut[siteDrPeat1,,26,,1]/10 - region$multiOut[siteDrPeat1,,27,,1]/10 - 
-      region$multiOut[siteDrPeat1,,28,,1]/10 - region$multiOut[siteDrPeat1,,29,,1]/10
-    region$multiOut[siteDrPeat1,,46,1,1] = region$multiOut[siteDrPeat1,,46,1,1] + 
-      coeffPeat1 + region$GVout[siteDrPeat1,,5] - region$GVout[siteDrPeat1,,2]/10
-    
-    region$multiOut[siteDrPeat2,,46,,1] = 0.
-    region$multiOut[siteDrPeat2,,46,,1] = region$multiOut[siteDrPeat2,,18,,1] - 
-      region$multiOut[siteDrPeat2,,26,,1]/10 - region$multiOut[siteDrPeat2,,27,,1]/10 - 
-      region$multiOut[siteDrPeat2,,28,,1]/10 - region$multiOut[siteDrPeat2,,29,,1]/10
-    region$multiOut[siteDrPeat2,,46,1,1] = region$multiOut[siteDrPeat2,,46,1,1] + 
-      coeffPeat2 +  region$GVout[siteDrPeat2,,5] - region$GVout[siteDrPeat2,,2]/10
+
+    if(FALSE){
+      region$multiOut[siteDrPeat1,,46,,1] = 0.
+      region$multiOut[siteDrPeat1,,46,,1] = region$multiOut[siteDrPeat1,,18,,1] - 
+        region$multiOut[siteDrPeat1,,26,,1]/10 - region$multiOut[siteDrPeat1,,27,,1]/10 - 
+        region$multiOut[siteDrPeat1,,28,,1]/10 - region$multiOut[siteDrPeat1,,29,,1]/10
+      region$multiOut[siteDrPeat1,,46,1,1] = region$multiOut[siteDrPeat1,,46,1,1] + 
+        coeffPeat1 + region$GVout[siteDrPeat1,,5] - region$GVout[siteDrPeat1,,2]/10
+      
+      region$multiOut[siteDrPeat2,,46,,1] = 0.
+      region$multiOut[siteDrPeat2,,46,,1] = region$multiOut[siteDrPeat2,,18,,1] - 
+        region$multiOut[siteDrPeat2,,26,,1]/10 - region$multiOut[siteDrPeat2,,27,,1]/10 - 
+        region$multiOut[siteDrPeat2,,28,,1]/10 - region$multiOut[siteDrPeat2,,29,,1]/10
+      region$multiOut[siteDrPeat2,,46,1,1] = region$multiOut[siteDrPeat2,,46,1,1] + 
+        coeffPeat2 +  region$GVout[siteDrPeat2,,5] - region$GVout[siteDrPeat2,,2]/10
+    }
   }
   #####start initialize deadWood volume
   ## identify managed and unmanaged forests
@@ -739,7 +789,17 @@ runModel <- function(sampleID, outType="dTabs",
               colsOut1,colsOut2,colsOut3,varSel,sampleForPlots)
     #return("all outs saved")  
   } 
- 
+  if(outType=="IRSruns"){
+    print("Calculate outputs...")
+    output <- runModOutAdapt(sampleID,deltaID,sampleX,region,r_no,harvScen,harvInten,climScen, rcpfile,areas,
+                             colsOut1,colsOut2,colsOut3,varSel,sampleForPlots,toRaster=toRaster)
+    print(output[c(1,12,13,15,26:nrow(output)),c(1,2,6,ncol(output))])
+    print("all outs calculated")
+    #print(output)
+    #print(paste("Time",Sys.time()-a0))
+    
+    return(output)
+ }
   print(paste("end clim model ID",sampleID))
   rm(list=setdiff(ls(), c(toMem,"toMem"))); gc()
 
@@ -942,7 +1002,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
   
   ####### Wind disturbance module from Jonathan
   sid <- NA
-  if("wind"%in%disturbanceON){# & !rcps%in%c("CurrClim","CurrClim_fmi")){
+  if("wind"%in%disturbanceON & climScen>=0){# & !rcps%in%c("CurrClim","CurrClim_fmi")){
     ###
     # EXTRACT WIND SPEEDS 
     # for prebas wind disturbance module
@@ -1174,8 +1234,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
   print("latitudes...")
   print(lat[1:5])
     
-  if(harv == "NoHarv"  & !rcps%in%c("CurrClim_fmis")) ClCuts <- -1+0*ClCuts
-  #if(harv == "NoHarv" & !rcps%in%c("CurrClim_fmi")) ClCuts <- -1
+  if(harv == "NoHarv"  & !rcps%in%c("CurrClim_fmi")) ClCuts <- -1+0*ClCuts
   #print(paste("ClCuts",ClCuts))  
   initPrebas <- InitMultiSite(nYearsMS = rep(nYears,nSites),
                               siteInfo=siteInfo,
@@ -1200,7 +1259,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
                               mortMod = mortMod, TminTmax = TminTmax, 
                               disturbanceON = disturbanceON)
   
-  if(harv == "NoHarv" & !rcps%in%c("CurrClim_fmis")){
+  if(harv == "NoHarv" & !rcps%in%c("CurrClim_fmi")){
   #if(harv == "NoHarv" & !rcps%in%c("CurrClim_fmi")){
       initPrebas$ClCut = rep(-1, nSites) 
   }
@@ -2565,4 +2624,654 @@ peat_regression_model_multiSite_vj <- function(modOut,peat_sites,peat_regr_pars=
   
   return(modOut)
 }
+
+
+runModOutAdapt <- function(sampleID,deltaID,sampleX,modOut,r_no,harvScen,harvInten,climScen,rcpfile,areas,
+                           colsOut1,colsOut2,colsOut3,varSel,sampleForPlots,toRaster){#},SBBbp,PI,pSBB){
+  ####create pdf for test plots 
+  marginX= 1:2#(length(dim(out$annual[,,varSel,]))-1)
+  nas <- data.table()
+  output <- data.frame()
+  ij<-1
+  for (ij in 1:length(varSel)) {
+    # print(varSel[ij])
+    if(funX[ij]=="baWmean"){
+      outX <- data.table(segID=sampleX$segID,baWmean(modOut,varSel[ij]))
+    }
+    if(funX[ij]=="sum"){
+      outX <- data.table(segID=sampleX$segID,apply(modOut$multiOut[,,varSel[ij],,1],marginX,sum))
+    }
+    ####test plot
+    #print(outX)
+    #if(sampleID==sampleForPlots){testPlot(outX,varNames[varSel[ij]],areas)}
+    pX <- calculatePerCols(outX = outX)
+    #    pX <- calculatePerColsAllRows(outX = outX)
+    vnam <- varOuts[ij]#varNames[varSel[ij]] 
+    if(toRaster){
+      if(vnam=="GPPTot/1000") vnam<-"GPPTot_1000"
+      assign(vnam,pX)
+      save(list=vnam,
+           file=paste0(path_output,"weatherStation",station_id,"/",
+                       vnam,
+                       "_harscen",harvScen,
+                       "_harInten",harvInten,"_",
+                       rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+      rm(list=vnam); gc()
+    }    
+    ##check for NAs
+    nax <- data.table(segID=unique(which(is.na(pX),arr.ind=T)[,1]))
+    if(nrow(nax)>0){
+      nax$var <- varNames[varSel[ij]]
+      nax$sampleID <- sampleID
+      nas <- rbind(nas,nax)
+    } 
+    pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+    pX <- c(var = varNames[varSel[ij]], pX)
+    #pX[1] <- varNames[varSel[ij]]
+    #names(pX)[1] <- "var"
+    output <- rbind(output, pX)
+    colnames(output) <- names(pX)
+    #print(output)
+  }
+  # save NAs
+  #  if(nrow(nas)>0){
+  #    save(nas,file=paste0("NAs/NAs_forCent_",r_no,
+  #                         "_","sampleID",sampleID,
+  #                         "_harscen",harvScen,
+  #                         "_harInten",harvInten,"_",
+  #                         rcpfile,".rdata"))        
+  #  }
+  ####process and save special variales
+  print(paste("start special vars",deltaID))
+  output <- specialVarProcAdapt(sampleX,modOut,r_no,harvScen,harvInten,rcpfile,sampleID,
+                                areas,sampleForPlots,output,toRaster=toRaster)#,SBBbp,PI,pSBB)
+  return(output)
+}
+
+
+
+specialVarProcAdapt <- function(sampleX,region,r_no,harvScen,harvInten,rcpfile,sampleID,
+                           areas,sampleForPlots,output, toRaster){#},SBBbp,PI,pSBB){
+  nYears <-  max(region$nYears)
+  nSites <-  max(region$nSites)
+  ####process and save special variables: 
+  ###dominant Species
+  outX <- domFun(region,varX="species")  
+  ####test plot
+  #if(sampleID==sampleForPlots){testPlot(outX,"domSpecies",areas)}
+  ###take the most frequent species in the periods
+  pX <- calculatePerCols(outX = outX)
+  varNam <- "domSpecies"
+  assign(varNam,pX)
+  if(toRaster){
+      save(list=varNam,
+         file=paste0(path_output,"weatherStation",station_id,"/",
+                     varNam,
+                     "_harscen",harvScen,
+                     "_harInten",harvInten,"_",
+                     rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+  }
+  pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+  pX <- c(var = varNam, pX)
+  output <- rbind(output, pX)
+  colnames(output) <- names(pX)
+  rm(list=varNam); gc()
+  #print(output)
+  
+  # rm(domSpecies); gc()
+  ###age dominant species
+  outX <- domFun(region,varX="age")
+  pX <- calculatePerCols(outX = outX)
+  varNam <- "domAge"
+  assign(varNam,pX)
+  if(toRaster){
+    save(list=varNam,
+       file=paste0(path_output,"weatherStation",station_id,"/",
+                   varNam,
+                   "_harscen",harvScen,
+                   "_harInten",harvInten,"_",
+                   rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+  }
+  pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+  pX <- c(var = varNam, pX)
+  output <- rbind(output, pX)
+  colnames(output) <- names(pX)
+  rm(list=varNam); gc()
+  #print(output)
+
+  ### pine Volume Vpine
+  outX <- vSpFun(region,SpID=1)
+  #outX <- vDecFun(region)
+  pX <- calculatePerCols(outX = outX)
+  varNam <- "Vpine"
+  assign(varNam,pX)
+  if(toRaster){
+    save(list=varNam,
+       file=paste0(path_output,"weatherStation",station_id,"/",
+                   varNam,
+                   "_harscen",harvScen,
+                   "_harInten",harvInten,"_",
+                   rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+  }
+  pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+  pX <- c(var = varNam, pX)
+  output <- rbind(output, pX)
+  colnames(output) <- names(pX)
+  #print(output)
+  
+  ### spruce Volume Vspruce
+  outX <- vSpFun(region,SpID=2)
+  pX <- calculatePerCols(outX = outX)
+  varNam <-  "Vspruce"
+  assign(varNam,pX)
+  if(toRaster){
+    save(list=varNam,
+       file=paste0(path_output,"weatherStation",station_id,"/",
+                   varNam,
+                   "_harscen",harvScen,
+                   "_harInten",harvInten,"_",
+                   rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+  }
+  pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+  pX <- c(var = varNam, pX)
+  output <- rbind(output, pX)
+  colnames(output) <- names(pX)
+  #print(output)
+  
+  ### deciduous Volume Vdec
+  outX <- vSpFun(region,SpID=3)
+  pX <- calculatePerCols(outX = outX)
+  varNam <-  "Vdec"
+  assign(varNam,pX)
+  if(toRaster){
+    save(list=varNam,
+       file=paste0(path_output,"weatherStation",station_id,"/",
+                   varNam,
+                   "_harscen",harvScen,
+                   "_harInten",harvInten,"_",
+                   rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+  }
+  pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+  pX <- c(var = varNam, pX)
+  output <- rbind(output, pX)
+  colnames(output) <- names(pX)
+  #print(output)
+  
+
+  ####WenergyWood
+  outX <- data.table(segID=sampleX$segID,apply(region$multiEnergyWood[,,,2],1:2,sum))
+  pX <- calculatePerCols(outX = outX)
+  varNam <-  "Wenergywood"
+  assign(varNam,pX)
+  if(toRaster){
+    save(list=varNam,
+       file=paste0(path_output,"weatherStation",station_id,"/",
+                   varNam,
+                   "_harscen",harvScen,
+                   "_harInten",harvInten,"_",
+                   rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+  }
+  pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+  pX <- c(var = varNam, pX)
+  output <- rbind(output, pX)
+  colnames(output) <- names(pX)
+  #print(output)
+
+  ####VenergyWood
+  outX <- data.table(segID=sampleX$segID,apply(region$multiEnergyWood[,,,1],1:2,sum))
+  pX <- calculatePerCols(outX = outX)
+  varNam <-  "Venergywood"
+  assign(varNam,pX)
+  if(toRaster){
+    save(list=varNam,
+       file=paste0(path_output,"weatherStation",station_id,"/",
+                   varNam,
+                   "_harscen",harvScen,
+                   "_harInten",harvInten,"_",
+                   rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+  }
+  pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+  pX <- c(var = varNam, pX)
+  output <- rbind(output, pX)
+  colnames(output) <- names(pX)
+  #print(output)
+
+  ####GVgpp
+  outX <- data.table(segID=sampleX$segID,region$GVout[,,3])
+  pX <- calculatePerCols(outX = outX)
+  varNam <-  "GVgpp"
+  assign(varNam,pX)
+  if(toRaster){
+    save(list=varNam,
+       file=paste0(path_output,"weatherStation",station_id,"/",
+                   varNam,
+                   "_harscen",harvScen,
+                   "_harInten",harvInten,"_",
+                   rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+  }
+  pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+  pX <- c(var = varNam, pX)
+  output <- rbind(output, pX)
+  colnames(output) <- names(pX)
+  #print(output)
+  
+  ####GVw
+  outX <- data.table(segID=sampleX$segID,region$GVout[,,4])
+  pX <- calculatePerCols(outX = outX)
+  varNam <-  "GVw"
+  assign(varNam,pX)
+  if(toRaster){
+    save(list=varNam,
+       file=paste0(path_output,"weatherStation",station_id,"/",
+                   varNam,
+                   "_harscen",harvScen,
+                   "_harInten",harvInten,"_",
+                   rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+  }
+  pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+  pX <- c(var = varNam, pX)
+  output <- rbind(output, pX)
+  colnames(output) <- names(pX)
+  #print(output)
+  
+  ####Wtot
+  outX <- data.table(segID=sampleX$segID,apply(region$multiOut[,,c(24,25,31,32,33),,1],1:2,sum))
+  pX <- calculatePerCols(outX = outX)
+  varNam <-  "Wtot"
+  assign(varNam,pX)
+  if(toRaster){
+    save(list=varNam,
+       file=paste0(path_output,"weatherStation",station_id,"/",
+                   varNam,
+                   "_harscen",harvScen,
+                   "_harInten",harvInten,"_",
+                   rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+  }
+  pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+  pX <- c(var = varNam, pX)
+  output <- rbind(output, pX)
+  colnames(output) <- names(pX)
+  #print(output)
+  
+  NUP <- T
+  if(exists("parsCN_alfar")){
+    #### alphar
+    outX <- data.table(segID=sampleX$segID,region$multiOut[,,3,1,2])
+    pX <- calculatePerCols(outX = outX)
+    varNam <-  "alphar"
+    assign(varNam,pX)
+    if(toRaster){
+      save(list=varNam,
+         file=paste0(path_output,"weatherStation",station_id,"/",
+                     varNam,
+                     "_harscen",harvScen,
+                     "_harInten",harvInten,"_",
+                     rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+    }
+    pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+    pX <- c(var = varNam, pX)
+    output <- rbind(output, pX)
+    colnames(output) <- names(pX)
+    #print(output)
+    
+    ####### Nup
+#    outX <- data.table(segID=sampleX$segID,region$multiOut[,,55,1,2])
+    marginX <- 1:2
+      outX <- data.table(segID=sampleX$segID,apply(region$multiOut[,,55,,2],marginX,sum))
+    pX <- calculatePerCols(outX = outX)
+    varNam <- "Nup"
+    assign(varNam,pX)
+    if(toRaster){
+      save(list=varNam,
+         file=paste0(path_output,"weatherStation",station_id,"/",
+                     varNam,
+                     "_harscen",harvScen,
+                     "_harInten",harvInten,"_",
+                     rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+    }
+    pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+    pX <- c(var = varNam, pX)
+    output <- rbind(output, pX)
+    colnames(output) <- names(pX)
+    #print(output)
+    
+    ### Ndem
+#    outX <- data.table(segID=sampleX$segID,region$multiOut[,,56,1,2])
+      outX <- data.table(segID=sampleX$segID,apply(region$multiOut[,,56,,2],marginX,sum))
+    pX <- calculatePerCols(outX = outX)
+    varNam <- "Ndem"
+    assign(varNam,pX)
+    if(toRaster){
+      save(list=varNam,
+         file=paste0(path_output,"weatherStation",station_id,"/",
+                     varNam,
+                     "_harscen",harvScen,
+                     "_harInten",harvInten,"_",
+                     rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+    }
+    pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+    pX <- c(var = varNam, pX)
+    output <- rbind(output, pX)
+    colnames(output) <- names(pX)
+    #print(output)
+    
+    ### "Umax"
+    #outX <- data.table(segID=sampleX$segID,region$multiOut[,,57,1,2])
+    tmp <- region$multiOut[,,57,,1]
+    region$multiOut[,,57,,1] <- region$multiOut[,,57,,2] 
+    outX <- data.table(segID=sampleX$segID,baWmean(region,57))
+    region$multiOut[,,57,,1] <- tmp
+    pX <- calculatePerCols(outX = outX)
+    varNam <- "Umax"
+    assign(varNam,pX)
+    if(toRaster){
+      save(list=varNam,
+         file=paste0(path_output,"weatherStation",station_id,"/",
+                     varNam,
+                     "_harscen",harvScen,
+                     "_harInten",harvInten,"_",
+                     rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+    }
+    pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+    pX <- c(var = varNam, pX)
+    output <- rbind(output, pX)
+    colnames(output) <- names(pX)
+    #print(output)
+    
+
+    if(FALSE){
+    ####### "Gf"
+    outX <- data.table(segID=sampleX$segID,apply(region$multiOut[,,55,,1],marginX,sum))
+    pX <- calculatePerCols(outX = outX)
+    varNam <- "Gf"
+    assign(varNam,pX)
+    if(toRaster){
+      save(list=varNam,
+         file=paste0(path_output,"weatherStation",station_id,"/",
+                     varNam,
+                     "_harscen",harvScen,
+                     "_harInten",harvInten,"_",
+                     rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+    }
+    pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+    pX <- c(var = varNam, pX)
+    output <- rbind(output, pX)
+    colnames(output) <- names(pX)
+    #print(output)
+    
+    ### "Gr"
+    outX <- data.table(segID=sampleX$segID,apply(region$multiOut[,,56,,1],marginX,sum))
+#    outX <- data.table(segID=sampleX$segID,region$multiOut[,,56,1,1])
+    pX <- calculatePerCols(outX = outX)
+    varNam <- "Gr"
+    assign(varNam,pX)
+    if(toRaster){
+      save(list=varNam,
+         file=paste0(path_output,"weatherStation",station_id,"/",
+                     varNam,
+                     "_harscen",harvScen,
+                     "_harInten",harvInten,"_",
+                     rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+    }
+    pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+    pX <- c(var = varNam, pX)
+    output <- rbind(output, pX)
+    colnames(output) <- names(pX)
+    #print(output)
+    
+    ### "Gw"
+    outX <- data.table(segID=sampleX$segID,apply(region$multiOut[,,57,,1],marginX,sum))
+#    outX <- data.table(segID=sampleX$segID,region$multiOut[,,57,1,1])
+    pX <- calculatePerCols(outX = outX)
+    varNam <- "Gw"
+    assign(varNam,pX)
+    if(toRaster){
+      save(list=varNam,
+         file=paste0(path_output,"weatherStation",station_id,"/",
+                     varNam,
+                     "_harscen",harvScen,
+                     "_harInten",harvInten,"_",
+                     rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+    }
+    pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+    pX <- c(var = varNam, pX)
+    output <- rbind(output, pX)
+    colnames(output) <- names(pX)
+    #print(output)
+    }
+  }
+  
+  #### SBBprob
+  outX <- data.table(segID=sampleX$segID,region$multiOut[,,45,1,2])
+  pX <- calculatePerCols(outX = outX)
+  varNam <-  "SBBprob"
+  assign(varNam,pX)
+  if(toRaster){
+    save(list=varNam,
+       file=paste0(path_output,"weatherStation",station_id,"/",
+                   varNam,
+                   "_harscen",harvScen,
+                   "_harInten",harvInten,"_",
+                   rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+  }
+  pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+  pX <- c(var = varNam, pX)
+  output <- rbind(output, pX)
+  colnames(output) <- names(pX)
+  #print(output)
+  
+  #### SMI
+  outX <- data.table(segID=sampleX$segID,region$multiOut[,,46,1,2])
+  pX <- calculatePerCols(outX = outX)
+  varNam <-  "SMI"
+  assign(varNam,pX)
+  if(toRaster){
+    save(list=varNam,
+       file=paste0(path_output,"weatherStation",station_id,"/",
+                   varNam,
+                   "_harscen",harvScen,
+                   "_harInten",harvInten,"_",
+                   rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+  }
+  pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+  pX <- c(var = varNam, pX)
+  output <- rbind(output, pX)
+  colnames(output) <- names(pX)
+  
+  ## BB intensity
+  #xSMI <- region$multiOut[,,46,1,2]
+  #BA <- apply(region$multiOut[,,13,,1],1:2,sum)
+  ##  BAspruce <- BASpFun(modOut = region,SpID = 2)[,-1]
+  #xBAspruceFract <- BASpFun(modOut = region,SpID = 2)[,-1]/BA
+  #xBAspruceFract[BA==0] <- 0
+  #SHI = xBAspruceFract*(1-xSMI)/0.2093014
+  #INTENSITY <- 1/(1+exp(3.9725-2.9673*SHI))
+  #INTENSITY[xBAspruceFract<0.05] <- 0
+  #pX <- calculatePerCols(outX = data.table(segID=sampleX$segID,INTENSITY))
+  #varNam <-  "BBintensity"
+  #assign(varNam,pX)
+  #if(toRaster){
+  #  save(list=varNam,
+  #       file=paste0(path_output,"weatherStation",station_id,"/",
+  #                   varNam,
+  #                   "_harscen",harvScen,
+  #                   "_harInten",harvInten,"_",
+  #                   rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+  #}
+  #pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+  #pX <- c(var = varNam, pX)
+  #output <- rbind(output, pX)
+  #colnames(output) <- names(pX)
+  
+  ## BB expected damage area
+  #SBBprob <- region$multiOut[,,45,1,2]
+  #SBBdamArea <- SBBprob*INTENSITY#*sampleX$area
+  #pX <- calculatePerCols(outX = data.table(segID=sampleX$segID,SBBdamArea))
+  #varNam <- "ExpectedBBdamAreaFraction"
+  #pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)*100
+  #pX <- c(var = varNam, pX)
+  #output <- rbind(output, pX)
+  #colnames(output) <- names(pX)
+  
+  ## BB simulated damage area
+  SBBReactionBA <-  apply(region$multiOut[,,43,,2],1:2,sum) # grossgrowth / ba dist
+  BA <- apply(region$multiOut[,,43,,1],1:2,sum)
+  Vrw <- apply(region$multiOut[,,"VroundWood",,1],1:2,sum)[,-1]
+  Vrw <- cbind(Vrw,Vrw[,ncol(Vrw)])
+  areaSample <- array(areas,c(dim(SBBReactionBA))) # Segment areas where damage happened
+  areaSample[SBBReactionBA==0] <- 0
+  #if(clcut==-1){ # if no clearcut, calculate only the 
+  areaSample[SBBReactionBA>0 & Vrw==0] <- areaSample[SBBReactionBA>0 & Vrw==0]*
+    SBBReactionBA[SBBReactionBA>0 & Vrw==0]/BA[SBBReactionBA>0 & Vrw==0]
+  areaSample[BA==0] <- 0
+  #}
+  #pX <- calculatePerCols(outX = data.table(segID=sampleX$segID, SBBReactionBA))
+  pX <- calculatePerCols(outX = data.table(segID=sampleX$segID, areaSample))
+  varNam <- "simBBdamArea%"
+  pX <- colSums(pX[,-1])/sum(sampleX$area)*100
+  #pX <- colSums(pX[,-1])
+  #pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)*100
+  pX <- c(var = varNam, pX)
+  output <- rbind(output, pX)
+  colnames(output) <- names(pX)
+  
+  #### pFire
+  outX <- data.table(segID=sampleX$segID,region$multiOut[,,47,1,2])
+  pX <- calculatePerCols(outX = outX)
+  varNam <-  "pFire"
+  assign(varNam,pX)
+  if(toRaster){
+    save(list=varNam,
+       file=paste0(path_output,"weatherStation",station_id,"/",
+                   varNam,
+                   "_harscen",harvScen,
+                   "_harInten",harvInten,"_",
+                   rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+  }
+  pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+  pX <- c(var = varNam, pX)
+  output <- rbind(output, pX)
+  colnames(output) <- names(pX)
+  
+  # pWind
+  outX <- data.table(segID=sampleX$segID,region$outDist[,,"wrisk"])
+  pX <- calculatePerCols(outX = outX)
+  varNam <-  "pWind"
+  assign(varNam,pX)
+  if(toRaster){
+    save(list=varNam,
+         file=paste0(path_output,"weatherStation",station_id,"/",
+                     varNam,
+                     "_harscen",harvScen,
+                     "_harInten",harvInten,"_",
+                     rcpfile,"_Nswitch",restrictionSwitch,".rdata"))
+  }
+  pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)
+  pX <- c(var = varNam, pX)
+  output <- rbind(output, pX)
+  colnames(output) <- names(pX)
+  
+  ## BB simulated damage area
+  WindReactionV <-  region$outDist[,,"damvol"]
+  V <- apply(region$multiOut[,,"V",,1],1:2,sum)
+  WindReactionSalvLog <- region$outDist[,,"salvlog"]
+  areaSample <- array(areas,c(dim(WindReactionV))) # Segment areas where damage happened
+#  areaSample[WindReactionSalvLog==0] <- 0 # if no wind damage, set to zero
+  areaSample[WindReactionV==0 & WindReactionSalvLog==0] <- 0 # if no wind damage, set to zero
+  # if no salvage logging but damage, Vdamage/V*area
+  areaSample[WindReactionV>0 & WindReactionSalvLog==0] <- areaSample[WindReactionV>0 & WindReactionSalvLog==0]*
+    WindReactionV[WindReactionV>0 & WindReactionSalvLog==0]/V[WindReactionV>0 & WindReactionSalvLog==0]
+  areaSample[V==0] <-0
+  #pX <- calculatePerCols(outX = data.table(segID=sampleX$segID, SBBReactionBA))
+  pX <- calculatePerCols(outX = data.table(segID=sampleX$segID, areaSample))
+  varNam <- "simWinddamArea%"
+  pX <- colSums(pX[,-1])/sum(sampleX$area)*100
+  #pX <- colSums(pX[,-1])
+  #pX <- colSums(pX[,-1]*matrix(sampleX$area,nrow(pX),ncol(pX)-1))/sum(sampleX$area)*100
+  pX <- c(var = varNam, pX)
+  output <- rbind(output, pX)
+  colnames(output) <- names(pX)
+  
+  
+    ####SBBbp
+#  outX <- data.table(segID=sampleX$segID,SBBbp)
+#  pX <- calculatePerCols(outX = outX)
+#  pX <- colMeans(pX)
+#  pX[1] <- "SBBbp"
+#  output <- rbind(output, pX)
+#  colnames(output) <- names(pX)
+  
+  ####PI
+#  outX <- data.table(segID=sampleX$segID,PI)
+#  pX <- calculatePerCols(outX = outX)
+#  pX <- colMeans(pX)
+#  pX[1] <- "sbbPI"
+#  output <- rbind(output, pX)
+#  colnames(output) <- names(pX)
+
+  ####pSBB damage
+#  outX <- data.table(segID=sampleX$segID,pSBB)
+#  pX <- calculatePerCols(outX = outX)
+#  pX <- colMeans(pX)
+#  pX[1] <- "pSBBdamage"
+#  output <- rbind(output, pX)
+#  colnames(output) <- names(pX)
+
+  gc()
+  
+  return(output)
+} 
+
+
+BASpFun <- function(modOut,SpID){
+  segID <- modOut$siteInfo[,1]
+  oo <- data.table(which(modOut$multiOut[,,4,,1]==SpID,arr.ind=T))
+  setnames(oo,c("site","year","layer"))
+  vx <-modOut$multiOut[,,13,,1][as.matrix(oo)]
+  oo$VSp <- vx
+  setkey(oo,site,year)
+  ff <- oo[,sum(VSp),by=.(site,year)]
+  VspMat <- matrix(0,modOut$nSites,modOut$maxYears)
+  VspMat[as.matrix(ff[,1:2])] <- unlist(ff[,3])
+  outX <- data.table(segID=segID,VspMat)
+  return(outX)
+}
+
+calculatePerCols <- function(outX){ #perStarts,perEnds,startingYear,
+  iper <- 1
+  for(iper in 1:length(perStarts)){      
+    per <- perStarts[iper]:perEnds[iper]
+    simYear = per - startingYear# + 1
+    colsOut = c(paste("V", simYear, sep=""))
+    #    outX <- outX*area
+    p <- outX[, .(per = rowMeans(.SD,na.rm=T)), .SDcols = colsOut, by = segID] 
+    colnames(p)[2] <- paste0("per",iper)
+    if(iper==1) {
+      pX <- data.table(p)
+      #    colnames(pX)[1] <- "var"
+    } else {
+      pX <- cbind(pX, p[,2])
+    }
+  }
+  return(pX)
+}
+
+calculatePerColsAllRows <- function(outX){ #perStarts,perEnds,startingYear,
+  for(iper in 1:length(perStarts)){      
+    per <- perStarts[iper]:perEnds[iper]
+    simYear = per - startingYear# + 1
+    colsOut = c(paste("V", simYear, sep=""))
+    p <- cbind(outX[,"segID"],rowMeans(outX[,..colsOut])) 
+    colnames(p)[2] <- paste0("per",iper)
+    if(iper==1) {
+      pX <- data.table(p)
+      #    colnames(pX)[1] <- "var"
+    } else {
+      pX <- cbind(pX, p[,2])
+    }
+  }
+  return(pX)
+}
+
+
 

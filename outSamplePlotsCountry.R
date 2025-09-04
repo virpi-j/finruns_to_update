@@ -137,6 +137,46 @@ for(r_noi in 1:length(rids)){
                               sum(data.all$area[which(data.all$landclass==2)]))  
   areaRegion <- totArea <- sum(data.all$area,na.rm=T)
   
+  if(TRUE){
+    load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/maakunta_",r_no,"_IDsTab.rdata"))
+    data.IDs <- data.IDs[segID!=0]
+    data.IDs$segID <- data.IDs$maakuntaID
+    setkey(data.IDs,segID)
+    setkey(data.all,segID)
+    #setkey(data.IDs,maakuntaID)
+    
+    tabX <- merge(data.IDs,data.all)
+    ntabX <- tabX[,.I[which.max(y)],by=segID]$V1
+    data.all <- cbind(data.all, tabX[ntabX,c("x","y")])
+    
+    #set_thin_PROJ6_warnings(TRUE)
+    xy <- data.all[,c("segID","x","y")]
+    coordinates(xy) <- c("x","y")
+    proj4string(xy) <- crsX
+    #cord = SpatialPoints(xy, proj4string=CRS("+init=EPSG:3067"))
+    location<-as.data.frame(spTransform(xy, CRS("+init=epsg:4326")))
+    data.all$lat <- location$coords.x2#location$y
+    
+    #data.all <- cbind(data.all,data.IDs[match(data.all$segID, data.IDs$maakuntaID),4:5])
+    finPeats <- raster("/scratch/project_2000994/MVMIsegments/segment-IDs/pseudopty.img")
+    drPeatID <- 400 # ID = 400 for luke database; drained peatland
+    print(drPeatID)
+    undrPeatID <- 700  ### ID = 700 for luke database; undrained peatland
+    if(FALSE){#file.exists(paste0("uncRuns/peatID_reg",r_no,".rdata"))){
+      load(paste0("uncRuns/peatID_reg",r_no,".rdata"))
+    } else {
+      print("Extract peatIDs...")
+      peatIDs <-extract(finPeats, cbind(data.all$x,data.all$y))
+      #peatIDs <-extract(finPeats, cbind(data.all$x,data.all$y))
+      #print("Save peatIDs.")
+      #save(peatIDs, file=paste0("uncRuns/peatID_reg",r_no,".rdata"))
+    }
+    #data.all[,peatID:=peatIDs]
+    data.all[,peatID:=peatIDs]
+    data.all$peatID[which(data.all$peatID==100)]<-0
+    data.all$peatID[which(data.all$peatID==400)]<-1
+    data.all$peatID[which(data.all$peatID==700)]<-2
+  }
   if(samplaus){
     data.all$age <- round(data.all$age)
     sampleArea <- nSegs*median(data.all$area)*1.3
@@ -262,47 +302,6 @@ for(r_noi in 1:length(rids)){
   dataS$decid <- dataS$birch + dataS$decid
   dataS$birch <- 0
 
-  if(TRUE){
-    load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/maakunta_",r_no,"_IDsTab.rdata"))
-    data.IDs <- data.IDs[segID!=0]
-    data.IDs$segID <- data.IDs$maakuntaID
-    setkey(data.IDs,segID)
-    setkey(dataS,segID)
-    #setkey(data.IDs,maakuntaID)
-    
-    tabX <- merge(data.IDs,dataS)
-    ntabX <- tabX[,.I[which.max(y)],by=segID]$V1
-    dataS <- cbind(dataS, tabX[ntabX,c("x","y")])
-    
-    #set_thin_PROJ6_warnings(TRUE)
-    xy <- dataS[,c("segID","x","y")]
-    coordinates(xy) <- c("x","y")
-    proj4string(xy) <- crsX
-    #cord = SpatialPoints(xy, proj4string=CRS("+init=EPSG:3067"))
-    location<-as.data.frame(spTransform(xy, CRS("+init=epsg:4326")))
-    dataS$lat <- location$coords.x2#location$y
-    
-    #data.all <- cbind(data.all,data.IDs[match(data.all$segID, data.IDs$maakuntaID),4:5])
-    finPeats <- raster("/scratch/project_2000994/MVMIsegments/segment-IDs/pseudopty.img")
-    drPeatID <- 400 # ID = 400 for luke database; drained peatland
-    print(drPeatID)
-    undrPeatID <- 700  ### ID = 700 for luke database; undrained peatland
-    if(FALSE){#file.exists(paste0("uncRuns/peatID_reg",r_no,".rdata"))){
-      load(paste0("uncRuns/peatID_reg",r_no,".rdata"))
-    } else {
-      print("Extract peatIDs...")
-      peatIDs <-extract(finPeats, cbind(dataS$x,dataS$y))
-      #peatIDs <-extract(finPeats, cbind(data.all$x,data.all$y))
-      #print("Save peatIDs.")
-      #save(peatIDs, file=paste0("uncRuns/peatID_reg",r_no,".rdata"))
-    }
-    #data.all[,peatID:=peatIDs]
-    dataS[,peatID:=peatIDs]
-    dataS$peatID[which(dataS$peatID==100)]<-0
-    dataS$peatID[which(dataS$peatID==400)]<-1
-    dataS$peatID[which(dataS$peatID==700)]<-2
-    
-  }
   rcps <- "CurrClim"
   print(fmi_from_allas)
   # fmi data from allas
@@ -364,6 +363,13 @@ for(r_noi in 1:length(rids)){
                 compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
                 forceSaveInitSoil=F, sampleX = dataS)
   print(paste("Sample area:",sum(dataS$area)))
+  if(HarvScen!="Base"){
+    out <- runModel(1,sampleID=1, outType = "testRun", rcps = rcps, climScen = 0,#RCP=0,
+                  harvScen=harvScen, harvInten=HarvInten, procDrPeat=T, 
+                  thinFactX= thinFactX, landClassUnman = 2,
+                  compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
+                  forceSaveInitSoil=F, sampleX = dataS)
+  }
   #lapply(sampleIDs, 
   #       function(jx) { 
   #         runModelAdapt(1,sampleID=jx, outType = outType, rcps = "CurrClim_fmi",
@@ -374,11 +380,12 @@ for(r_noi in 1:length(rids)){
 #                       forceSaveInitSoil=F)
   gc()
 
+  out$region <- peat_regression_model_multiSite(out$region,which(dataS$peatID==1)) 
+  
   output <- out$region$multiOut
   areas <- dataS$area
   time <- (1:dim(output)[2])+2015
 
-  out$region <- peat_regression_model_multiSite_vj(out$region,which(dataS$peatID==1)) 
   
   ti <- 1
   ikaluokat <- array(0,c(nYears,9))
@@ -401,163 +408,295 @@ for(r_noi in 1:length(rids)){
     }
     ikaluokat[ti,] <- round(ikaluokat[ti,]/sum(ikaluokat[ti,]),3)
     
-    par(mfrow=c(1,1))
-    datagroups <- c("a: 0","b: 1-20","c: 21-40","d: 41-60","e: 61-80","f:81-100","g: 101-120","h: 121-140","i: 140-")
-    data <- data.frame(time=rep(time,each=ncol(ikaluokat)), 
-                       shares = c(t(ikaluokat)), classes =rep(datagroups,length(time)))
-    a1 <- ggplot(data, aes(x=time, y=shares, fill=classes)) + 
-      geom_area(alpha=0.6, size=.5, colour="white") + 
-      #scale_fill_viridis(discrete = T) +
-      #ylim(0,600) + 
-      theme_gray(base_size = 10) + 
-      ggtitle(paste("Age class area share, Region",r_no, rname_fi))
-    data2 <- data.frame(time=rep(c(2015,2021), each=ncol(ikaluokat)),
-                        shares = c(1-t(ageclassstats)), 
-                        classes = rep(datagroups, 2))
-    a2 <- geom_point(data = data2, 
-                     mapping = aes(x = time, y = shares, colour = classes))
-    print(a1+a2)
-    
   }
+  par(mfrow=c(1,1))
+  datagroups <- c("a: 0","b: 1-20","c: 21-40","d: 41-60","e: 61-80","f:81-100","g: 101-120","h: 121-140","i: 140-")
+  data <- data.frame(time=rep(time,each=ncol(ikaluokat)), 
+                     shares = c(t(ikaluokat)), classes =rep(datagroups,length(time)))
+  a1 <- ggplot(data, aes(x=time, y=shares, fill=classes)) + 
+    geom_area(alpha=0.6, size=.5, colour="white") + 
+    #scale_fill_viridis(discrete = T) +
+    #ylim(0,600) + 
+    theme_gray(base_size = 10) + 
+    ggtitle(paste("Age class area share, Region",r_no, rname_fi))
+  data2 <- data.frame(time=rep(c(2015,2021), each=ncol(ikaluokat)),
+                      shares = c(1-t(ageclassstats)), 
+                      classes = rep(datagroups, 2))
+  a2 <- geom_point(data = data2, 
+                   mapping = aes(x = time, y = shares, colour = classes))
+  print(a1+a2)
   
-
+  totArea <- sum(data.all$area)
   sortVar <- c("landclass","peatID","cons")
+  outresults <- outresultsSum <- data.table()
+  sortid <- 1
   for(sortid in 1:3){
     if(sortid==1){
       n_lc1 <- which(dataS$landclass==1)
       n_lc2 <- which(dataS$landclass==2)
-      sortVarnams <- c("forest","poorly productive")
+      sortVarnams <- c("forest","poorly_productive")
+      sortTotAreas <- c(sum(data.all$area[which(data.all$landclass==1)]),
+                     sum(data.all$area[which(data.all$landclass==2)]))
     } else if(sortid==2) {
       n_lc1 <- which(dataS$peatID==0)
       n_lc2 <- which(dataS$peatID==1)
-      sortVarnams <- c("min","ditched org")
+      n_lc3 <- which(dataS$peatID==2)
+      sortVarnams <- c("min","ditched_org","natural_org")
+      sortTotAreas <- c(sum(data.all$area[which(data.all$peatID==0)]),
+                     sum(data.all$area[which(data.all$peatID==1)]),
+                     sum(data.all$area[which(data.all$peatID==2)]))
     } else if(sortid==3) {
       n_lc1 <- which(dataS$cons==0)
       n_lc2 <- which(dataS$cons==1)
       sortVarnams <- c("managed","cons")
+      sortTotAreas <- c(sum(data.all$area[which(data.all$cons==0)]),
+                     sum(data.all$area[which(data.all$cons==1)]))
     }    
     
-    areas1 <- areas[n_lc1]
-    areas2 <- areas[n_lc2]
+    #areas1 <- areas[n_lc1]
+    #areas2 <- areas[n_lc2]
+    #if(sortid==3) areas3 <- areas[n_lc3]
+    varis <- c("V","age","Wtot","BA","grossGrowth","NEP/SMI[layer_1]",
+               "Wharvested","Vharvested","VroundWood","Venergywood","CH4em","N2Oem")
+    variNams <- c("V","age","Wtot","BA","grossGrowth","NEP",
+                  "Wharvested","Vharvested","VroundWood","Venergywood","CH4em","N2Oem")
+  #  outresults <- outresultsSum <- data.table()
+    ij <- 1
+    for(ij in 1:length(varis)){
+      if(varis[ij]=="Wtot"){ 
+        tmp <- apply(output[,,c(24,25,31,32,33),,1],c(1,2,4),sum)
+      } else if(varis[ij]=="Wharvested"){
+        tmp <- output[,,"WroundWood",,1]+out$region$multiEnergyWood[,,,2]
+      } else if(varis[ij]=="Vharvested"){
+        tmp <- output[,,"VroundWood",,1]+out$region$multiEnergyWood[,,,1]
+      }  else if(varis[ij]=="Venergywood"){
+        tmp <- out$region$multiEnergyWood[,,,1]
+      }  else if(varis[ij]=="CH4em"){
+        tmp <- out$region$CH4emisDrPeat_kgyear
+      }  else if(varis[ij]=="N2Oem"){
+        tmp <- out$region$N2OemisDrPeat_kgyear
+      } else {
+        tmp <- output[,,which(varNames==varis[ij]),,1]
+      }
+      if(varis[ij]%in%c("V","Wtot","BA","grossGrowth","NEP/SMI[layer_1]","Wharvested","Vharvested","VroundWood","Venergywood","CH4em","N2Oem")){ # sums
+        if(varis[ij]%in%c("CH4em","N2Oem")){
+          outres <- sum(tmp*areas)/sum(areas)
+        } else {
+          outres <- colSums(apply(tmp,1:2,sum)*areas)/sum(areas)
+        }
+        #assign(varis[ij],outres)
+        if(sortid==1){
+          outresults <- cbind(outresults, outres)
+          colnames(outresults)[ncol(outresults)] <- variNams[ij]
+          outresultsSum <- cbind(outresultsSum, outres*totArea)
+          colnames(outresultsSum)[ncol(outresultsSum)] <- variNams[ij]
+        }        
+        ik <- 1
+        for(ik in 1:length(sortVarnams)){
+          if(ik==1) ni <- n_lc1
+          if(ik==2) ni <- n_lc2
+          if(ik==3) ni <- n_lc3
+          if(varis[ij]%in%c("CH4em","N2Oem")){
+            outres <- sum(tmp[ni]*areas[ni])/sum(areas[ni])
+          } else {
+            outres <- colSums(apply(tmp[ni,,],1:2,sum)*areas[ni])/sum(areas[ni])
+          }
+          outresults <- cbind(outresults, outres)
+          colnames(outresults)[ncol(outresults)] <- paste0(variNams[ij],"_",sortVarnams[ik])
+          outresultsSum <- cbind(outresultsSum, outres*sortTotAreas[ik])
+          colnames(outresultsSum)[ncol(outresultsSum)] <- paste0(variNams[ij],"_",sortVarnams[ik])
+          assign(paste0(varis[ij],"_lc",ik),outres)
+        }
+      }
+      if(varis[ij]%in%c("age")){ # mean
+        outres <- colSums(apply(tmp,1:2,mean)*areas)/sum(areas)
+        #assign(varis[ij],outres)
+        outresults <- cbind(outresults, outres)
+        colnames(outresults)[ncol(outresults)] <- variNams[ij]
+        outresultsSum <- cbind(outresultsSum, outres)
+        colnames(outresultsSum)[ncol(outresultsSum)] <- variNams[ij]
+        ik <- 1
+        for(ik in 1:length(sortVarnams)){
+          if(ik==1) ni <- n_lc1
+          if(ik==2) ni <- n_lc2
+          if(ik==3) ni <- n_lc3
+          outres <- colSums(apply(tmp[ni,,],1:2,mean)*areas[ni])/sum(areas[ni])
+          outresults <- cbind(outresults, outres)
+          colnames(outresults)[ncol(outresults)] <- paste0(variNams[ij],"_",sortVarnams[ik])
+          outresultsSum <- cbind(outresultsSum, outres)
+          colnames(outresultsSum)[ncol(outresultsSum)] <- paste0(variNams[ij],"_",sortVarnams[ik])
+          assign(paste0(varis[ij],"_lc",ik),outres)
+        }
+      }
+    }
     
-    V <- colSums(apply(output[,,"V",,1],1:2,sum)*areas)/sum(areas)
-    Vlc1 <- colSums(apply(output[n_lc1,,"V",,1],1:2,sum)*areas1)/sum(areas1)
-    Vlc2 <- colSums(apply(output[n_lc2,,"V",,1],1:2,sum)*areas2)/sum(areas2)
-    
-    age <- colSums(apply(output[,,"age",,1],1:2,mean)*areas)/sum(areas)
-    agelc1 <- colSums(apply(output[n_lc1,,"age",,1],1:2,mean)*areas1)/sum(areas1)
-    agelc2 <- colSums(apply(output[n_lc2,,"age",,1],1:2,mean)*areas2)/sum(areas2)
-    
-    Wtot <-   colSums(apply(output[,,c(24,25,31,32,33),,1],1:2,sum)*areas)/sum(areas)
-    Wtotlc1 <-   colSums(apply(output[n_lc1,,c(24,25,31,32,33),,1],1:2,sum)*areas1)/sum(areas1)
-    Wtotlc2 <-   colSums(apply(output[n_lc2,,c(24,25,31,32,33),,1],1:2,sum)*areas2)/sum(areas2)
-    
-    BA <- colSums(apply(output[,,"BA",,1],1:2,sum)*areas)/sum(areas)
-    BAlc1 <- colSums(apply(output[n_lc1,,"BA",,1],1:2,sum)*areas1)/sum(areas1)
-    BAlc2 <- colSums(apply(output[n_lc2,,"BA",,1],1:2,sum)*areas2)/sum(areas2)
-    
-    grossgrowth <- colSums(apply(output[,,43,,1],1:2,sum)*areas)/sum(areas)#grossgrowth
-    grossgrowthlc1 <- colSums(apply(output[n_lc1,,43,,1],1:2,sum)*areas1)/sum(areas1)#grossgrowth
-    grossgrowthlc2 <- colSums(apply(output[n_lc2,,43,,1],1:2,sum)*areas2)/sum(areas2)#grossgrowth
-    
-    NEP <- colSums(apply(output[,,"NEP/SMI[layer_1]",,1],1:2,sum)*areas)/sum(areas)
-    NEPlc1 <- colSums(apply(output[n_lc1,,"NEP/SMI[layer_1]",,1],1:2,sum)*areas1)/sum(areas1)
-    NEPlc2 <- colSums(apply(output[n_lc2,,"NEP/SMI[layer_1]",,1],1:2,sum)*areas2)/sum(areas2)
-    
-    NEE <- -NEP*ha_to_m2/g_to_kg
-    NEElc1 <- -NEPlc1*ha_to_m2/g_to_kg
-    NEElc2 <- -NEPlc2*ha_to_m2/g_to_kg
-    #NEE <- -colSums(apply(output[,,"NEP/SMI[layer_1]",,1],1:2,sum)*areas*ha_to_m2/g_to_kg)/sum(areas)
-    Wharvested <- colSums(apply(output[,,"WroundWood",,1],1:2,sum)*areas+
-                            apply(out$region$multiEnergyWood[,,,2],1:2,sum)*areas)/sum(areas)
-    Wharvestedlc1 <- colSums(apply(output[n_lc1,,"WroundWood",,1],1:2,sum)*areas1+
-                               apply(out$region$multiEnergyWood[n_lc1,,,2],1:2,sum)*areas1)/sum(areas1)
-    Wharvestedlc2 <- colSums(apply(output[n_lc2,,"WroundWood",,1],1:2,sum)*areas2+
-                               apply(out$region$multiEnergyWood[n_lc2,,,2],1:2,sum)*areas2)/sum(areas2)
-    
-    CH4em <- sum(out$region$CH4emisDrPeat_kgyear*areas)/sum(areas)  
-    N2Oem <- sum(out$region$N2OemisDrPeat_kgyear*areas)/sum(areas)  
-    
-    CH4emlc1 <- sum(out$region$CH4emisDrPeat_kgyear[n_lc1]*areas1)/sum(areas1)  
-    N2Oemlc1 <- sum(out$region$N2OemisDrPeat_kgyear[n_lc1]*areas1)/sum(areas1)  
-    CH4emlc2 <- sum(out$region$CH4emisDrPeat_kgyear[n_lc2]*areas2)/sum(areas2)  
-    N2Oemlc2 <- sum(out$region$N2OemisDrPeat_kgyear[n_lc2]*areas2)/sum(areas2)  
-    
-    NBE <- 44/12*(NEE + Wharvested) + 298*N2Oem + 25*CH4em
-    NBElc1 <- 44/12*(NEElc1 + Wharvestedlc1) + 298*N2Oemlc1 + 25*CH4emlc1
-    NBElc2 <- 44/12*(NEElc2 + Wharvestedlc2) + 298*N2Oemlc2 + 25*CH4emlc2
-    
-    VroundWood <- colSums(apply(output[,,"VroundWood",,1],1:2,sum)*areas)/sum(areas)
-    VroundWoodlc1 <- colSums(apply(output[n_lc1,,"VroundWood",,1],1:2,sum)*areas1)/sum(areas1)
-    VroundWoodlc2 <- colSums(apply(output[n_lc2,,"VroundWood",,1],1:2,sum)*areas2)/sum(areas2)
-    
-    VenergyWood <- colSums(apply(out$region$multiEnergyWood[,,,1],1:2,sum)*areas)/sum(areas)
-    VenergyWoodlc1 <- colSums(apply(out$region$multiEnergyWood[n_lc1,,,1],1:2,sum)*areas1)/sum(areas1)
-    VenergyWoodlc2 <- colSums(apply(out$region$multiEnergyWood[n_lc2,,,1],1:2,sum)*areas2)/sum(areas2)
-    
-    Vharvested <- VroundWood+VenergyWood
-    Vharvestedlc1 <- VroundWoodlc1+VenergyWoodlc1
-    Vharvestedlc2 <- VroundWoodlc2+VenergyWoodlc2
-    
-    
+    ij <- which(colnames(outresults)=="NEP")
+    if(sortid==1){
+      outresults <-cbind(outresults, -outresults$NEP*ha_to_m2/g_to_kg)
+      colnames(outresults)[ncol(outresults)] <- "NEE"
+    }
+    for(ik in 1:length(sortVarnams)){
+      ikj <- which(colnames(outresults)==paste0("NEP_",sortVarnams[ik]))
+      outresults <- cbind(outresults, -outresults[,..ikj]*ha_to_m2/g_to_kg)
+      colnames(outresults)[ncol(outresults)] <- paste0("NEE_",sortVarnams[ik])
+    }
+
+    if(sortid==1){
+      outresults <-cbind(outresults, 44/12*(outresults$NEE+outresults$Wharvested)+
+                           298*outresults$N2Oem + 25*outresults$CH4em)
+      colnames(outresults)[ncol(outresults)] <- "NBE"
+    }
+    for(ik in 1:length(sortVarnams)){
+      ik0 <- which(colnames(outresults)==paste0("NEE_",sortVarnams[ik]))
+      ik1 <- which(colnames(outresults)==paste0("Wharvested_",sortVarnams[ik]))
+      ik2 <- which(colnames(outresults)==paste0("CH4em_",sortVarnams[ik]))
+      ik3 <- which(colnames(outresults)==paste0("N2Oem_",sortVarnams[ik]))
+      outresults <- cbind(outresults,44/12*(outresults[,..ik0]+outresults[,..ik1])+
+                            298*outresults[,..ik2] + 25*outresults[,..ik3])
+      colnames(outresults)[ncol(outresults)] <- paste0("NBE_",sortVarnams[ik])
+    }
+    #NBE <- 44/12*(NEE + Wharvested) + 298*N2Oem + 25*CH4em
+
     KUVA <- T
     if(KUVA){
       par(mfrow=c(2,2))
-      plot(time, grossgrowth, type="l",main=paste("Region",r_no,rname), 
-           ylim = c(0,9), ylab = "grossgrowth, m3/ha")
+      ij <- which(colnames(outresults)=="grossGrowth")
+      tmp <- unlist(outresults[,..ij])
+      plot(time, tmp, type="l",main=paste("Region",r_no,rname), 
+           ylim = c(0,9), ylab = "grossgrowth, m3/ha",lwd=3)
       points(c(2015,2021),ggstats,pch=19,col="red")
-      lines(time, grossgrowthlc1,col="blue")
-      if(length(n_lc2)>1) lines(time, grossgrowthlc2,col="green")
-      legend("bottomright",c(paste0("all, ",round(sum(areas)),"kha"),
-                             paste0(sortVarnams[1],", ",round(sum(areas1)),"kha"),
-                             paste0(sortVarnams[2],", ",round(sum(areas2)),"kha")),
-             pch=c(1,1,1),cex=0.7,
-             col=c("black","blue","green"))
+      colorsi <- c("blue","green","pink")
+      for(ik in 1:length(sortVarnams)){
+        ijk <- ij + ik
+        tmp <- unlist(outresults[,..ijk])
+        if(length(tmp)>1){
+          lines(time, tmp,col=colorsi[ik])
+        }
+      }
+      legend("bottomright",c(paste0("all ",round(totArea),"kha"),paste0(sortVarnams," ", round(sortTotAreas),"kha")),
+             pch=rep(1,length(sortVarnams)+1),cex=0.7,
+             col=c("black",colorsi[1:length(sortVarnams)]))
+
+      # NEP
+      ij <- which(colnames(outresults)=="NEP")
+      tmp <- unlist(outresults[,..ij])
+      ij2 <- c(ij,match(paste0("NEP_",sortVarnams),colnames(outresults)))
+      ymax <- max(outresults[,..ij2])
+      ymin <- min(outresults[,..ij2])
+      plot(time, tmp, type="l",main=paste("Region",r_no,rname), 
+           ylab = "NEP, g/m2", ylim = c(ymin,ymax),
+           lwd=3)
+      colorsi <- c("blue","green","pink")
+      for(ik in 1:length(sortVarnams)){
+        ijk <- which(paste0("NEP_",sortVarnams[ik])==colnames(outresults))
+        tmp <- unlist(outresults[,..ijk])
+        if(length(tmp)>1){
+          lines(time, tmp,col=colorsi[ik])
+        }
+      }
+      lines(time,0*time, col="black")
       
-      #    plot(time, BA, type="l",main=paste("Region",r_no,rname))
-      plot(time, NEP, type="l",main=paste("Region",r_no), 
-           ylab = "NEP, g/m2",
-           ylim=c(min(c(NEP,NEPlc1,NEPlc2)),1.1*max(c(NEP,NEPlc1,NEPlc2))))
-      lines(time, NEPlc1, col="blue")
-      if(length(n_lc2)>1) lines(time, NEPlc2, col="green")
+      # V
+      ij <- which(colnames(outresults)=="V")
+      tmp <- unlist(outresults[,..ij])
+      ij2 <- c(ij,match(paste0("V_",sortVarnams),colnames(outresults)))
+      ymax <- max(outresults[,..ij2])
+      ymin <- min(outresults[,..ij2])
+      plot(time, tmp, type="l",main=paste("Region",r_no,rname), 
+           ylab = "V, m3/ha", ylim = c(0,ymax),
+           lwd=3)
+      colorsi <- c("blue","green","pink")
+      for(ik in 1:length(sortVarnams)){
+        ijk <- which(paste0("V_",sortVarnams[ik])==colnames(outresults))
+        tmp <- unlist(outresults[,..ijk])
+        if(length(tmp)>1){
+          lines(time, tmp,col=colorsi[ik])
+        }
+      }
       
-      plot(time, V, type="l",main=paste("Region",r_no), 
-           ylab = "V, m3/ha", ylim = c(0,max(c(V,Vlc1,Vlc2))))
-      points(c(2015,2021),Vstats,pch=19,col="red")
-      lines(time, Vlc1, col="blue")
-      if(length(n_lc2)>1) lines(time, Vlc2, col="green")
+      # age
+      ij <- which(colnames(outresults)=="age")[1]
+      tmp <- unlist(outresults[,..ij])
+      ij2 <- c(ij,match(paste0("age_",sortVarnams),colnames(outresults)))
+      ymax <- max(outresults[,..ij2])
+      ymin <- min(outresults[,..ij2])
+      plot(time, tmp, type="l",main=paste("Region",r_no,rname), 
+           ylab = "age, years", ylim = c(0,ymax),
+           lwd=3)
+      colorsi <- c("blue","green","pink")
+      for(ik in 1:length(sortVarnams)){
+        ijk <- which(paste0("age_",sortVarnams[ik])==colnames(outresults))
+        tmp <- unlist(outresults[,..ijk])
+        if(length(tmp)>1){
+          lines(time, tmp,col=colorsi[ik])
+        }
+      }
       
-      plot(time, age, type="l",main=paste("Region",r_no), 
-           ylab = "years", ylim = c(0,max(c(age,agelc1,agelc2))))
-      lines(time, agelc1, col="blue")
-      if(length(n_lc2)>1) lines(time, agelc2, col="green")
+      # Wtot
+      ij <- which(colnames(outresults)=="Wtot")
+      tmp <- unlist(outresults[,..ij])
+      ij2 <- c(ij,match(paste0("Wtot_",sortVarnams),colnames(outresults)))
+      ymax <- max(outresults[,..ij2])
+      ymin <- min(outresults[,..ij2])
+      plot(time, tmp, type="l",main=paste("Region",r_no,rname), 
+           ylab = "Wtot, kg C/ha", ylim = c(0,ymax),
+           lwd=3)
+      colorsi <- c("blue","green","pink")
+      for(ik in 1:length(sortVarnams)){
+        ijk <- ij2[ik+1]
+        tmp <- unlist(outresults[,..ijk])
+        if(length(tmp)>1){
+          lines(time, tmp,col=colorsi[ik])
+        }
+      }
+      legend("bottomright",c(paste0("all ",round(totArea),"kha"),paste0(sortVarnams," ", round(sortTotAreas),"kha")),
+             pch=rep(1,length(sortVarnams)+1),cex=0.7,
+             col=c("black",colorsi[1:length(sortVarnams)]))
       
-      plot(time, Wtot, type="l",main=paste("Region",r_no), 
-           ylab = "Wtot, kg C/ha", ylim = c(0,max(c(Wtot,Wtotlc1,Wtotlc2))))
-      points(c(2015,2021),wstats,pch=19,col="red")
-      lines(time, Wtotlc1, col="blue")
-      if(length(n_lc2)>1) lines(time, Wtotlc2, col="green")
-      
-      plot(time, Vharvested, type="l",main=paste("Region",r_no), 
-           ylim=c(0,max(c(Vharvested,Vharvestedlc1,Vharvestedlc2))*1.1),ylab="Vharv, m3/ha")
+      # Vharvested
+      ij <- which(colnames(outresults)=="Vharvested")
+      tmp <- unlist(outresults[,..ij])
+      ij2 <- c(ij,match(paste0("Vharvested_",sortVarnams),colnames(outresults)))
+      ymax <- max(outresults[,..ij2])
+      ymin <- min(outresults[,..ij2])
+      plot(time, tmp, type="l",main=paste("Region",r_no,rname), 
+           ylab = "Vharv, m3/ha", ylim = c(0,ymax),
+           lwd=3)
+      colorsi <- c("blue","green","pink")
+      for(ik in 1:length(sortVarnams)){
+        ijk <- ij2[1 + ik]
+        tmp <- unlist(outresults[,..ijk])
+        if(length(tmp)>1){
+          lines(time, tmp,col=colorsi[ik])
+        }
+      }
       points(time[1:nYears],rowSums(HarvLimMaak[1:nYears,])/totArea*1000,col="red")
-      lines(time, Vharvestedlc1, col="blue")
-      if(length(n_lc2)>1)lines(time, Vharvestedlc2, col="green")
       
       if(TRUE){
-        plot(time, NBE, type="l", ylab = "NBE, kg CO2eq/ha",
-             ylim = 1.1*c(min(0,min(c(NBE,NBElc1,NBElc2))),
-                          max(max(c(NBE,NBElc1,NBElc2)),0)),main=paste("Region",r_no))
+        
+        # NBE
+        ij <- which(colnames(outresults)=="NBE")
+        tmp <- unlist(outresults[,..ij])
+        ij2 <- c(ij,match(paste0("NBE_",sortVarnams),colnames(outresults)))
+        ymax <- max(outresults[,..ij2])
+        ymin <- min(outresults[,..ij2])
+        plot(time, tmp, type="l",main=paste("Region",r_no,rname), 
+             ylab="NBE, kg CO2eq/ha", ylim = c(ymin,ymax),
+             lwd=3)
+        colorsi <- c("blue","green","pink")
+        for(ik in 1:length(sortVarnams)){
+          ijk <- ij2[1 + ik]
+          tmp <- unlist(outresults[,..ijk])
+          if(length(tmp)>1){
+            lines(time, tmp,col=colorsi[ik])
+          }
+        }
         lines(c(time[1],time[length(time)]),c(0,0),col="black")
-        lines(time, NBElc1, col="blue")
-        if(length(n_lc2)>1) lines(time, NBElc2, col="green")
       }
     }
   }
-  results_ave <- rbind(grossgrowth,V,Vharvested, NEE, Wharvested, CH4em, N2Oem, NBE)/sum(areas)
-  results[,,r_noi,1] <- results_ave*totArea
-  results[,,r_noi,2] <- results_ave
-  if(toFile) save(results, landclassMSNFI, ikaluokat, 
+
+  if(toFile) save(outresults, landclassMSNFI, ikaluokat, 
                   file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,".rdata"))  
  # rm(list=setdiff(ls(), toMem))
   gc()
