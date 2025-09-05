@@ -698,7 +698,7 @@ for(r_noi in 1:length(rids)){
 
   if(toFile) save(outresults, landclassMSNFI, ikaluokat, 
                   file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,".rdata"))  
- # rm(list=setdiff(ls(), toMem))
+  rm(list=setdiff(ls(), toMem))
   gc()
 }
 if(toFile) dev.off()
