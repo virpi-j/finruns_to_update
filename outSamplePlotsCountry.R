@@ -176,6 +176,9 @@ for(r_noi in 1:length(rids)){
     data.all$peatID[which(data.all$peatID==100)]<-0
     data.all$peatID[which(data.all$peatID==400)]<-1
     data.all$peatID[which(data.all$peatID==700)]<-2
+    data.all <- data.all[which(data.all$peatID!=2),]
+    rm(list=c("finPeats","peatIDs","data.IDs","tabX","ntabX","xy"))
+    gc()
   }
   if(samplaus){
     data.all$age <- round(data.all$age)
@@ -295,6 +298,8 @@ for(r_noi in 1:length(rids)){
     }
   } else {
     dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F),]
+    #rm("data.all")
+    gc()
   }
   
   #lajistats2015
@@ -428,7 +433,7 @@ for(r_noi in 1:length(rids)){
   
   totArea <- sum(data.all$area)
   sortVar <- c("landclass","peatID","cons")
-  outresults <- outresultsSum <- data.table()
+  outresults <- data.table()
   sortid <- 1
   for(sortid in 1:3){
     if(sortid==1){
@@ -440,11 +445,14 @@ for(r_noi in 1:length(rids)){
     } else if(sortid==2) {
       n_lc1 <- which(dataS$peatID==0)
       n_lc2 <- which(dataS$peatID==1)
-      n_lc3 <- which(dataS$peatID==2)
-      sortVarnams <- c("min","ditched_org","natural_org")
+      sortVarnams <- c("min","ditched_org")
       sortTotAreas <- c(sum(data.all$area[which(data.all$peatID==0)]),
-                     sum(data.all$area[which(data.all$peatID==1)]),
-                     sum(data.all$area[which(data.all$peatID==2)]))
+                        sum(data.all$area[which(data.all$peatID==1)]))
+    #  n_lc3 <- which(dataS$peatID==2)
+    #  sortVarnams <- c("min","ditched_org","natural_org")
+    #  sortTotAreas <- c(sum(data.all$area[which(data.all$peatID==0)]),
+    #                    sum(data.all$area[which(data.all$peatID==1)]),
+    #                    sum(data.all$area[which(data.all$peatID==2)]))
     } else if(sortid==3) {
       n_lc1 <- which(dataS$cons==0)
       n_lc2 <- which(dataS$cons==1)
@@ -488,8 +496,8 @@ for(r_noi in 1:length(rids)){
         if(sortid==1){
           outresults <- cbind(outresults, outres)
           colnames(outresults)[ncol(outresults)] <- variNams[ij]
-          outresultsSum <- cbind(outresultsSum, outres*totArea)
-          colnames(outresultsSum)[ncol(outresultsSum)] <- variNams[ij]
+          #outresultsSum <- cbind(outresultsSum, outres*totArea)
+          #colnames(outresultsSum)[ncol(outresultsSum)] <- variNams[ij]
         }        
         ik <- 1
         for(ik in 1:length(sortVarnams)){
@@ -503,18 +511,20 @@ for(r_noi in 1:length(rids)){
           }
           outresults <- cbind(outresults, outres)
           colnames(outresults)[ncol(outresults)] <- paste0(variNams[ij],"_",sortVarnams[ik])
-          outresultsSum <- cbind(outresultsSum, outres*sortTotAreas[ik])
-          colnames(outresultsSum)[ncol(outresultsSum)] <- paste0(variNams[ij],"_",sortVarnams[ik])
-          assign(paste0(varis[ij],"_lc",ik),outres)
+          #outresultsSum <- cbind(outresultsSum, outres*sortTotAreas[ik])
+          #colnames(outresultsSum)[ncol(outresultsSum)] <- paste0(variNams[ij],"_",sortVarnams[ik])
+          #assign(paste0(varis[ij],"_lc",ik),outres)
         }
       }
       if(varis[ij]%in%c("age")){ # mean
         outres <- colSums(apply(tmp,1:2,mean)*areas)/sum(areas)
         #assign(varis[ij],outres)
-        outresults <- cbind(outresults, outres)
-        colnames(outresults)[ncol(outresults)] <- variNams[ij]
-        outresultsSum <- cbind(outresultsSum, outres)
-        colnames(outresultsSum)[ncol(outresultsSum)] <- variNams[ij]
+        if(sortid==1){
+          outresults <- cbind(outresults, outres)
+          colnames(outresults)[ncol(outresults)] <- variNams[ij]
+          #outresultsSum <- cbind(outresultsSum, outres)
+        #  colnames(outresultsSum)[ncol(outresultsSum)] <- variNams[ij]
+        }
         ik <- 1
         for(ik in 1:length(sortVarnams)){
           if(ik==1) ni <- n_lc1
@@ -523,9 +533,9 @@ for(r_noi in 1:length(rids)){
           outres <- colSums(apply(tmp[ni,,],1:2,mean)*areas[ni])/sum(areas[ni])
           outresults <- cbind(outresults, outres)
           colnames(outresults)[ncol(outresults)] <- paste0(variNams[ij],"_",sortVarnams[ik])
-          outresultsSum <- cbind(outresultsSum, outres)
-          colnames(outresultsSum)[ncol(outresultsSum)] <- paste0(variNams[ij],"_",sortVarnams[ik])
-          assign(paste0(varis[ij],"_lc",ik),outres)
+         # outresultsSum <- cbind(outresultsSum, outres)
+          #colnames(outresultsSum)[ncol(outresultsSum)] <- paste0(variNams[ij],"_",sortVarnams[ik])
+          #assign(paste0(varis[ij],"_lc",ik),outres)
         }
       }
     }
@@ -534,18 +544,27 @@ for(r_noi in 1:length(rids)){
     if(sortid==1){
       outresults <-cbind(outresults, -outresults$NEP*ha_to_m2/g_to_kg)
       colnames(outresults)[ncol(outresults)] <- "NEE"
+      outresults <-cbind(outresults, outresults$NEE*totArea)
+      colnames(outresults)[ncol(outresults)] <- "NEEsum"
     }
+    ik <- 1
     for(ik in 1:length(sortVarnams)){
       ikj <- which(colnames(outresults)==paste0("NEP_",sortVarnams[ik]))
       outresults <- cbind(outresults, -outresults[,..ikj]*ha_to_m2/g_to_kg)
       colnames(outresults)[ncol(outresults)] <- paste0("NEE_",sortVarnams[ik])
+      ikj <- which(colnames(outresults)==paste0("NEE_",sortVarnams[ik]))
+      outresults <- cbind(outresults, outresults[,..ikj]*sortTotAreas[ik])
+      colnames(outresults)[ncol(outresults)] <- paste0("NEEsum_",sortVarnams[ik])
     }
 
     if(sortid==1){
       outresults <-cbind(outresults, 44/12*(outresults$NEE+outresults$Wharvested)+
                            298*outresults$N2Oem + 25*outresults$CH4em)
       colnames(outresults)[ncol(outresults)] <- "NBE"
+      outresults <-cbind(outresults, outresults$NBE*totArea)
+      colnames(outresults)[ncol(outresults)] <- "NBEsum"
     }
+    ik <- 1
     for(ik in 1:length(sortVarnams)){
       ik0 <- which(colnames(outresults)==paste0("NEE_",sortVarnams[ik]))
       ik1 <- which(colnames(outresults)==paste0("Wharvested_",sortVarnams[ik]))
@@ -554,6 +573,9 @@ for(r_noi in 1:length(rids)){
       outresults <- cbind(outresults,44/12*(outresults[,..ik0]+outresults[,..ik1])+
                             298*outresults[,..ik2] + 25*outresults[,..ik3])
       colnames(outresults)[ncol(outresults)] <- paste0("NBE_",sortVarnams[ik])
+      ikj <- which(colnames(outresults)==paste0("NBE_",sortVarnams[ik]))
+      outresults <- cbind(outresults, outresults[,..ikj]*sortTotAreas[ik])
+      colnames(outresults)[ncol(outresults)] <- paste0("NBEsum_",sortVarnams[ik])
     }
     #NBE <- 44/12*(NEE + Wharvested) + 298*N2Oem + 25*CH4em
 
@@ -573,7 +595,8 @@ for(r_noi in 1:length(rids)){
           lines(time, tmp,col=colorsi[ik])
         }
       }
-      legend("bottomright",c(paste0("all ",round(totArea),"kha"),paste0(sortVarnams," ", round(sortTotAreas),"kha")),
+      legend("bottomright",c(paste0("all ",round(totArea/1000),"kha"),
+                             paste0(sortVarnams," ", round(sortTotAreas/1000),"kha")),
              pch=rep(1,length(sortVarnams)+1),cex=0.7,
              col=c("black",colorsi[1:length(sortVarnams)]))
 
@@ -649,7 +672,8 @@ for(r_noi in 1:length(rids)){
           lines(time, tmp,col=colorsi[ik])
         }
       }
-      legend("bottomright",c(paste0("all ",round(totArea),"kha"),paste0(sortVarnams," ", round(sortTotAreas),"kha")),
+      legend("bottomright",c(paste0("all ",round(totArea/1000),"kha"),
+                             paste0(sortVarnams," ", round(sortTotAreas/1000),"kha")),
              pch=rep(1,length(sortVarnams)+1),cex=0.7,
              col=c("black",colorsi[1:length(sortVarnams)]))
       
@@ -692,13 +716,89 @@ for(r_noi in 1:length(rids)){
           }
         }
         lines(c(time[1],time[length(time)]),c(0,0),col="black")
+        
+        # NBEsum
+        ij <- which(colnames(outresults)=="NBEsum")
+        tmp <- unlist(outresults[,..ij])
+        ij2 <- c(ij,match(paste0("NBEsum_",sortVarnams),colnames(outresults)))
+        ymax <- max(outresults[,..ij2])
+        ymin <- min(outresults[,..ij2])
+        plot(time, tmp/1e6, type="l",main=paste("Region",r_no,rname), 
+             ylab="NBEsum, million kg CO2eq", ylim = c(ymin,ymax)/1e6,
+             lwd=3)
+        colorsi <- c("blue","green","pink")
+        for(ik in 1:length(sortVarnams)){
+          ijk <- ij2[1 + ik]
+          tmp <- unlist(outresults[,..ijk])
+          if(length(tmp)>1){
+            lines(time, tmp/1e6,col=colorsi[ik])
+          }
+        }
+        lines(c(time[1],time[length(time)]),c(0,0),col="black")
+        
       }
     }
   }
 
   if(toFile) save(outresults, landclassMSNFI, ikaluokat, 
-                  file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,".rdata"))  
+                  file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,".rdata"))  
   rm(list=setdiff(ls(), toMem))
   gc()
+}
+
+r_noi <- 1
+outresults_wholecountry <- data.frame()
+for(r_noi in 1:length(rids)){
+  toMem <- ls()
+  set.seed(1)
+  r_no <- rids[r_noi]
+  rname <- regionNames[r_no]
+  rname_fi <- regionNames_fi[r_no]
+  rnameid <- r_nos[r_no]
+  load(file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,".rdata"))  
+
+  ij <- which(grepl("NBEsum",colnames(outresults)))
+  cnames <- colnames(outresults)[ij]
+  if(r_noi==1){
+    outresults_wholecountry <- outresults[,..ij]
+  } else {
+    outresults_wholecountry <- outresults_wholecountry + outresults[,..ij]
+  }
+  rm(list=setdiff(ls(), toMem))
+  gc()
+}    
+
+if(toFile) save(outresults_wholecountry, 
+                file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_wholeCountry.rdata"))  
+par(mfrow=c(3,1))
+sortid <- 1
+for(sortid in 1:3){
+  if(sortid==1){
+    sortVarnams <- c("forest","poorly_productive")
+  } else if(sortid==2) {
+    sortVarnams <- c("min","ditched_org","natural_org")
+  } else if(sortid==3) {
+    sortVarnams <- c("managed","cons")
+  }    
+  ij <- c(1,which(cnames%in%paste0("NBEsum_",sortVarnams)))
+  ymax <- max(outresults_wholecountry[,..ij])
+  ymin <- min(outresults_wholecountry[,..ij])
+  plot(time, outresults_wholecountry$NBEsum/1e6, type="l",main="Whole country", 
+       ylab="NBEsum, million kg CO2eq", ylim = c(ymin,ymax)/1e6,
+       lwd=3)
+  colorsi <- c("blue","green","pink")
+  ik <- 1
+  for(ik in 1:length(sortVarnams)){
+    ijk <- ij[1 + ik]
+    tmp <- unlist(outresults_wholecountry[,..ijk])
+    if(length(tmp)>1){
+      lines(time, tmp/1e6,col=colorsi[ik])
+    }
+  }
+  lines(c(time[1],time[length(time)]),c(0,0),col="black")
+  legend("bottomright",c("all",sortVarnams),
+         pch=rep(1,length(sortVarnams)+1),cex=0.7,
+         col=c("black",colorsi[1:length(sortVarnams)]))
+  
 }
 if(toFile) dev.off()
