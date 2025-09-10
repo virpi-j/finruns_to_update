@@ -391,7 +391,6 @@ for(r_noi in 1:length(rids)){
   areas <- dataS$area
   time <- (1:dim(output)[2])+2015
 
-  
   ti <- 1
   ikaluokat <- array(0,c(nYears,9))
   agelimits <- c(0,20,40,60,80,100,120,140,1e4)
@@ -433,8 +432,9 @@ for(r_noi in 1:length(rids)){
   
   totArea <- sum(data.all$area)
   sortVar <- c("landclass","peatID","cons")
-  outresults <- data.table()
+  outresults <- areatable <- data.table()
   sortid <- 1
+  areatable <- cbind(areatable, areaTot = totArea)
   for(sortid in 1:3){
     if(sortid==1){
       n_lc1 <- which(dataS$landclass==1)
@@ -442,13 +442,17 @@ for(r_noi in 1:length(rids)){
       sortVarnams <- c("forest","poorly_productive")
       sortTotAreas <- c(sum(data.all$area[which(data.all$landclass==1)]),
                      sum(data.all$area[which(data.all$landclass==2)]))
+      areatable <- cbind(areatable, data.table(area_forest=sortTotAreas[1],
+                                               area_poorly_productive=sortTotAreas[2]))
     } else if(sortid==2) {
       n_lc1 <- which(dataS$peatID==0)
       n_lc2 <- which(dataS$peatID==1)
       sortVarnams <- c("min","ditched_org")
       sortTotAreas <- c(sum(data.all$area[which(data.all$peatID==0)]),
                         sum(data.all$area[which(data.all$peatID==1)]))
-    #  n_lc3 <- which(dataS$peatID==2)
+      areatable <- cbind(areatable, data.table(area_min=sortTotAreas[1],
+                                               area_ditched_org=sortTotAreas[2]))
+      #  n_lc3 <- which(dataS$peatID==2)
     #  sortVarnams <- c("min","ditched_org","natural_org")
     #  sortTotAreas <- c(sum(data.all$area[which(data.all$peatID==0)]),
     #                    sum(data.all$area[which(data.all$peatID==1)]),
@@ -459,15 +463,19 @@ for(r_noi in 1:length(rids)){
       sortVarnams <- c("managed","cons")
       sortTotAreas <- c(sum(data.all$area[which(data.all$cons==0)]),
                      sum(data.all$area[which(data.all$cons==1)]))
+      areatable <- cbind(areatable, data.table(area_managed=sortTotAreas[1],
+                                               area_cons=sortTotAreas[2]))
     }    
     
     #areas1 <- areas[n_lc1]
     #areas2 <- areas[n_lc2]
     #if(sortid==3) areas3 <- areas[n_lc3]
     varis <- c("V","age","Wtot","BA","grossGrowth","NEP/SMI[layer_1]",
-               "Wharvested","Vharvested","VroundWood","Venergywood","CH4em","N2Oem")
+               "Wharvested","Vharvested","VroundWood","Venergywood",
+               "Vmort","CH4em","N2Oem")
     variNams <- c("V","age","Wtot","BA","grossGrowth","NEP",
-                  "Wharvested","Vharvested","VroundWood","Venergywood","CH4em","N2Oem")
+                  "Wharvested","Vharvested","VroundWood","Venergywood",
+                  "Vmort","CH4em","N2Oem")
   #  outresults <- outresultsSum <- data.table()
     ij <- 1
     for(ij in 1:length(varis)){
@@ -486,7 +494,7 @@ for(r_noi in 1:length(rids)){
       } else {
         tmp <- output[,,which(varNames==varis[ij]),,1]
       }
-      if(varis[ij]%in%c("V","Wtot","BA","grossGrowth","NEP/SMI[layer_1]","Wharvested","Vharvested","VroundWood","Venergywood","CH4em","N2Oem")){ # sums
+      if(varis[ij]%in%c("V","Wtot","BA","grossGrowth","NEP/SMI[layer_1]","Wharvested","Vharvested","VroundWood","Venergywood","Vmort","CH4em","N2Oem")){ # sums
         if(varis[ij]%in%c("CH4em","N2Oem")){
           outres <- sum(tmp*areas)/sum(areas)
         } else {
@@ -559,7 +567,7 @@ for(r_noi in 1:length(rids)){
 
     if(sortid==1){
       outresults <-cbind(outresults, 44/12*(outresults$NEE+outresults$Wharvested)+
-                           298*outresults$N2Oem + 25*outresults$CH4em)
+                           (298*outresults$N2Oem + 25*outresults$CH4em)*ha_to_m2/g_to_kg)
       colnames(outresults)[ncol(outresults)] <- "NBE"
       outresults <-cbind(outresults, outresults$NBE*totArea)
       colnames(outresults)[ncol(outresults)] <- "NBEsum"
@@ -571,7 +579,7 @@ for(r_noi in 1:length(rids)){
       ik2 <- which(colnames(outresults)==paste0("CH4em_",sortVarnams[ik]))
       ik3 <- which(colnames(outresults)==paste0("N2Oem_",sortVarnams[ik]))
       outresults <- cbind(outresults,44/12*(outresults[,..ik0]+outresults[,..ik1])+
-                            298*outresults[,..ik2] + 25*outresults[,..ik3])
+                            (298*outresults[,..ik2] + 25*outresults[,..ik3])*ha_to_m2/g_to_kg)
       colnames(outresults)[ncol(outresults)] <- paste0("NBE_",sortVarnams[ik])
       ikj <- which(colnames(outresults)==paste0("NBE_",sortVarnams[ik]))
       outresults <- cbind(outresults, outresults[,..ikj]*sortTotAreas[ik])
@@ -740,14 +748,14 @@ for(r_noi in 1:length(rids)){
     }
   }
 
-  if(toFile) save(outresults, landclassMSNFI, ikaluokat, 
+  if(toFile) save(outresults, areatable, 
                   file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,".rdata"))  
   rm(list=setdiff(ls(), toMem))
   gc()
 }
 
 r_noi <- 1
-outresults_wholecountry <- data.frame()
+outresults_wholecountry <- areatable_wholecountry <- data.frame()
 for(r_noi in 1:length(rids)){
   toMem <- ls()
   set.seed(1)
@@ -761,14 +769,17 @@ for(r_noi in 1:length(rids)){
   cnames <- colnames(outresults)[ij]
   if(r_noi==1){
     outresults_wholecountry <- outresults[,..ij]
+    areatable_wholecountry <- data.table(r_no, rname, areatable)
   } else {
     outresults_wholecountry <- outresults_wholecountry + outresults[,..ij]
+    areatable_wholecountry <- rbind(areatable_wholecountry,
+                                    data.table(r_no, rname, areatable))
   }
   rm(list=setdiff(ls(), toMem))
   gc()
 }    
 
-if(toFile) save(outresults_wholecountry, 
+if(toFile) save(outresults_wholecountry, areatable_wholecountry,
                 file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_wholeCountry.rdata"))  
 par(mfrow=c(3,1))
 sortid <- 1
