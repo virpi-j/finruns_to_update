@@ -7,6 +7,7 @@ if(!exists("samplaus")) samplaus <- F
 
 library(dplyr)
 library(ggplot2)
+
 library(data.table)
 print(toFile)
 vPREBAS <- "newVersion"
@@ -558,6 +559,7 @@ for(r_noi in 1:length(rids)){
     ik <- 1
     for(ik in 1:length(sortVarnams)){
       ikj <- which(colnames(outresults)==paste0("NEP_",sortVarnams[ik]))
+      print(colnames(outresults)[ikj])
       outresults <- cbind(outresults, -outresults[,..ikj]*ha_to_m2/g_to_kg)
       colnames(outresults)[ncol(outresults)] <- paste0("NEE_",sortVarnams[ik])
       ikj <- which(colnames(outresults)==paste0("NEE_",sortVarnams[ik]))
@@ -567,7 +569,7 @@ for(r_noi in 1:length(rids)){
 
     if(sortid==1){
       outresults <-cbind(outresults, 44/12*(outresults$NEE+outresults$Wharvested)+
-                           (298*outresults$N2Oem + 25*outresults$CH4em)*ha_to_m2/g_to_kg)
+                           298*outresults$N2Oem + 25*outresults$CH4em)
       colnames(outresults)[ncol(outresults)] <- "NBE"
       outresults <-cbind(outresults, outresults$NBE*totArea)
       colnames(outresults)[ncol(outresults)] <- "NBEsum"
@@ -579,7 +581,7 @@ for(r_noi in 1:length(rids)){
       ik2 <- which(colnames(outresults)==paste0("CH4em_",sortVarnams[ik]))
       ik3 <- which(colnames(outresults)==paste0("N2Oem_",sortVarnams[ik]))
       outresults <- cbind(outresults,44/12*(outresults[,..ik0]+outresults[,..ik1])+
-                            (298*outresults[,..ik2] + 25*outresults[,..ik3])*ha_to_m2/g_to_kg)
+                            298*outresults[,..ik2] + 25*outresults[,..ik3])
       colnames(outresults)[ncol(outresults)] <- paste0("NBE_",sortVarnams[ik])
       ikj <- which(colnames(outresults)==paste0("NBE_",sortVarnams[ik]))
       outresults <- cbind(outresults, outresults[,..ikj]*sortTotAreas[ik])
@@ -783,19 +785,22 @@ if(toFile) save(outresults_wholecountry, areatable_wholecountry,
                 file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_wholeCountry.rdata"))  
 par(mfrow=c(3,1))
 sortid <- 1
+cnames <- colnames(outresults_wholecountry)
+timei <- 2015+1:nrow(outresults_wholecountry)
 for(sortid in 1:3){
   if(sortid==1){
     sortVarnams <- c("forest","poorly_productive")
   } else if(sortid==2) {
-    sortVarnams <- c("min","ditched_org","natural_org")
+    sortVarnams <- c("min","ditched_org")#,"natural_org")
   } else if(sortid==3) {
     sortVarnams <- c("managed","cons")
   }    
   ij <- c(1,which(cnames%in%paste0("NBEsum_",sortVarnams)))
   ymax <- max(outresults_wholecountry[,..ij])
   ymin <- min(outresults_wholecountry[,..ij])
-  plot(time, outresults_wholecountry$NBEsum/1e6, type="l",main="Whole country", 
+  plot(timei, outresults_wholecountry$NBEsum/1e6, type="l",main="Whole country", 
        ylab="NBEsum, million kg CO2eq", ylim = c(ymin,ymax)/1e6,
+       #xlim <- c(2015,2025),
        lwd=3)
   colorsi <- c("blue","green","pink")
   ik <- 1
@@ -803,10 +808,10 @@ for(sortid in 1:3){
     ijk <- ij[1 + ik]
     tmp <- unlist(outresults_wholecountry[,..ijk])
     if(length(tmp)>1){
-      lines(time, tmp/1e6,col=colorsi[ik])
+      lines(timei, tmp/1e6,col=colorsi[ik])
     }
   }
-  lines(c(time[1],time[length(time)]),c(0,0),col="black")
+  lines(c(timei[1],timei[length(timei)]),c(0,0),col="black")
   legend("bottomright",c("all",sortVarnams),
          pch=rep(1,length(sortVarnams)+1),cex=0.7,
          col=c("black",colorsi[1:length(sortVarnams)]))

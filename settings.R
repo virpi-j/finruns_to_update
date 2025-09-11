@@ -1,18 +1,12 @@
-# CSCrun=T
-
 library(raster)
-#library(rgdal)
 library(parallel)
 library(ggplot2)
 library(readxl)
 
 ###load packages in CSC project folder
-# if(CSCrun){
 if(!exists("vPREBAS")) vPREBAS = "newVersion"  #### choose PREBAS version to run the model "master" "v0.2.x"
 ###load packages in CSC project folder
-# if(CSCrun){
 if(vPREBAS=="newVersion"){
-  #.libPaths(c("/scratch/project_2000994/newV", .libPaths()))
   .libPaths(c("/scratch/project_2000994/tmpV", .libPaths()))
   libpath <- .libPaths()[1]
 } else {
