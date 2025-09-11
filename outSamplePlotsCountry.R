@@ -344,17 +344,20 @@ for(r_noi in 1:length(rids)){
     # RUN
     result <- do.call(setup_and_run, setup_and_run_args)
     
-    # Change file name
-    workdir <- getwd()
-    file.rename(list.files(path=workdir, pattern="fmi_vars_", all.files=FALSE,full.names=FALSE)[1],
-                "fmi_vars_PREBAS.rdata")
-    file.rename(list.files(path=workdir, pattern="climID_lookup_", all.files=FALSE,full.names=FALSE)[1],
-                "climID_lookup.rdata")
+    # clear memory
     rm(list = setdiff(ls(), toMemFmi))
     gc()
+    
+    # Change file name
+    workdir <- getwd()
     rcps <- "CurrClim_fmi"
-    fmi_vars_PREBAS_file <- "fmi_vars_PREBAS.rdata"
-    climID_lookup_file <- "climID_lookup.rdata"
+    fmi_vars_PREBAS_file <-  paste0("fmi_vars_PREBAS_",r_noi,".rdata")
+    climID_lookup_file <- paste0("climID_lookup_",r_noi,".rdata")
+    
+    file.rename(list.files(path=workdir, pattern="fmi_vars_", all.files=FALSE,full.names=FALSE)[1],
+                fmi_vars_PREBAS_file)
+    file.rename(list.files(path=workdir, pattern="climID_lookup_", all.files=FALSE,full.names=FALSE)[1],
+                climID_lookup_file)
   }
   
   source("~/finruns_to_update/functions.R")
@@ -615,6 +618,7 @@ for(r_noi in 1:length(rids)){
       legend("bottomright",c(paste0("all ",round(totArea/1000),"kha"),
                              paste0(sortVarnams," ", round(sortTotAreas/1000),"kha")),
              pch=rep(1,length(sortVarnams)+1),cex=0.7,
+             bty = "n",
              col=c("black",colorsi[1:length(sortVarnams)]))
 
       # NEP
@@ -697,6 +701,7 @@ for(r_noi in 1:length(rids)){
       legend("bottomright",c(paste0("all ",round(totArea/1000),"kha"),
                              paste0(sortVarnams," ", round(sortTotAreas/1000),"kha")),
              pch=rep(1,length(sortVarnams)+1),cex=0.7,
+             bty = "n",
              col=c("black",colorsi[1:length(sortVarnams)]))
       
       # Vharvested
@@ -794,6 +799,11 @@ for(r_noi in 1:length(rids)){
   }
   rm(list=setdiff(ls(), toMem))
   gc()
+  if(fmi_from_allas){
+    file.remove(paste0(workdir,fmi_vars_PREBAS_file))
+    file.remove(paste0(workdir,climID_lookup_file))
+  }
+  
 }    
 
 if(toFile) save(outresults_wholecountry, areatable_wholecountry,
@@ -828,6 +838,7 @@ for(sortid in 1:3){
   }
   lines(c(timei[1],timei[length(timei)]),c(0,0),col="black")
   legend("bottomright",c("all",sortVarnams),
+         bty = "n",
          pch=rep(1,length(sortVarnams)+1),cex=0.7,
          col=c("black",colorsi[1:length(sortVarnams)]))
   
