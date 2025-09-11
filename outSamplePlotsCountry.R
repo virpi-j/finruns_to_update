@@ -313,7 +313,7 @@ for(r_noi in 1:length(rids)){
   # fmi data from allas
   if(fmi_from_allas){
     toMemFmi <- ls()
-    source("0.5_get_fmi_from_allas.R")
+    source("~/finruns_to_update/0.5_get_fmi_from_allas.R")
     repo <- "ForModLabUHel/fmi.weather.finland"
     file_path <- "r/init_setup.R"
     branch <- "main"
@@ -345,6 +345,7 @@ for(r_noi in 1:length(rids)){
     result <- do.call(setup_and_run, setup_and_run_args)
     
     # Change file name
+    workdir <- getwd()
     file.rename(list.files(path=workdir, pattern="fmi_vars_", all.files=FALSE,full.names=FALSE)[1],
                 "fmi_vars_PREBAS.rdata")
     file.rename(list.files(path=workdir, pattern="climID_lookup_", all.files=FALSE,full.names=FALSE)[1],
@@ -352,7 +353,8 @@ for(r_noi in 1:length(rids)){
     rm(list = setdiff(ls(), toMemFmi))
     gc()
     rcps <- "CurrClim_fmi"
-    
+    fmi_vars_PREBAS_file <- "fmi_vars_PREBAS.rdata"
+    climID_lookup_file <- "climID_lookup.rdata"
   }
   
   source("~/finruns_to_update/functions.R")
@@ -363,13 +365,17 @@ for(r_noi in 1:length(rids)){
     deltaID <- 1; outType <- "TestRun"; harvScen="Base"; harvInten="Base"; climScen=0  
     procDrPeat=T; landClassUnman = 2; forceSaveInitSoil=F; sampleX = dataS  
   }
-  out <- runModel(1,sampleID=1, outType = "testRun", rcps = rcps, climScen = 0,#RCP=0,
+  out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
                 harvScen="Base", harvInten="Base", procDrPeat=T, 
                 thinFactX= thinFactX, landClassUnman = 2,
                 compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
                 forceSaveInitSoil=F, sampleX = dataS)
   print(paste("Sample area:",sum(dataS$area)))
-  if(HarvScen!="Base"){
+  if(HarvScen!="Base" | fmi_from_allas){
+    workdir <- paste0(getwd(),"/")  
+    startingYear <- 2015
+    endingYear <- 2024
+    nYears <- endingYear-startingYear
     out <- runModel(1,sampleID=1, outType = "testRun", rcps = rcps, climScen = 0,#RCP=0,
                   harvScen=harvScen, harvInten=HarvInten, procDrPeat=T, 
                   thinFactX= thinFactX, landClassUnman = 2,
@@ -381,9 +387,9 @@ for(r_noi in 1:length(rids)){
   #         runModelAdapt(1,sampleID=jx, outType = outType, rcps = "CurrClim_fmi",
   #                       harvScen="Base", harvInten="Base",
   #                       forceSaveInitSoil=T)
-# out <- runModelAdapt(1,sampleID=1, outType = "testRun", rcps = rcps,
-#                       harvScen="NoHarv", harvInten="NoHarv", climScen=0, procDrPeat=T,
-#                       forceSaveInitSoil=F)
+  # out <- runModelAdapt(1,sampleID=1, outType = "testRun", rcps = rcps,
+  #                       harvScen="NoHarv", harvInten="NoHarv", climScen=0, procDrPeat=T,
+  #                       forceSaveInitSoil=F)
   gc()
 
   out$region <- peat_regression_model_multiSite(out$region,which(dataS$peatID==1)) 
@@ -595,6 +601,7 @@ for(r_noi in 1:length(rids)){
       ij <- which(colnames(outresults)=="grossGrowth")
       tmp <- unlist(outresults[,..ij])
       plot(time, tmp, type="l",main=paste("Region",r_no,rname), 
+           xlim = c(time[1]-1,time[length(time)]),
            ylim = c(0,9), ylab = "grossgrowth, m3/ha",lwd=3)
       points(c(2015,2021),ggstats,pch=19,col="red")
       colorsi <- c("blue","green","pink")
@@ -614,9 +621,10 @@ for(r_noi in 1:length(rids)){
       ij <- which(colnames(outresults)=="NEP")
       tmp <- unlist(outresults[,..ij])
       ij2 <- c(ij,match(paste0("NEP_",sortVarnams),colnames(outresults)))
-      ymax <- max(outresults[,..ij2])
-      ymin <- min(outresults[,..ij2])
+      ymax <- max(0,max(outresults[,..ij2]))
+      ymin <- min(0,min(outresults[,..ij2]))
       plot(time, tmp, type="l",main=paste("Region",r_no,rname), 
+           xlim = c(time[1]-1,time[length(time)]),
            ylab = "NEP, g/m2", ylim = c(ymin,ymax),
            lwd=3)
       colorsi <- c("blue","green","pink")
@@ -636,8 +644,10 @@ for(r_noi in 1:length(rids)){
       ymax <- max(outresults[,..ij2])
       ymin <- min(outresults[,..ij2])
       plot(time, tmp, type="l",main=paste("Region",r_no,rname), 
+           xlim = c(time[1]-1,time[length(time)]),
            ylab = "V, m3/ha", ylim = c(0,ymax),
            lwd=3)
+      points(c(2015,2021),Vstats,pch=19,col="red")
       colorsi <- c("blue","green","pink")
       for(ik in 1:length(sortVarnams)){
         ijk <- which(paste0("V_",sortVarnams[ik])==colnames(outresults))
@@ -654,6 +664,7 @@ for(r_noi in 1:length(rids)){
       ymax <- max(outresults[,..ij2])
       ymin <- min(outresults[,..ij2])
       plot(time, tmp, type="l",main=paste("Region",r_no,rname), 
+           xlim = c(time[1]-1,time[length(time)]),
            ylab = "age, years", ylim = c(0,ymax),
            lwd=3)
       colorsi <- c("blue","green","pink")
@@ -672,6 +683,7 @@ for(r_noi in 1:length(rids)){
       ymax <- max(outresults[,..ij2])
       ymin <- min(outresults[,..ij2])
       plot(time, tmp, type="l",main=paste("Region",r_no,rname), 
+           xlim = c(time[1]-1,time[length(time)]),
            ylab = "Wtot, kg C/ha", ylim = c(0,ymax),
            lwd=3)
       colorsi <- c("blue","green","pink")
@@ -694,6 +706,7 @@ for(r_noi in 1:length(rids)){
       ymax <- max(outresults[,..ij2])
       ymin <- min(outresults[,..ij2])
       plot(time, tmp, type="l",main=paste("Region",r_no,rname), 
+           xlim = c(time[1]-1,time[length(time)]),
            ylab = "Vharv, m3/ha", ylim = c(0,ymax),
            lwd=3)
       colorsi <- c("blue","green","pink")
@@ -712,9 +725,10 @@ for(r_noi in 1:length(rids)){
         ij <- which(colnames(outresults)=="NBE")
         tmp <- unlist(outresults[,..ij])
         ij2 <- c(ij,match(paste0("NBE_",sortVarnams),colnames(outresults)))
-        ymax <- max(outresults[,..ij2])
-        ymin <- min(outresults[,..ij2])
+        ymax <- max(0,max(outresults[,..ij2]))
+        ymin <- min(0,min(outresults[,..ij2]))
         plot(time, tmp, type="l",main=paste("Region",r_no,rname), 
+             xlim = c(time[1]-1,time[length(time)]),
              ylab="NBE, kg CO2eq/ha", ylim = c(ymin,ymax),
              lwd=3)
         colorsi <- c("blue","green","pink")
@@ -731,9 +745,10 @@ for(r_noi in 1:length(rids)){
         ij <- which(colnames(outresults)=="NBEsum")
         tmp <- unlist(outresults[,..ij])
         ij2 <- c(ij,match(paste0("NBEsum_",sortVarnams),colnames(outresults)))
-        ymax <- max(outresults[,..ij2])
-        ymin <- min(outresults[,..ij2])
+        ymax <- max(0,max(outresults[,..ij2]))
+        ymin <- min(0,min(outresults[,..ij2]))
         plot(time, tmp/1e6, type="l",main=paste("Region",r_no,rname), 
+             xlim = c(time[1]-1,time[length(time)]),
              ylab="NBEsum, million kg CO2eq", ylim = c(ymin,ymax)/1e6,
              lwd=3)
         colorsi <- c("blue","green","pink")
