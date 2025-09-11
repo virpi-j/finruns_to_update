@@ -351,8 +351,8 @@ for(r_noi in 1:length(rids)){
     # Change file name
     workdir <- getwd()
     rcps <- "CurrClim_fmi"
-    fmi_vars_PREBAS_file <-  paste0("fmi_vars_PREBAS_",r_noi,".rdata")
-    climID_lookup_file <- paste0("climID_lookup_",r_noi,".rdata")
+    fmi_vars_PREBAS_file <-  paste0("fmi_vars_PREBAS_dataS_",r_noi,".rdata")
+    climID_lookup_file <- paste0("climID_lookup_dataS_",r_noi,".rdata")
     
     file.rename(list.files(path=workdir, pattern="fmi_vars_", all.files=FALSE,full.names=FALSE)[1],
                 fmi_vars_PREBAS_file)
@@ -774,6 +774,11 @@ for(r_noi in 1:length(rids)){
                   file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,".rdata"))  
   rm(list=setdiff(ls(), toMem))
   gc()
+  if(fmi_from_allas){
+    file.remove(paste0(workdir,fmi_vars_PREBAS_file))
+    file.remove(paste0(workdir,climID_lookup_file))
+  }
+  
 }
 
 r_noi <- 1
@@ -799,10 +804,6 @@ for(r_noi in 1:length(rids)){
   }
   rm(list=setdiff(ls(), toMem))
   gc()
-  if(fmi_from_allas){
-    file.remove(paste0(workdir,fmi_vars_PREBAS_file))
-    file.remove(paste0(workdir,climID_lookup_file))
-  }
   
 }    
 
