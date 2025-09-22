@@ -100,7 +100,7 @@ dimnames(results) <- list(c("grossgrowth","V","Vharvested", "NEE", "Wharvested",
 r_noi <- 1
 #if(!toFile) rids <- rids[1:3]
 if(toFile) pdf(paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,".pdf"))
-FIGsOnly <- T
+if(!exists("FIGsOnly")) FIGsOnly <- F
 if(!FIGsOnly){
   for(r_noi in 1:length(rids)){
     toMem <- ls()
