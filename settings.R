@@ -3,6 +3,8 @@ library(parallel)
 library(ggplot2)
 library(readxl)
 
+if(!exists("noPrebasLoading")) noPrebasLoading<-F
+
 ###load packages in CSC project folder
 if(!exists("vPREBAS")) vPREBAS = "newVersion"  #### choose PREBAS version to run the model "master" "v0.2.x"
 ###load packages in CSC project folder
@@ -20,9 +22,11 @@ require(dplyr)
 require(abind)
 require(sm)
 # ###choose PREBAS version
+if(!noPrebasLoading){
 print("Install Prebas")
 install_github("ForModLabUHel/Rprebasso", ref=vPREBAS, force = F)
 print(paste("PREBAS version",vPREBAS))
+}
 require(Rprebasso)
 
 #if(CSCrun & vPREBAS == "newVersion") {
