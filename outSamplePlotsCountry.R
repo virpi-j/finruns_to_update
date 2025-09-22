@@ -1140,7 +1140,7 @@ for(r_noi in 1:length(rids)){
     areatable_wholecountry <- rbind(areatable_wholecountry,
                                     data.table(r_no, rname, areatable))
   }
-  rm(list=setdiff(ls(), c(toMem,cnames)))
+  rm(list=setdiff(ls(), c(toMem,"cnames")))
   gc()
   
 }    
