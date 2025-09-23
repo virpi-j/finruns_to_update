@@ -143,6 +143,7 @@ if(!FIGsOnly){
     areaRegion <- totArea <- sum(data.all$area,na.rm=T)
     
     if(TRUE){
+      print("Get coordinates...")
       load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/maakunta_",r_no,"_IDsTab.rdata"))
       data.IDs <- data.IDs[segID!=0]
       data.IDs$segID <- data.IDs$maakuntaID
@@ -153,6 +154,8 @@ if(!FIGsOnly){
       tabX <- merge(data.IDs,data.all)
       ntabX <- tabX[,.I[which.max(y)],by=segID]$V1
       data.all <- cbind(data.all, tabX[ntabX,c("x","y")])
+      rm(list=c("tabX","ntabX","data.IDs"))
+      gc()
       
       #set_thin_PROJ6_warnings(TRUE)
       xy <- data.all[,c("segID","x","y")]
@@ -161,6 +164,9 @@ if(!FIGsOnly){
       #cord = SpatialPoints(xy, proj4string=CRS("+init=EPSG:3067"))
       location<-as.data.frame(spTransform(xy, CRS("+init=epsg:4326")))
       data.all$lat <- location$coords.x2#location$y
+      rm(list=c("xy","location"))
+      gc()
+      print("done.")
       
       #data.all <- cbind(data.all,data.IDs[match(data.all$segID, data.IDs$maakuntaID),4:5])
       finPeats <- raster("/scratch/project_2000994/MVMIsegments/segment-IDs/pseudopty.img")
@@ -182,7 +188,7 @@ if(!FIGsOnly){
       data.all$peatID[which(data.all$peatID==400)]<-1
       data.all$peatID[which(data.all$peatID==700)]<-2
       data.all <- data.all[which(data.all$peatID!=2),]
-      rm(list=c("finPeats","peatIDs","data.IDs","tabX","ntabX","xy"))
+      rm(list=c("finPeats","peatIDs"))
       gc()
     }
     if(samplaus==1){
@@ -305,7 +311,8 @@ if(!FIGsOnly){
       dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F),]
       dataS$decid <- dataS$birch + dataS$decid
       dataS$birch <- 0
-      dataSorig <- dataS
+      gc()
+      #dataSorig <- dataS
       if(samplaus==2){
         print("qq-correction of initial state data, start...")
         load("~/finruns_to_update/quantile_data_2021.rdata")
