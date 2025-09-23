@@ -3,7 +3,7 @@ gc()
 if(dev.interactive()) dev.off()
 
 if(!exists("toFile")) toFile <- F
-if(!exists("samplaus")) samplaus <- F
+if(!exists("samplaus")) samplaus <- 0
 
 library(dplyr)
 library(ggplot2)
@@ -183,7 +183,7 @@ if(!FIGsOnly){
       rm(list=c("finPeats","peatIDs","data.IDs","tabX","ntabX","xy"))
       gc()
     }
-    if(samplaus){
+    if(samplaus==1){
       data.all$age <- round(data.all$age)
       sampleArea <- nSegs*median(data.all$area)*1.3
       sample_weight <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
@@ -301,6 +301,22 @@ if(!FIGsOnly){
       }
     } else {
       dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F),]
+      if(samplaus==2){
+        print("qq-correction of initial state data, start...")
+        load("~/finruns_to_update/quantile_data_2021.rdata")
+        source("~/finruns_to_update/correction_function.R")
+        ii <- 1
+        for(ii in 1:nSegs){
+          dataS[ii,"ba"] <- correction_f(dataS$ba[ii],1)
+          dataS[ii,"decid"] <- correction_f(dataS$decid[ii],2)
+          dataS[ii,"pine"] <- correction_f(dataS$pine[ii],3)
+          dataS[ii,"spruce"] <- correction_f(dataS$spruce[ii],4)
+          dataS[ii,"age"] <- correction_f(dataS$age[ii],6)
+          dataS[ii,"h"] <- correction_f(dataS$h[ii]/10,7)*10
+          dataS[ii,"dbh"] <- correction_f(dataS$dbh[ii],8)  
+        }
+        print("done.")
+      }
       #rm("data.all")
       gc()
     }
