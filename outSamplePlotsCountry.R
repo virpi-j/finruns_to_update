@@ -305,13 +305,14 @@ if(!FIGsOnly){
       dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F),]
       dataS$decid <- dataS$birch + dataS$decid
       dataS$birch <- 0
+      dataSorig <- dataS
       if(samplaus==2){
         print("qq-correction of initial state data, start...")
         load("~/finruns_to_update/quantile_data_2021.rdata")
         source("~/finruns_to_update/correction_function.R")
         ii <- 1
         for(ii in 1:nSegs){
-          dataS[ii,"ba"] <- correction_f(dataS$ba[ii],1)
+          dataS[ii,"ba"] <- min(max(data.all$ba)*1.1,correction_f(dataS$ba[ii],1))
           dataS[ii,"decid"] <- correction_f(dataS$decid[ii],2)
           dataS[ii,"pine"] <- correction_f(dataS$pine[ii],3)
           dataS[ii,"spruce"] <- correction_f(dataS$spruce[ii],4)
