@@ -1134,69 +1134,71 @@ if(!FIGsOnly){
     }
   }
 }
-r_noi <- 1
-outresults_wholecountry <- areatable_wholecountry <- data.frame()
-for(r_noi in 1:length(rids)){
-  toMem <- ls()
-  set.seed(1)
-  r_no <- rids[r_noi]
-  rname <- regionNames[r_no]
-  rname_fi <- regionNames_fi[r_no]
-  rnameid <- r_nos[r_no]
-  load(file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,".rdata"))  
-  
-  if(r_noi==1){
-    ij <- which(grepl("NBEsum",colnames(outresults)))
-    cnames <- colnames(outresults)[ij]
-    outresults_wholecountry <- outresults[,..ij]
-    areatable_wholecountry <- data.table(r_no, rname, areatable)
-  } else {
-    outresults_wholecountry <- outresults_wholecountry + outresults[,..cnames]
-    #outresults[,..ij]
-    areatable_wholecountry <- rbind(areatable_wholecountry,
-                                    data.table(r_no, rname, areatable))
-  }
-  rm(list=setdiff(ls(), c(toMem,"cnames")))
-  gc()
-  
-}    
 
-if(toFile) save(outresults_wholecountry, areatable_wholecountry,
-                file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_wholeCountry.rdata"))  
-par(mfrow=c(3,1))
-sortid <- 1
-cnames <- colnames(outresults_wholecountry)
-timei <- 2015+1:nrow(outresults_wholecountry)
-for(sortid in 1:3){
-  if(sortid==1){
-    sortVarnams <- c("forest","poorly_productive")
-  } else if(sortid==2) {
-    sortVarnams <- c("min","ditched_org")#,"natural_org")
-  } else if(sortid==3) {
-    sortVarnams <- c("managed","cons")
-  }    
-  ij <- c(1,which(cnames%in%paste0("NBEsum_",sortVarnams)))
-  ymax <- max(outresults_wholecountry[,..ij])
-  ymin <- min(outresults_wholecountry[,..ij])
-  plot(timei, outresults_wholecountry$NBEsum/1e6, type="l",main="Whole country", 
-       ylab="NBEsum, million kg CO2eq", ylim = c(ymin,ymax)/1e6,
-       #xlim <- c(2015,2025),
-       lwd=3)
-  colorsi <- c("blue","green","pink")
-  ik <- 1
-  for(ik in 1:length(sortVarnams)){
-    ijk <- ij[1 + ik]
-    tmp <- unlist(outresults_wholecountry[,..ijk])
-    if(length(tmp)>1){
-      lines(timei, tmp/1e6,col=colorsi[ik])
+if(toFile){
+  r_noi <- 1
+  outresults_wholecountry <- areatable_wholecountry <- data.frame()
+  for(r_noi in 1:length(rids)){
+    toMem <- ls()
+    set.seed(1)
+    r_no <- rids[r_noi]
+    rname <- regionNames[r_no]
+    rname_fi <- regionNames_fi[r_no]
+    rnameid <- r_nos[r_no]
+    load(file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,".rdata"))  
+    
+    if(r_noi==1){
+      ij <- which(grepl("NBEsum",colnames(outresults)))
+      cnames <- colnames(outresults)[ij]
+      outresults_wholecountry <- outresults[,..ij]
+      areatable_wholecountry <- data.table(r_no, rname, areatable)
+    } else {
+      outresults_wholecountry <- outresults_wholecountry + outresults[,..cnames]
+      #outresults[,..ij]
+      areatable_wholecountry <- rbind(areatable_wholecountry,
+                                      data.table(r_no, rname, areatable))
     }
-  }
-  lines(c(timei[1],timei[length(timei)]),c(0,0),col="black")
-  legend("bottomright",c("all",sortVarnams),
-         bty = "n",
-         pch=rep(1,length(sortVarnams)+1),cex=0.7,
-         col=c("black",colorsi[1:length(sortVarnams)]))
+    rm(list=setdiff(ls(), c(toMem,"cnames")))
+    gc()
+    
+  }    
   
+  if(toFile) save(outresults_wholecountry, areatable_wholecountry,
+                  file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_wholeCountry.rdata"))  
+  par(mfrow=c(3,1))
+  sortid <- 1
+  cnames <- colnames(outresults_wholecountry)
+  timei <- 2015+1:nrow(outresults_wholecountry)
+  for(sortid in 1:3){
+    if(sortid==1){
+      sortVarnams <- c("forest","poorly_productive")
+    } else if(sortid==2) {
+      sortVarnams <- c("min","ditched_org")#,"natural_org")
+    } else if(sortid==3) {
+      sortVarnams <- c("managed","cons")
+    }    
+    ij <- c(1,which(cnames%in%paste0("NBEsum_",sortVarnams)))
+    ymax <- max(outresults_wholecountry[,..ij])
+    ymin <- min(outresults_wholecountry[,..ij])
+    plot(timei, outresults_wholecountry$NBEsum/1e6, type="l",main="Whole country", 
+         ylab="NBEsum, million kg CO2eq", ylim = c(ymin,ymax)/1e6,
+         #xlim <- c(2015,2025),
+         lwd=3)
+    colorsi <- c("blue","green","pink")
+    ik <- 1
+    for(ik in 1:length(sortVarnams)){
+      ijk <- ij[1 + ik]
+      tmp <- unlist(outresults_wholecountry[,..ijk])
+      if(length(tmp)>1){
+        lines(timei, tmp/1e6,col=colorsi[ik])
+      }
+    }
+    lines(c(timei[1],timei[length(timei)]),c(0,0),col="black")
+    legend("bottomright",c("all",sortVarnams),
+           bty = "n",
+           pch=rep(1,length(sortVarnams)+1),cex=0.7,
+           col=c("black",colorsi[1:length(sortVarnams)]))
+    
+  }
 }
-
 if(toFile) dev.off()
