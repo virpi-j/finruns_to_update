@@ -102,7 +102,9 @@ r_noi <- 1
 if(toFile) pdf(paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,".pdf"))
 if(!exists("FIGsOnly")) FIGsOnly <- F
 if(!FIGsOnly){
+  noPrebasLoading <- F
   for(r_noi in 1:length(rids)){
+    if(r_noi>1) noPrebasLoading <- T
     toMem <- ls()
     set.seed(1)
     r_no <- rids[r_noi]
@@ -301,6 +303,8 @@ if(!FIGsOnly){
       }
     } else {
       dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F),]
+      dataS$decid <- dataS$birch + dataS$decid
+      dataS$birch <- 0
       if(samplaus==2){
         print("qq-correction of initial state data, start...")
         load("~/finruns_to_update/quantile_data_2021.rdata")
@@ -321,11 +325,7 @@ if(!FIGsOnly){
       gc()
     }
     
-    #lajistats2015
-    #round(colSums(dataS[,c("pine","spruce","birch","decid")])/sum(dataS$area)*sum(data.all$area)/1e6)
-    dataS$decid <- dataS$birch + dataS$decid
-    dataS$birch <- 0
-    
+    print(paste("NAs in init state?", any(is.na(dataS))))
     rcps <- "CurrClim"
     print(fmi_from_allas)
     # fmi data from allas
@@ -378,7 +378,6 @@ if(!FIGsOnly){
                   climID_lookup_file)
     }
     
-    source("~/finruns_to_update/functions.R")
     
     MANUALRUN <- F
     if(MANUALRUN){
@@ -386,6 +385,11 @@ if(!FIGsOnly){
       deltaID <- 1; outType <- "TestRun"; harvScen="Base"; harvInten="Base"; climScen=0  
       procDrPeat=T; landClassUnman = 2; forceSaveInitSoil=F; sampleX = dataS  
     }
+    startingYear <- 2015
+    endingYear <- 2050
+    nYears <- endingYear-startingYear
+    source("~/finruns_to_update/functions.R")
+    
     out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
                     harvScen="Base", harvInten="Base", procDrPeat=T, 
                     thinFactX= thinFactX, landClassUnman = 2,
@@ -649,8 +653,9 @@ if(!FIGsOnly){
         ij <- which(colnames(outresults)=="NEP_yasso")
         tmp <- unlist(outresults[,..ij])
         ij2 <- c(ij,match(paste0("NEP_yasso_",sortVarnams),colnames(outresults)))
-        ymax <- max(0,max(outresults[,..ij2]))
-        ymin <- min(0,min(outresults[,..ij2]))
+        ij3 <- c(ij2,match(c("NEP",paste0("NEP_",sortVarnams)),colnames(outresults)))
+        ymax <- max(0,max(outresults[,..ij3]))
+        ymin <- min(0,min(outresults[,..ij3]))
         plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
              xlim = c(timei[1]-1,timei[length(timei)]),
              xlab = "time, dotted=NEPyasso, solid=NEP",
