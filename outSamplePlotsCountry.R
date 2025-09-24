@@ -4,6 +4,7 @@ if(dev.interactive()) dev.off()
 
 if(!exists("toFile")) toFile <- F
 if(!exists("samplaus")) samplaus <- 0
+if(!exists("landClassUnman")) landClassUnman <- NULL
 
 library(dplyr)
 library(ggplot2)
@@ -101,7 +102,7 @@ dimnames(results) <- list(c("grossgrowth","V","Vharvested", "NEE", "Wharvested",
 
 r_noi <- 1
 #if(!toFile) rids <- rids[1:3]
-if(toFile) pdf(paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,".pdf"))
+if(toFile) pdf(paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_",rcps,".pdf"))
 if(!exists("FIGsOnly")) FIGsOnly <- F
 if(!FIGsOnly){
   noPrebasLoading <- F
@@ -336,7 +337,7 @@ if(!FIGsOnly){
     }
     
     print(paste("NAs in init state?", any(is.na(dataS))))
-    rcps <- "CurrClim"
+   # rcps <- "CurrClim"
     print(fmi_from_allas)
     # fmi data from allas
     if(fmi_from_allas & save_fmi_data){
@@ -378,7 +379,7 @@ if(!FIGsOnly){
       
       # Change file name
       workdir <- getwd()
-      rcps <- "CurrClim_fmi"
+      #rcps <- "CurrClim_fmi"
       fmi_vars_PREBAS_file <-  paste0("fmi_vars_PREBAS_dataS_",r_noi,".rdata")
       climID_lookup_file <- paste0("climID_lookup_dataS_",r_noi,".rdata")
       
@@ -388,7 +389,7 @@ if(!FIGsOnly){
                   climID_lookup_file)
     } else if(fmi_from_allas & !save_fmi_data){
       workdir <- getwd()
-      rcps <- "CurrClim_fmi"
+      #rcps <- "CurrClim_fmi"
       fmi_vars_PREBAS_file <-  paste0("fmi_vars_PREBAS_dataS_",r_noi,".rdata")
       climID_lookup_file <- paste0("climID_lookup_dataS_",r_noi,".rdata")
     }
@@ -406,7 +407,7 @@ if(!FIGsOnly){
     
     out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
                     harvScen="Base", harvInten="Base", procDrPeat=T, 
-                    thinFactX= thinFactX, landClassUnman = 2,
+                    thinFactX= thinFactX, landClassUnman = landClassUnman,
                     compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
                     forceSaveInitSoil=F, sampleX = dataS)
     print(paste("Sample area:",sum(dataS$area)))
@@ -417,7 +418,7 @@ if(!FIGsOnly){
       nYears <- endingYear-startingYear
       out <- runModel(1,sampleID=1, outType = "testRun", rcps = rcps, climScen = 0,#RCP=0,
                       harvScen=harvScen, harvInten=HarvInten, procDrPeat=T, 
-                      thinFactX= thinFactX, landClassUnman = 2,
+                      thinFactX= thinFactX, landClassUnman = landClassUnman,
                       compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
                       forceSaveInitSoil=F, sampleX = dataS)
     }
@@ -876,7 +877,7 @@ if(!FIGsOnly){
     }
     
     if(toFile) save(outresults, areatable, 
-                    file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,".rdata"))  
+                    file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,"_",rcps,".rdata"))  
     if(fmi_from_allas & delete_fmi_data){
       file.remove(paste0(workdir,fmi_vars_PREBAS_file))
       file.remove(paste0(workdir,climID_lookup_file))
@@ -1164,7 +1165,7 @@ if(toFile){
     rname <- regionNames[r_no]
     rname_fi <- regionNames_fi[r_no]
     rnameid <- r_nos[r_no]
-    load(file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,".rdata"))  
+    load(file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,"_",rcps,".rdata"))  
     
     if(r_noi==1){
       ij <- which(grepl("NBEsum",colnames(outresults)))
@@ -1183,7 +1184,7 @@ if(toFile){
   }    
   
   if(toFile) save(outresults_wholecountry, areatable_wholecountry,
-                  file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_wholeCountry.rdata"))  
+                  file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_wholeCountry_",rcps,".rdata"))  
   par(mfrow=c(3,1))
   sortid <- 1
   cnames <- colnames(outresults_wholecountry)
