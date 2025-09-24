@@ -14,6 +14,8 @@ vPREBAS <- "newVersion"
 #vPREBAS <- "master"
 if(!exists("nSegs")) nSegs <- 5000
 if(!exists("fmi_from_allas")) fmi_from_allas <- F
+if(!exists("save_fmi_data")) save_fmi_data <- F
+if(!exists("delete_fmi_data")) delete_fmi_data <- T
 
 library(tidyverse)
 library(readxl)
@@ -337,7 +339,7 @@ if(!FIGsOnly){
     rcps <- "CurrClim"
     print(fmi_from_allas)
     # fmi data from allas
-    if(fmi_from_allas){
+    if(fmi_from_allas & save_fmi_data){
       toMemFmi <- ls()
       source("~/finruns_to_update/0.5_get_fmi_from_allas.R")
       repo <- "ForModLabUHel/fmi.weather.finland"
@@ -384,8 +386,12 @@ if(!FIGsOnly){
                   fmi_vars_PREBAS_file)
       file.rename(list.files(path=workdir, pattern="climID_lookup_", all.files=FALSE,full.names=FALSE)[1],
                   climID_lookup_file)
+    } else if(fmi_from_allas & !save_fmi_data){
+      workdir <- getwd()
+      rcps <- "CurrClim_fmi"
+      fmi_vars_PREBAS_file <-  paste0("fmi_vars_PREBAS_dataS_",r_noi,".rdata")
+      climID_lookup_file <- paste0("climID_lookup_dataS_",r_noi,".rdata")
     }
-    
     
     MANUALRUN <- F
     if(MANUALRUN){
@@ -871,7 +877,7 @@ if(!FIGsOnly){
     
     if(toFile) save(outresults, areatable, 
                     file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,".rdata"))  
-    if(fmi_from_allas){
+    if(fmi_from_allas & delete_fmi_data){
       file.remove(paste0(workdir,fmi_vars_PREBAS_file))
       file.remove(paste0(workdir,climID_lookup_file))
     }
