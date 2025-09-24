@@ -320,6 +320,20 @@ if(!FIGsOnly){
         print("qq-correction of initial state data, start...")
         #load("~/finruns_to_update/quantile_data_2021.rdata")
         load("~/finruns_to_update/quantile_data_2021_landclass12.rdata")
+        #VMIages <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
+        #eVMI <- cumsum(VMIages)/sum(VMIages)
+        #ecdf <- qFC[[6]]$ecdf
+        #ex <- qFC[[6]]$x
+        #ecdf[1]<-eVMI[1]
+        #ecdf[which(ex>0 & ex<=20)]<-ecdf[which(ex==0)]+(ecdf[which(ex>0 & ex<=20)]*(eVMI[2]-eVMI[1])/ecdf[which(ex==20)]
+        #ecdf[which(ex>20 & ex<=40)]<-ecdf[which(ex>20 & ex<=40)]*(eVMI[3]-eVMI[2])/ecdf[which(ex==40)]
+        #ecdf[which(ex>40 & ex<=60)]<-ecdf[which(ex>40 & ex<=60)]*eVMI[4]/ecdf[which(ex==60)]
+        #ecdf[which(ex>60 & ex<=80)]<-ecdf[which(ex>60 & ex<=80)]*eVMI[5]/ecdf[which(ex==80)]
+        #ecdf[which(ex>80 & ex<=100)]<-ecdf[which(ex>80 & ex<=100)]*eVMI[6]/ecdf[which(ex==100)]
+        #ecdf[which(ex>100 & ex<=120)]<-ecdf[which(ex>100 & ex<=120)]*eVMI[7]/ecdf[which(ex==120)]
+        #ecdf[which(ex>120 & ex<=140)]<-ecdf[which(ex>120 & ex<=140)]*eVMI[8]/ecdf[which(ex==140)]
+        #ecdf[which(ex>140)]<-ecdf[which(ex>140)]*eVMI[9]/ecdf[ex==max(ex)]
+        
         source("~/finruns_to_update/correction_function.R")
         ii <- 1
         for(ii in 1:nSegs){
