@@ -318,7 +318,8 @@ if(!FIGsOnly){
       #dataSorig <- dataS
       if(samplaus==2){
         print("qq-correction of initial state data, start...")
-        load("~/finruns_to_update/quantile_data_2021.rdata")
+        #load("~/finruns_to_update/quantile_data_2021.rdata")
+        load("~/finruns_to_update/quantile_data_2021_landclass12.rdata")
         source("~/finruns_to_update/correction_function.R")
         ii <- 1
         for(ii in 1:nSegs){
