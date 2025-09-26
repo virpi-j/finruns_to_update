@@ -16,6 +16,7 @@ correction_f <- function(xi,ij,ecdfx=qMSNFI[[ij]],ecdfz=qFC[[ij]],
       ylims <- c(-0.05,max(c(ecdfy1,ecdfy2)))
       plot(ecdfx1,ecdfy1,col="black",xlim=xlims, ylim=ylims,type="l",
            main=vari, xlab="x", ylab="ecdf")
+      points(ecdfx2,ecdfy2,col="blue",pch=19,cex=.5)
       lines(ecdfx2,ecdfy2,col="blue")
       lines(xlims,c(0,0),col="black")
       lines(c(0,0),ylims,col="black")

@@ -320,20 +320,23 @@ if(!FIGsOnly){
         print("qq-correction of initial state data, start...")
         #load("~/finruns_to_update/quantile_data_2021.rdata")
         load("~/finruns_to_update/quantile_data_2021_landclass12.rdata")
-        #VMIages <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
-        #eVMI <- cumsum(VMIages)/sum(VMIages)
-        #ecdf <- qFC[[6]]$ecdf
-        #ex <- qFC[[6]]$x
-        #ecdf[1]<-eVMI[1]
-        #ecdf[which(ex>0 & ex<=20)]<-ecdf[which(ex==0)]+(ecdf[which(ex>0 & ex<=20)]*(eVMI[2]-eVMI[1])/ecdf[which(ex==20)]
-        #ecdf[which(ex>20 & ex<=40)]<-ecdf[which(ex>20 & ex<=40)]*(eVMI[3]-eVMI[2])/ecdf[which(ex==40)]
-        #ecdf[which(ex>40 & ex<=60)]<-ecdf[which(ex>40 & ex<=60)]*eVMI[4]/ecdf[which(ex==60)]
-        #ecdf[which(ex>60 & ex<=80)]<-ecdf[which(ex>60 & ex<=80)]*eVMI[5]/ecdf[which(ex==80)]
-        #ecdf[which(ex>80 & ex<=100)]<-ecdf[which(ex>80 & ex<=100)]*eVMI[6]/ecdf[which(ex==100)]
-        #ecdf[which(ex>100 & ex<=120)]<-ecdf[which(ex>100 & ex<=120)]*eVMI[7]/ecdf[which(ex==120)]
-        #ecdf[which(ex>120 & ex<=140)]<-ecdf[which(ex>120 & ex<=140)]*eVMI[8]/ecdf[which(ex==140)]
-        #ecdf[which(ex>140)]<-ecdf[which(ex>140)]*eVMI[9]/ecdf[ex==max(ex)]
-        
+        NFIlocal <- T
+        if(NFIlocal){
+          VMIages <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
+          VMIxs <- c(0,1,20,40,60,80,100,120,140,max(qFC[[6]]$x),max(qFC[[6]]$x)*1.01)
+          eVMI <- cumsum(VMIages)/sum(VMIages)
+          eVMI <- c(eVMI[1]-.0001,eVMI,1)
+          qFC[[6]] <- data.table(ecdf=eVMI,x=VMIxs)
+          ex <- sort(unique(round(data.all$age)))
+          ex <- c(ex,max(ex)*1.01)
+          eMSNFI <- ex*0
+          exi <- 1
+          totA <- sum(data.all$area)
+          for(exi in 1:length(ex)){
+            eMSNFI[exi] <- sum(data.all$area[which(data.all$age<=ex[exi])])/totA
+          }
+          qMSNFI[[6]] <- data.table(ecdf=eMSNFI,x=ex)
+        }
         source("~/finruns_to_update/correction_function.R")
         ii <- 1
         for(ii in 1:nSegs){
@@ -346,6 +349,27 @@ if(!FIGsOnly){
           dataS[ii,"dbh"] <- correction_f(dataS$dbh[ii],8)  
         }
         print("done.")
+        dataS[which(dataS$age==0),c("ba","decid","pine","spruce","age","h","dbh")]<-0
+        dataS[which(dataS$h==0),c("ba","decid","pine","spruce","age","h","dbh")]<-0
+        par(mfrow=c(2,2))
+        ni <- sample(1:nrow(data.all),1000,replace = F)
+        ni2 <- sample(1:nrow(dataS),1000,replace = F)
+        plot(data.all$ba[ni],data.all$age[ni],pch=19,cex=0.2,
+             ylim=c(0,max(c(data.all$age[ni],dataS$age))),
+             xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
+        points(dataS$ba[ni2],dataS$age[ni2],col="red",pch=19,cex=0.2)
+        plot(data.all$ba[ni],data.all$pine[ni],pch=19,cex=0.2,
+             ylim=c(0,max(c(data.all$pine[ni],dataS$pine))),
+             xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
+        points(dataS$ba[ni2],dataS$pine[ni2],col="red",pch=19,cex=0.2)
+        plot(data.all$ba[ni],data.all$spruce[ni],pch=,cex=0.219,
+             ylim=c(0,max(c(data.all$spruce[ni],dataS$spruce))),
+             xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
+        points(dataS$ba[ni2],dataS$spruce[ni2],col="red",pch=19,cex=0.2)
+        plot(data.all$h[ni],data.all$dbh[ni],pch=19,cex=0.2,
+             ylim=c(0,max(c(data.all$dbh[ni],dataS$dbh))),
+             xlim=c(0,max(c(data.all$h[ni],dataS$h))))
+        points(dataS$h[ni2],dataS$dbh[ni2],col="red",pch=19,cex=0.2)
       }
       #rm("data.all")
       gc()
@@ -724,7 +748,7 @@ if(!FIGsOnly){
         ij <- which(colnames(outresults)=="V")
         tmp <- unlist(outresults[,..ij])
         ij2 <- c(ij,match(paste0("V_",sortVarnams),colnames(outresults)))
-        ymax <- max(outresults[,..ij2])
+        ymax <- max(Vstats,max(outresults[,..ij2]))
         ymin <- min(outresults[,..ij2])
         plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
              xlim = c(timei[1]-1,timei[length(timei)]),
@@ -759,6 +783,30 @@ if(!FIGsOnly){
           }
         }
         
+        # BA
+        ij <- which(colnames(outresults)=="BA")
+        tmp <- unlist(outresults[,..ij])
+        ij2 <- c(ij,match(paste0("BA_",sortVarnams),colnames(outresults)))
+        ymax <- max(outresults[,..ij2])
+        ymin <- min(outresults[,..ij2])
+        plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
+             xlim = c(timei[1]-1,timei[length(timei)]),
+             ylab = "BA m2/ha", ylim = c(0,ymax),
+             lwd=3)
+        colorsi <- c("blue","green","pink")
+        for(ik in 1:length(sortVarnams)){
+          ijk <- ij2[ik+1]
+          tmp <- unlist(outresults[,..ijk])
+          if(length(tmp)>1){
+            lines(timei, tmp,col=colorsi[ik])
+          }
+        }
+        legend("bottomright",c(paste0("all ",round(totArea/1000),"kha"),
+                               paste0(sortVarnams," ", round(sortTotAreas/1000),"kha")),
+               pch=rep(1,length(sortVarnams)+1),cex=0.7,
+               bty = "n",
+               col=c("black",colorsi[1:length(sortVarnams)]))
+        
         # Wtot
         ij <- which(colnames(outresults)=="Wtot")
         tmp <- unlist(outresults[,..ij])
@@ -777,11 +825,6 @@ if(!FIGsOnly){
             lines(timei, tmp,col=colorsi[ik])
           }
         }
-        legend("bottomright",c(paste0("all ",round(totArea/1000),"kha"),
-                               paste0(sortVarnams," ", round(sortTotAreas/1000),"kha")),
-               pch=rep(1,length(sortVarnams)+1),cex=0.7,
-               bty = "n",
-               col=c("black",colorsi[1:length(sortVarnams)]))
         
         # Vharvested
         ij <- which(colnames(outresults)=="Vharvested")
