@@ -377,7 +377,7 @@ if(!FIGsOnly){
     
     print(paste("NAs in init state?", any(is.na(dataS))))
    # rcps <- "CurrClim"
-    print(fmi_from_allas)
+    print(paste("fmi_from_allas =",fmi_from_allas))
     # fmi data from allas
     if(fmi_from_allas & save_fmi_data){
       toMemFmi <- ls()
