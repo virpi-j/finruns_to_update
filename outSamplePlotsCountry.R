@@ -101,6 +101,8 @@ results <- array(0,c(8,nYears,length(rids),2))
 dimnames(results) <- list(c("grossgrowth","V","Vharvested", "NEE", "Wharvested", "CH4em", "N2Oem","NBE"),1:nYears,regionNames[rids],c("sum","ave"))
 
 r_noi <- 1
+
+nsorts <- 1 # 3 how many different subsets in results and visualization
 #if(!toFile) rids <- rids[1:3]
 if(toFile) pdf(paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_",rcps,".pdf"))
 if(!exists("FIGsOnly")) FIGsOnly <- F
@@ -322,7 +324,7 @@ if(!FIGsOnly){
         print("qq-correction of initial state data, start...")
         #load("~/finruns_to_update/quantile_data_2021.rdata")
         load("~/finruns_to_update/quantile_data_2021_landclass12.rdata")
-        NFIlocal <- F
+        NFIlocal <- T
         if(NFIlocal){
           VMIages <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
           VMIxs <- c(0,1,20,40,60,80,100,120,140,max(qFC[[6]]$x),max(qFC[[6]]$x)*1.01)
@@ -445,7 +447,12 @@ if(!FIGsOnly){
     endingYear <- 2050
     nYears <- endingYear-startingYear
     source("~/finruns_to_update/functions.R")
-    
+    ageHarvPriorX = 120 # 0, 120
+    HcFactor<-1
+    if(mean(ageclassstats[,8])<0.975){ # if more old forests...     
+      HcFactor <- 1.2
+      ageHarvPriorX = 160
+    }
     out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
                     harvScen="Base", harvInten="Base", procDrPeat=T, 
                     thinFactX= thinFactX, landClassUnman = landClassUnman,
@@ -549,7 +556,7 @@ if(!FIGsOnly){
     outresults <- areatable <- data.table()
     sortid <- 1
     areatable <- cbind(areatable, areaTot = totArea)
-    for(sortid in 1){#:3){
+    for(sortid in 1:nsorts){
       if(sortid==1){
         n_lc1 <- which(dataS$landclass==1)
         n_lc2 <- which(dataS$landclass==2)
@@ -960,7 +967,7 @@ if(!FIGsOnly){
     }
     
     #
-    if(toFile) 
+    #if(toFile) 
       save(outresults, areatable, 
                     file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,"_",rcps,".rdata"))  
     if(fmi_from_allas & delete_fmi_data){
@@ -1016,7 +1023,7 @@ if(!FIGsOnly){
     sortVar <- c("landclass","peatID","cons")
     load(paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,".rdata"))  
     sortid <- 1
-    for(sortid in 1:3){
+    for(sortid in 1:nsorts){
       if(sortid==1){
         sortVarnams <- c("forest","poorly_productive")
       } else if(sortid==2) {
@@ -1268,13 +1275,14 @@ if(toFile){
     
   }    
   
-  if(toFile) save(outresults_wholecountry, areatable_wholecountry,
+  #if(toFile) 
+  save(outresults_wholecountry, areatable_wholecountry,
                   file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_wholeCountry_",rcps,".rdata"))  
   par(mfrow=c(3,1))
   sortid <- 1
   cnames <- colnames(outresults_wholecountry)
   timei <- 2015+1:nrow(outresults_wholecountry)
-  for(sortid in 1:3){
+  for(sortid in 1:nsorts){
     if(sortid==1){
       sortVarnams <- c("forest","poorly_productive")
     } else if(sortid==2) {
