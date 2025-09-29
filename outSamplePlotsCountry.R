@@ -448,9 +448,9 @@ if(!FIGsOnly){
     nYears <- endingYear-startingYear
     source("~/finruns_to_update/functions.R")
     ageHarvPriorX = 120 # 0, 120
-    HcFactor<-1
+    #HcFactor<-1
     if(mean(ageclassstats[,8])<0.975){ # if more old forests...     
-      HcFactor <- 1.2
+      #HcFactor <- 1.2
       ageHarvPriorX = 160
     }
     out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
