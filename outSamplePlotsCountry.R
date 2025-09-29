@@ -447,11 +447,12 @@ if(!FIGsOnly){
     endingYear <- 2050
     nYears <- endingYear-startingYear
     source("~/finruns_to_update/functions.R")
-    ageHarvPriorX = 120 # 0, 120
-    #HcFactor<-1
+    ageHarvPriorX <- ageHarvPriorX1 # 120
+    HcFactor<-HcFactor1
+    print(paste("Fraction of >140 year forests:",1-mean(ageclassstats[,8])))
     if(mean(ageclassstats[,8])<0.975){ # if more old forests...     
-      #HcFactor <- 1.2
-      ageHarvPriorX = 160
+      HcFactor <- HcFactor2
+      ageHarvPriorX <- ageHarvPriorX2 # 160
     }
     out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
                     harvScen="Base", harvInten="Base", procDrPeat=T, 
