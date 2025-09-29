@@ -143,7 +143,7 @@ if(!FIGsOnly){
     print(paste("Start running region",r_no,"/",rname))
     landclassMSNFI[r_noi,] <- c(sum(data.all$area[which(data.all$landclass==1)]),
                                 sum(data.all$area[which(data.all$landclass==2)]))  
-    areaRegion <- totArea <- sum(data.all$area,na.rm=T)
+    
     
     if(TRUE){
       print("Get coordinates...")
@@ -194,6 +194,8 @@ if(!FIGsOnly){
       rm(list=c("finPeats","peatIDs"))
       gc()
     }
+    areaRegion <- totArea <- sum(data.all$area,na.rm=T)
+    
     if(samplaus==1){
       data.all$age <- round(data.all$age)
       sampleArea <- nSegs*median(data.all$area)*1.3
@@ -320,7 +322,7 @@ if(!FIGsOnly){
         print("qq-correction of initial state data, start...")
         #load("~/finruns_to_update/quantile_data_2021.rdata")
         load("~/finruns_to_update/quantile_data_2021_landclass12.rdata")
-        NFIlocal <- T
+        NFIlocal <- F
         if(NFIlocal){
           VMIages <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
           VMIxs <- c(0,1,20,40,60,80,100,120,140,max(qFC[[6]]$x),max(qFC[[6]]$x)*1.01)
@@ -449,7 +451,13 @@ if(!FIGsOnly){
                     thinFactX= thinFactX, landClassUnman = landClassUnman,
                     compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
                     forceSaveInitSoil=F, sampleX = dataS)
+    clim1 <- out$clim
+    NEP_yasso <- out$region$multiOut[,,"NEP/SMI[layer_1]",,1]
+    timei1 <- (1:dim(out$region$multiOut)[2])+2015
+    NEP_yasso1 <- colMeans(apply(NEP_yasso,1:2,sum))
+    #plot(timei, NEP_yasso,ylim=c(0,250),type="l",main="Currclim",ylab="NEPmin")
     print(paste("Sample area:",sum(dataS$area)))
+    
     if(HarvScen!="Base" | fmi_from_allas){
       workdir <- paste0(getwd(),"/")  
       startingYear <- 2015
@@ -460,6 +468,23 @@ if(!FIGsOnly){
                       thinFactX= thinFactX, landClassUnman = landClassUnman,
                       compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
                       forceSaveInitSoil=F, sampleX = dataS)
+      clim2 <-out$clim
+      NEP_yasso <- out$region$multiOut[,,"NEP/SMI[layer_1]",,1]
+      timei2 <- (1:dim(out$region$multiOut)[2])+2015
+      NEP_yasso2 <- colMeans(apply(NEP_yasso,1:2,sum))
+      par(mfrow=c(3,2))
+      for(ij in 1:(length(clim1)-1)){
+        ylims  <- c(min(min(clim1[[ij]]),min(clim2[[ij]])),
+                    max(max(clim1[[ij]]),max(clim2[[ij]])))
+        if(ij%in%c(1,3,4)) ylims[1] <-  0
+        plot(clim2[[ij]][1,1:(9*365)],ylab=names(clim1)[ij],
+             ylim =ylims, col="red",main="black: CurrClim, red: Currclimfmi",pch=19,cex=.2)
+        points(clim1[[ij]][1,1:(9*365)],pch=19,col="black",cex=0.2)
+      }
+      ylims  <- c(min(c(NEP_yasso1,NEP_yasso2)),max(c(NEP_yasso1,NEP_yasso2)))
+      plot(timei1, NEP_yasso1,type="l",ylim=ylims,main="black: Currclim, red: Currclimfmi",ylab="NEPmin")
+      lines(timei2,NEP_yasso2,col="red")      
+      
     }
     #lapply(sampleIDs, 
     #       function(jx) { 
@@ -519,12 +544,12 @@ if(!FIGsOnly){
     print(a1+a2)
     
     #totArea <- sum(data.all$area)
-    areaRegion <- totArea <- sum(data.all$area,na.rm=T)
+    #areaRegion <- totArea <- sum(data.all$area,na.rm=T)
     sortVar <- c("landclass","peatID","cons")
     outresults <- areatable <- data.table()
     sortid <- 1
     areatable <- cbind(areatable, areaTot = totArea)
-    for(sortid in 1:3){
+    for(sortid in 1){#:3){
       if(sortid==1){
         n_lc1 <- which(dataS$landclass==1)
         n_lc2 <- which(dataS$landclass==2)
@@ -934,7 +959,9 @@ if(!FIGsOnly){
       }
     }
     
-    if(toFile) save(outresults, areatable, 
+    #
+    if(toFile) 
+      save(outresults, areatable, 
                     file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,"_",rcps,".rdata"))  
     if(fmi_from_allas & delete_fmi_data){
       file.remove(paste0(workdir,fmi_vars_PREBAS_file))
@@ -982,7 +1009,7 @@ if(!FIGsOnly){
     print(paste("Start figs of region",r_no,"/",rname))
     landclassMSNFI[r_noi,] <- c(sum(data.all$area[which(data.all$landclass==1)]),
                                 sum(data.all$area[which(data.all$landclass==2)]))  
-    areaRegion <- totArea <- sum(data.all$area,na.rm=T)
+    #areaRegion <- totArea <- sum(data.all$area,na.rm=T)
     
     gc()
     
