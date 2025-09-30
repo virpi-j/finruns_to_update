@@ -315,6 +315,8 @@ if(!FIGsOnly){
         dataS <- data.all[nirandom[sample(1:length(nirandom),nSegs,replace=F)],]
       }
     } else {
+      #data.all$decid <- data.all$birch+data.all$decid
+      #data.all$birch <- 0
       dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F),]
       dataS$decid <- dataS$birch + dataS$decid
       dataS$birch <- 0
@@ -340,6 +342,57 @@ if(!FIGsOnly){
             eMSNFI[exi] <- sum(data.all$area[which(data.all$age<=ex[exi])])/totA
           }
           qMSNFI[[6]] <- data.table(ecdf=eMSNFI,x=ex)
+          TEST <- F
+          if(TEST){
+            ex <- sort(unique(round(data.all$ba)))
+            ex <- c(ex,max(ex)*1.01)
+            eMSNFI <- ex*0
+            for(exi in 1:length(ex)){
+              eMSNFI[exi] <- sum(data.all$area[which(data.all$ba<=ex[exi])])/totA
+            }
+            qMSNFI[[1]] <- data.table(ecdf=eMSNFI,x=ex)
+            ##
+            ex <- sort(unique(round(data.all$decid)))
+            ex <- c(ex,max(ex)*1.01)
+            eMSNFI <- ex*0
+            for(exi in 1:length(ex)){
+              eMSNFI[exi] <- sum(data.all$area[which(data.all$decid<=ex[exi])])/totA
+            }
+            qMSNFI[[2]] <- data.table(ecdf=eMSNFI,x=ex)
+            ##
+            ex <- sort(unique(round(data.all$pine)))
+            ex <- c(ex,max(ex)*1.01)
+            eMSNFI <- ex*0
+            for(exi in 1:length(ex)){
+              eMSNFI[exi] <- sum(data.all$area[which(data.all$pine<=ex[exi])])/totA
+            }
+            qMSNFI[[3]] <- data.table(ecdf=eMSNFI,x=ex)
+            ##
+            ex <- sort(unique(round(data.all$spruce)))
+            ex <- c(ex,max(ex)*1.01)
+            eMSNFI <- ex*0
+            for(exi in 1:length(ex)){
+              eMSNFI[exi] <- sum(data.all$area[which(data.all$spruce<=ex[exi])])/totA
+            }
+            qMSNFI[[4]] <- data.table(ecdf=eMSNFI,x=ex)
+            ##
+            ex <- sort(unique(round(data.all$h)))
+            ex <- c(ex,max(ex)*1.01)
+            eMSNFI <- ex*0
+            for(exi in 1:length(ex)){
+              eMSNFI[exi] <- sum(data.all$area[which(data.all$h<=ex[exi])])/totA
+            }
+            qMSNFI[[7]] <- data.table(ecdf=eMSNFI,x=ex)
+            ##
+            ex <- sort(unique(round(data.all$dbh)))
+            ex <- c(ex,max(ex)*1.01)
+            eMSNFI <- ex*0
+            for(exi in 1:length(ex)){
+              eMSNFI[exi] <- sum(data.all$area[which(data.all$dbh<=ex[exi])])/totA
+            }
+            qMSNFI[[8]] <- data.table(ecdf=eMSNFI,x=ex)
+            
+          }
         }
         source("~/finruns_to_update/correction_function.R")
         ii <- 1
@@ -355,25 +408,27 @@ if(!FIGsOnly){
         print("done.")
         dataS[which(dataS$age==0),c("ba","decid","pine","spruce","age","h","dbh")]<-0
         dataS[which(dataS$h==0),c("ba","decid","pine","spruce","age","h","dbh")]<-0
-        par(mfrow=c(2,2))
-        ni <- sample(1:nrow(data.all),1000,replace = F)
-        ni2 <- sample(1:nrow(dataS),1000,replace = F)
-        plot(data.all$ba[ni],data.all$age[ni],pch=19,cex=0.2,
-             ylim=c(0,max(c(data.all$age[ni],dataS$age))),
-             xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
-        points(dataS$ba[ni2],dataS$age[ni2],col="red",pch=19,cex=0.2)
-        plot(data.all$ba[ni],data.all$pine[ni],pch=19,cex=0.2,
-             ylim=c(0,max(c(data.all$pine[ni],dataS$pine))),
-             xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
-        points(dataS$ba[ni2],dataS$pine[ni2],col="red",pch=19,cex=0.2)
-        plot(data.all$ba[ni],data.all$spruce[ni],pch=,cex=0.219,
-             ylim=c(0,max(c(data.all$spruce[ni],dataS$spruce))),
-             xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
-        points(dataS$ba[ni2],dataS$spruce[ni2],col="red",pch=19,cex=0.2)
-        plot(data.all$h[ni],data.all$dbh[ni],pch=19,cex=0.2,
-             ylim=c(0,max(c(data.all$dbh[ni],dataS$dbh))),
-             xlim=c(0,max(c(data.all$h[ni],dataS$h))))
-        points(dataS$h[ni2],dataS$dbh[ni2],col="red",pch=19,cex=0.2)
+        if(FALSE){
+          par(mfrow=c(2,2))
+          ni <- sample(1:nrow(data.all),1000,replace = F)
+          ni2 <- sample(1:nrow(dataS),1000,replace = F)
+          plot(data.all$ba[ni],data.all$age[ni],pch=19,cex=0.2,
+               ylim=c(0,max(c(data.all$age[ni],dataS$age))),
+               xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
+          points(dataS$ba[ni2],dataS$age[ni2],col="red",pch=19,cex=0.2)
+          plot(data.all$ba[ni],data.all$pine[ni],pch=19,cex=0.2,
+               ylim=c(0,max(c(data.all$pine[ni],dataS$pine))),
+               xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
+          points(dataS$ba[ni2],dataS$pine[ni2],col="red",pch=19,cex=0.2)
+          plot(data.all$ba[ni],data.all$spruce[ni],pch=,cex=0.219,
+               ylim=c(0,max(c(data.all$spruce[ni],dataS$spruce))),
+               xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
+          points(dataS$ba[ni2],dataS$spruce[ni2],col="red",pch=19,cex=0.2)
+          plot(data.all$h[ni],data.all$dbh[ni],pch=19,cex=0.2,
+               ylim=c(0,max(c(data.all$dbh[ni],dataS$dbh))),
+               xlim=c(0,max(c(data.all$h[ni],dataS$h))))
+          points(dataS$h[ni2],dataS$dbh[ni2],col="red",pch=19,cex=0.2)
+        }
       }
       #rm("data.all")
       gc()
@@ -480,19 +535,20 @@ if(!FIGsOnly){
       NEP_yasso <- out$region$multiOut[,,"NEP/SMI[layer_1]",,1]
       timei2 <- (1:dim(out$region$multiOut)[2])+2015
       NEP_yasso2 <- colMeans(apply(NEP_yasso,1:2,sum))
-      par(mfrow=c(3,2))
-      for(ij in 1:(length(clim1)-1)){
-        ylims  <- c(min(min(clim1[[ij]]),min(clim2[[ij]])),
-                    max(max(clim1[[ij]]),max(clim2[[ij]])))
-        if(ij%in%c(1,3,4)) ylims[1] <-  0
-        plot(clim2[[ij]][1,1:(9*365)],ylab=names(clim1)[ij],
-             ylim =ylims, col="red",main="black: CurrClim, red: Currclimfmi",pch=19,cex=.2)
-        points(clim1[[ij]][1,1:(9*365)],pch=19,col="black",cex=0.2)
+      if(FALSE){
+        par(mfrow=c(3,2))
+        for(ij in 1:(length(clim1)-1)){
+          ylims  <- c(min(min(clim1[[ij]]),min(clim2[[ij]])),
+                      max(max(clim1[[ij]]),max(clim2[[ij]])))
+          if(ij%in%c(1,3,4)) ylims[1] <-  0
+          plot(clim2[[ij]][1,1:(9*365)],ylab=names(clim1)[ij],
+               ylim =ylims, col="red",main="black: CurrClim, red: Currclimfmi",pch=19,cex=.2)
+          points(clim1[[ij]][1,1:(9*365)],pch=19,col="black",cex=0.2)
+        }
+        ylims  <- c(min(c(NEP_yasso1,NEP_yasso2)),max(c(NEP_yasso1,NEP_yasso2)))
+        plot(timei1, NEP_yasso1,type="l",ylim=ylims,main="black: Currclim, red: Currclimfmi",ylab="NEPmin")
+        lines(timei2,NEP_yasso2,col="red")      
       }
-      ylims  <- c(min(c(NEP_yasso1,NEP_yasso2)),max(c(NEP_yasso1,NEP_yasso2)))
-      plot(timei1, NEP_yasso1,type="l",ylim=ylims,main="black: Currclim, red: Currclimfmi",ylab="NEPmin")
-      lines(timei2,NEP_yasso2,col="red")      
-      
     }
     #lapply(sampleIDs, 
     #       function(jx) { 
