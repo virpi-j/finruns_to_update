@@ -509,6 +509,7 @@ if(!FIGsOnly){
       HcFactor <- HcFactor2
       ageHarvPriorX <- ageHarvPriorX2 # 160
     }
+    if( save_fmi_data | !fmi_from_allas){
     out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
                     harvScen="Base", harvInten="Base", procDrPeat=T, 
                     thinFactX= thinFactX, landClassUnman = landClassUnman,
@@ -519,6 +520,7 @@ if(!FIGsOnly){
     timei1 <- (1:dim(out$region$multiOut)[2])+2015
     NEP_yasso1 <- colMeans(apply(NEP_yasso,1:2,sum))
     #plot(timei, NEP_yasso,ylim=c(0,250),type="l",main="Currclim",ylab="NEPmin")
+    }    
     print(paste("Sample area:",sum(dataS$area)))
     
     if(HarvScen!="Base" | fmi_from_allas){
@@ -535,7 +537,7 @@ if(!FIGsOnly){
       NEP_yasso <- out$region$multiOut[,,"NEP/SMI[layer_1]",,1]
       timei2 <- (1:dim(out$region$multiOut)[2])+2015
       NEP_yasso2 <- colMeans(apply(NEP_yasso,1:2,sum))
-      if(FALSE){
+      if(FALSE & (save_fmi_data | !fmi_from_allas)){
         par(mfrow=c(3,2))
         for(ij in 1:(length(clim1)-1)){
           ylims  <- c(min(min(clim1[[ij]]),min(clim2[[ij]])),
