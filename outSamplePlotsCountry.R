@@ -102,7 +102,6 @@ dimnames(results) <- list(c("grossgrowth","V","Vharvested", "NEE", "Wharvested",
 
 r_noi <- 1
 
-nsorts <- 1 # 3 how many different subsets in results and visualization
 #if(!toFile) rids <- rids[1:3]
 if(toFile) pdf(paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_",rcps,".pdf"))
 if(!exists("FIGsOnly")) FIGsOnly <- F
@@ -773,7 +772,7 @@ if(!FIGsOnly){
       KUVA <- T
       if(KUVA){
         timei <- 2015+1:nrow(outresults)
-        par(mfrow=c(2,2))
+        par(mfrow=c(3,2))
         ij <- which(colnames(outresults)=="grossGrowth")
         tmp <- unlist(outresults[,..ij])
         plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
@@ -892,11 +891,6 @@ if(!FIGsOnly){
             lines(timei, tmp,col=colorsi[ik])
           }
         }
-        legend("bottomright",c(paste0("all ",round(totArea/1000),"kha"),
-                               paste0(sortVarnams," ", round(sortTotAreas/1000),"kha")),
-               pch=rep(1,length(sortVarnams)+1),cex=0.7,
-               bty = "n",
-               col=c("black",colorsi[1:length(sortVarnams)]))
         
         # Wtot
         ij <- which(colnames(outresults)=="Wtot")
@@ -936,6 +930,11 @@ if(!FIGsOnly){
           }
         }
         points(timei[1:nYears],rowSums(HarvLimMaak[1:nYears,])/totArea*1000,col="red")
+        legend("bottomright",c(paste0("all ",round(totArea/1000),"kha"),
+                               paste0(sortVarnams," ", round(sortTotAreas/1000),"kha")),
+               pch=rep(1,length(sortVarnams)+1),cex=0.7,
+               bty = "n",
+               col=c("black",colorsi[1:length(sortVarnams)]))
         
         
         # Wharvested
