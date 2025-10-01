@@ -325,7 +325,6 @@ if(!FIGsOnly){
         print("qq-correction of initial state data, start...")
         #load("~/finruns_to_update/quantile_data_2021.rdata")
         load("~/finruns_to_update/quantile_data_2021_landclass12.rdata")
-        NFIlocal <- T
         if(NFIlocal){
           VMIages <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
           VMIxs <- c(0,1,20,40,60,80,100,120,140,max(qFC[[6]]$x),max(qFC[[6]]$x)*1.01)
@@ -414,6 +413,115 @@ if(!FIGsOnly){
           plot(data.all$ba[ni],data.all$age[ni],pch=19,cex=0.2,
                ylim=c(0,max(c(data.all$age[ni],dataS$age))),
                xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
+          points(dataS$ba[ni2],dataS$age[ni2],col="red",pch=19,cex=0.2)
+          plot(data.all$ba[ni],data.all$pine[ni],pch=19,cex=0.2,
+               ylim=c(0,max(c(data.all$pine[ni],dataS$pine))),
+               xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
+          points(dataS$ba[ni2],dataS$pine[ni2],col="red",pch=19,cex=0.2)
+          plot(data.all$ba[ni],data.all$spruce[ni],pch=,cex=0.219,
+               ylim=c(0,max(c(data.all$spruce[ni],dataS$spruce))),
+               xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
+          points(dataS$ba[ni2],dataS$spruce[ni2],col="red",pch=19,cex=0.2)
+          plot(data.all$h[ni],data.all$dbh[ni],pch=19,cex=0.2,
+               ylim=c(0,max(c(data.all$dbh[ni],dataS$dbh))),
+               xlim=c(0,max(c(data.all$h[ni],dataS$h))))
+          points(dataS$h[ni2],dataS$dbh[ni2],col="red",pch=19,cex=0.2)
+        }
+      
+      } else if(samplaus==3){
+        print("region specific qq-correction of initial state data, start...")
+        #load("~/finruns_to_update/quantile_data_2021.rdata")
+        load(paste0("~/finruns_to_update/quantile_data_2021_landclass12_",
+        r_no,"_",regionNames_fi[r_no],".rdata"))
+        if(NFIlocal){
+          VMIages <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
+          VMIxs <- c(0,1,20,40,60,80,100,120,140,max(qFC[[6]]$x),max(qFC[[6]]$x)*1.01)
+          eVMI <- cumsum(VMIages)/sum(VMIages)
+          eVMI <- c(eVMI[1]-.0001,eVMI,1)
+          qFC[[6]] <- data.table(ecdf=eVMI,x=VMIxs)
+          ex <- sort(unique(round(data.all$age)))
+          ex <- c(ex,max(ex)*1.01)
+          eMSNFI <- ex*0
+          exi <- 1
+          totA <- sum(data.all$area)
+          for(exi in 1:length(ex)){
+            eMSNFI[exi] <- sum(data.all$area[which(data.all$age<=ex[exi])])/totA
+          }
+          qMSNFI[[6]] <- data.table(ecdf=eMSNFI,x=ex)
+          TEST <- F
+          if(TEST){
+            ex <- sort(unique(round(data.all$ba)))
+            ex <- c(ex,max(ex)*1.01)
+            eMSNFI <- ex*0
+            for(exi in 1:length(ex)){
+              eMSNFI[exi] <- sum(data.all$area[which(data.all$ba<=ex[exi])])/totA
+            }
+            qMSNFI[[1]] <- data.table(ecdf=eMSNFI,x=ex)
+            ##
+            ex <- sort(unique(round(data.all$decid)))
+            ex <- c(ex,max(ex)*1.01)
+            eMSNFI <- ex*0
+            for(exi in 1:length(ex)){
+              eMSNFI[exi] <- sum(data.all$area[which(data.all$decid<=ex[exi])])/totA
+            }
+            qMSNFI[[2]] <- data.table(ecdf=eMSNFI,x=ex)
+            ##
+            ex <- sort(unique(round(data.all$pine)))
+            ex <- c(ex,max(ex)*1.01)
+            eMSNFI <- ex*0
+            for(exi in 1:length(ex)){
+              eMSNFI[exi] <- sum(data.all$area[which(data.all$pine<=ex[exi])])/totA
+            }
+            qMSNFI[[3]] <- data.table(ecdf=eMSNFI,x=ex)
+            ##
+            ex <- sort(unique(round(data.all$spruce)))
+            ex <- c(ex,max(ex)*1.01)
+            eMSNFI <- ex*0
+            for(exi in 1:length(ex)){
+              eMSNFI[exi] <- sum(data.all$area[which(data.all$spruce<=ex[exi])])/totA
+            }
+            qMSNFI[[4]] <- data.table(ecdf=eMSNFI,x=ex)
+            ##
+            ex <- sort(unique(round(data.all$h)))
+            ex <- c(ex,max(ex)*1.01)
+            eMSNFI <- ex*0
+            for(exi in 1:length(ex)){
+              eMSNFI[exi] <- sum(data.all$area[which(data.all$h<=ex[exi])])/totA
+            }
+            qMSNFI[[7]] <- data.table(ecdf=eMSNFI,x=ex)
+            ##
+            ex <- sort(unique(round(data.all$dbh)))
+            ex <- c(ex,max(ex)*1.01)
+            eMSNFI <- ex*0
+            for(exi in 1:length(ex)){
+              eMSNFI[exi] <- sum(data.all$area[which(data.all$dbh<=ex[exi])])/totA
+            }
+            qMSNFI[[8]] <- data.table(ecdf=eMSNFI,x=ex)
+            
+          }
+        }
+        source("~/finruns_to_update/correction_function.R")
+        ii <- 1
+        for(ii in 1:nSegs){
+          dataS[ii,"ba"] <- min(max(data.all$ba)*1.1,correction_f(dataS$ba[ii],1))
+          dataS[ii,"decid"] <- correction_f(dataS$decid[ii],2)
+          dataS[ii,"pine"] <- correction_f(dataS$pine[ii],3)
+          dataS[ii,"spruce"] <- correction_f(dataS$spruce[ii],4)
+          dataS[ii,"age"] <- correction_f(dataS$age[ii],6)
+          dataS[ii,"h"] <- correction_f(dataS$h[ii]/10,7)*10
+          dataS[ii,"dbh"] <- correction_f(dataS$dbh[ii],8)  
+        }
+        print("done.")
+        dataS[which(dataS$age==0),c("ba","decid","pine","spruce","age","h","dbh")]<-0
+        dataS[which(dataS$h==0),c("ba","decid","pine","spruce","age","h","dbh")]<-0
+        if(FIGS){
+          par(mfrow=c(2,2))
+          ni <- sample(1:nrow(data.all),1000,replace = F)
+          ni2 <- sample(1:nrow(dataS),1000,replace = F)
+          plot(data.all$ba[ni],data.all$age[ni],pch=19,cex=0.2,
+               ylim=c(0,max(c(data.all$age[ni],dataS$age))),
+               xlim=c(0,max(c(data.all$ba[ni],dataS$ba))),
+               main=paste0(regionNames_fi[r_no],": black MSNFI, red MSNFIcorr"))
           points(dataS$ba[ni2],dataS$age[ni2],col="red",pch=19,cex=0.2)
           plot(data.all$ba[ni],data.all$pine[ni],pch=19,cex=0.2,
                ylim=c(0,max(c(data.all$pine[ni],dataS$pine))),
@@ -802,7 +910,7 @@ if(!FIGsOnly){
         ymin <- min(0,min(outresults[,..ij3]))
         plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
              xlim = c(timei[1]-1,timei[length(timei)]),
-             xlab = "time, dotted=NEPyasso, solid=NEP",
+             xlab = "time, dotted=NEPyasso, solid=NEP (incl.ditched peatlands)",
              ylab = "NEP, g/m2", ylim = c(ymin,ymax),
              lwd=3, lty=3)
         colorsi <- c("blue","green","pink")
