@@ -34,6 +34,13 @@ r_nos <- c(1, 21, 16, 6, 9, 13, 11, 19, 5, 15, 2, 14, 7, 4, 8, 18, 10, 12, 17)
 #regionNames <- fread("/scratch/project_2000994/PREBASruns/metadata/maakunta/maakunta_names.txt")
 if(exists("rids")) rids <- c(1,3:19)
 
+NetSinks <- read_excel(path = "/users/vjunttil/finruns_to_update/LUKE_maak_nettonielu_kokeellinen.xlsx",  
+                    sheet = "nettonielu", range = "A3:J24")
+NetSinks <- NetSinks[-c(2),-c(2,3)]
+NetSinks_per_ha <- read_excel(path = "/users/vjunttil/finruns_to_update/LUKE_maak_nettonielu_kokeellinen.xlsx",  
+                       sheet = "nettonielu_per_ha", range = "A3:J24")
+NetSinks_per_ha <- NetSinks_per_ha[-c(2),-c(2,3)]
+
 V2015 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.xlsx",  
                     sheet = "tilavuus", range = "B3:G25")
 V2021 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.xlsx",  
@@ -140,6 +147,12 @@ if(!FIGsOnly){
     ageclassstats[2,] <- cumsum(ageclassstats[2,]/areasLandClass2021[1])
     lajistats2015 <- as.numeric(V2015[which(V2015[,1]==rname_fi),2:5])
     lajistats2021 <- as.numeric(V2021[which(V2021[,1]==rname_fi),2:5])
+    netsinksreg <- NetSinks[which(NetSinks[,1]==regionNames_fi[r_no]),-1]
+    netsinksreg[which(netsinksreg=="..")] <- NA  
+    netsinksreg <- as.numeric(netsinksreg)
+    netsinksreg_per_ha <- NetSinks_per_ha[which(NetSinks_per_ha[,1]==regionNames_fi[r_no]),-1]
+    netsinksreg_per_ha[which(netsinksreg_per_ha=="..")] <- NA  
+    netsinksreg_per_ha <- as.numeric(netsinksreg_per_ha)
     
     print(paste("Start running region",r_no,"/",rname))
     landclassMSNFI[r_noi,] <- c(sum(data.all$area[which(data.all$landclass==1)]),
@@ -1087,17 +1100,22 @@ if(!FIGsOnly){
         
         
         if(TRUE){
-          
           # NBE
           ij <- which(colnames(outresults)=="NBE")
           tmp <- unlist(outresults[,..ij])
           ij2 <- c(ij,match(paste0("NBE_",sortVarnams),colnames(outresults)))
-          ymax <- max(0,max(outresults[,..ij2]))
-          ymin <- min(0,min(outresults[,..ij2]))
+          if(!is.na(netsinksreg_per_ha[1])){          
+            ymax <- max(0,max(max(netsinksreg_per_ha*1000,na.rm = T),max(outresults[,..ij2])))
+            ymin <- min(0,min(min(netsinksreg_per_ha*1000,na.rm = T),min(outresults[,..ij2])))
+          } else {
+            ymax <- max(0,max(outresults[,..ij2]))
+            ymin <- min(0,min(outresults[,..ij2]))
+          }
           plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
                xlim = c(timei[1]-1,timei[length(timei)]),
                ylab="NBE, kg CO2eq/ha", ylim = c(ymin,ymax),
                lwd=3)
+          points(2015:2021, netsinksreg_per_ha*1000, pch=19,col="red")
           colorsi <- c("blue","green","pink")
           for(ik in 1:length(sortVarnams)){
             ijk <- ij2[1 + ik]
@@ -1112,12 +1130,18 @@ if(!FIGsOnly){
           ij <- which(colnames(outresults)=="NBEsum")
           tmp <- unlist(outresults[,..ij])
           ij2 <- c(ij,match(paste0("NBEsum_",sortVarnams),colnames(outresults)))
-          ymax <- max(0,max(outresults[,..ij2]))
-          ymin <- min(0,min(outresults[,..ij2]))
+          if(!is.na(netsinksreg[1])){          
+            ymax <- max(0,max(max(netsinksreg*1000,na.rm = T),max(outresults[,..ij2])))
+            ymin <- min(0,min(min(netsinksreg*1000,na.rm = T),min(outresults[,..ij2])))
+          } else {
+            ymax <- max(0,max(outresults[,..ij2]))
+            ymin <- min(0,min(outresults[,..ij2]))
+          }
           plot(timei, tmp/1e6, type="l",main=paste("Region",r_no,rname), 
                xlim = c(timei[1]-1,timei[length(timei)]),
-               ylab="NBEsum, million kg CO2eq", ylim = c(ymin,ymax)/1e6,
+               ylab="NBEsum, million kg CO2eq", ylim = c(ymin,ymax*1.05)/1e6,
                lwd=3)
+          points(2015:2021,netsinksreg*1000,pch=19,col="red")
           colorsi <- c("blue","green","pink")
           for(ik in 1:length(sortVarnams)){
             ijk <- ij2[1 + ik]
