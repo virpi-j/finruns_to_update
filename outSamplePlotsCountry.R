@@ -1104,9 +1104,10 @@ if(!FIGsOnly){
           ij <- which(colnames(outresults)=="NBE")
           tmp <- unlist(outresults[,..ij])
           ij2 <- c(ij,match(paste0("NBE_",sortVarnams),colnames(outresults)))
-          if(!is.na(netsinksreg_per_ha[1])){          
-            ymax <- max(0,max(max(netsinksreg_per_ha*1000,na.rm = T),max(outresults[,..ij2])))
-            ymin <- min(0,min(min(netsinksreg_per_ha*1000,na.rm = T),min(outresults[,..ij2])))
+          if(!is.na(netsinksreg[1])){ 
+            netsinksreg_per_ha <-netsinksreg*1e9/totArea
+            ymax <- 1.05*max(0,max(max(netsinksreg_per_ha,na.rm = T),max(outresults[,..ij2])))
+            ymin <- 1.05*min(0,min(min(netsinksreg_per_ha,na.rm = T),min(outresults[,..ij2])))
           } else {
             ymax <- max(0,max(outresults[,..ij2]))
             ymin <- min(0,min(outresults[,..ij2]))
@@ -1115,7 +1116,7 @@ if(!FIGsOnly){
                xlim = c(timei[1]-1,timei[length(timei)]),
                ylab="NBE, kg CO2eq/ha", ylim = c(ymin,ymax),
                lwd=3)
-          points(2015:2021, netsinksreg_per_ha*1000, pch=19,col="red")
+          points(2015:2021, netsinksreg_per_ha, pch=19,col="red")
           colorsi <- c("blue","green","pink")
           for(ik in 1:length(sortVarnams)){
             ijk <- ij2[1 + ik]
@@ -1131,17 +1132,17 @@ if(!FIGsOnly){
           tmp <- unlist(outresults[,..ij])
           ij2 <- c(ij,match(paste0("NBEsum_",sortVarnams),colnames(outresults)))
           if(!is.na(netsinksreg[1])){          
-            ymax <- max(0,max(max(netsinksreg*1000,na.rm = T),max(outresults[,..ij2])))
-            ymin <- min(0,min(min(netsinksreg*1000,na.rm = T),min(outresults[,..ij2])))
+            ymax <- 1.05*max(0,max(max(netsinksreg*1e9,na.rm = T),max(outresults[,..ij2])))
+            ymin <- 1.05*min(0,min(min(netsinksreg*1e9,na.rm = T),min(outresults[,..ij2])))
           } else {
             ymax <- max(0,max(outresults[,..ij2]))
             ymin <- min(0,min(outresults[,..ij2]))
           }
           plot(timei, tmp/1e6, type="l",main=paste("Region",r_no,rname), 
                xlim = c(timei[1]-1,timei[length(timei)]),
-               ylab="NBEsum, million kg CO2eq", ylim = c(ymin,ymax*1.05)/1e6,
+               ylab="NBEsum, million kg CO2eq", ylim = c(ymin,ymax)/1e6,
                lwd=3)
-          points(2015:2021,netsinksreg*1000,pch=19,col="red")
+          points(2015:2021,netsinksreg*1e9/1e6,pch=19,col="red")
           colorsi <- c("blue","green","pink")
           for(ik in 1:length(sortVarnams)){
             ijk <- ij2[1 + ik]
