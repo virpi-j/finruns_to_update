@@ -110,7 +110,7 @@ dimnames(results) <- list(c("grossgrowth","V","Vharvested", "NEE", "Wharvested",
 r_noi <- 1
 
 #if(!toFile) rids <- rids[1:3]
-if(toFile) pdf(paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_",rcps,".pdf"))
+if(toFile) pdf(paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_",rcps,".pdf"))
 if(!exists("FIGsOnly")) FIGsOnly <- F
 if(!FIGsOnly){
   noPrebasLoading <- F
@@ -1160,7 +1160,7 @@ if(!FIGsOnly){
     #
     #if(toFile) 
       save(outresults, areatable, 
-                    file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,"_",rcps,".rdata"))  
+                    file = paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,"_",rcps,".rdata"))  
     if(fmi_from_allas & delete_fmi_data){
       file.remove(paste0(workdir,fmi_vars_PREBAS_file))
       file.remove(paste0(workdir,climID_lookup_file))
@@ -1212,7 +1212,7 @@ if(!FIGsOnly){
     gc()
     
     sortVar <- c("landclass","peatID","cons")
-    load(paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,".rdata"))  
+    load(paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,".rdata"))  
     sortid <- 1
     for(sortid in 1:nsorts){
       if(sortid==1){
@@ -1448,7 +1448,7 @@ if(toFile){
     rname <- regionNames[r_no]
     rname_fi <- regionNames_fi[r_no]
     rnameid <- r_nos[r_no]
-    load(file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,"_",rcps,".rdata"))  
+    load(file = paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,"_",rcps,".rdata"))  
     
     if(r_noi==1){
       ij <- which(grepl("NBEsum",colnames(outresults)))
@@ -1468,7 +1468,7 @@ if(toFile){
   
   #if(toFile) 
   save(outresults_wholecountry, areatable_wholecountry,
-                  file = paste0(outDir,"results_agesample",samplaus,"compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_wholeCountry_",rcps,".rdata"))  
+                  file = paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_wholeCountry_",rcps,".rdata"))  
   par(mfrow=c(3,1))
   sortid <- 1
   cnames <- colnames(outresults_wholecountry)
