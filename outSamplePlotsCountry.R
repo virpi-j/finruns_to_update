@@ -114,7 +114,7 @@ if(toFile) pdf(paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",c
 if(!exists("FIGsOnly")) FIGsOnly <- F
 if(!FIGsOnly){
   noPrebasLoading <- F
-  for(r_noi in 11:length(rids)){
+  for(r_noi in 1:length(rids)){
     if(r_noi>1) noPrebasLoading <- T
     toMem <- ls()
     set.seed(1)
