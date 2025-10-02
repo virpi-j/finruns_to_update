@@ -327,11 +327,11 @@ if(!FIGsOnly){
         dataS <- data.all[nirandom[sample(1:length(nirandom),nSegs,replace=F)],]
       }
     } else {
-      #data.all$decid <- data.all$birch+data.all$decid
-      #data.all$birch <- 0
+      data.all$decid <- data.all$birch+data.all$decid
+      data.all$birch <- 0
       dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F),]
-      dataS$decid <- dataS$birch + dataS$decid
-      dataS$birch <- 0
+      #dataS$decid <- dataS$birch + dataS$decid
+      #dataS$birch <- 0
       gc()
       #dataSorig <- dataS
       if(samplaus==2){
@@ -471,13 +471,13 @@ if(!FIGsOnly){
           }
           qMSNFI_NFI <- data.table(ecdf=eMSNFI,x=ex)
           qMSNFI[[6]] <- qMSNFI_NFI
-          ageS <- dataS$age
-          source("~/finruns_to_update/correction_function.R")
-          for(ii in 1:nSegs){
-            ageS[ii] <- correction_f(dataS$age[ii],6,ecdfx = qMSNFI_NFI,ecdfz = qFCNFI)
-          }
           TEST <- F
           if(TEST){
+            ageS <- dataS$age
+            source("~/finruns_to_update/correction_function.R")
+            for(ii in 1:nSegs){
+              ageS[ii] <- correction_f(dataS$age[ii],6,ecdfx = qMSNFI_NFI,ecdfz = qFCNFI)
+            }
             VMIages <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
             VMIxs <- c(0,1,20,40,60,80,100,120,140,max(qFC[[6]]$x),max(qFC[[6]]$x)*1.01)
             eVMI <- cumsum(VMIages)/sum(VMIages)
@@ -555,7 +555,7 @@ if(!FIGsOnly){
           dataS[ii,"dbh"] <- correction_f(dataS$dbh[ii],8)  
         }
         print("done.")
-        if(NFIlocal){
+        if(NFIlocal==2){
           ninew <- which(ageS==0)
           ni <- which(dataS$age==0)
           dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")]<-dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")]*colMeans(dataS[ni,c("ba","decid","pine","spruce","age","h","dbh")])/colMeans(dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")])
@@ -587,7 +587,7 @@ if(!FIGsOnly){
         dataS[which(dataS$age==0),c("ba","decid","pine","spruce","age","h","dbh")]<-0
         dataS[which(dataS$h==0),c("ba","decid","pine","spruce","age","h","dbh")]<-0
         if(FIGS){
-          par(mfrow=c(2,2))
+          par(mfrow=c(3,2))
           ni <- sample(1:nrow(data.all),1000,replace = F)
           ni2 <- sample(1:nrow(dataS),1000,replace = F)
           plot(data.all$ba[ni],data.all$age[ni],pch=19,cex=0.2,
@@ -603,6 +603,15 @@ if(!FIGsOnly){
                ylim=c(0,max(c(data.all$spruce[ni],dataS$spruce))),
                xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
           points(dataS$ba[ni2],dataS$spruce[ni2],col="red",pch=19,cex=0.2)
+          plot(data.all$ba[ni],data.all$decid[ni],pch=19,cex=0.2,
+               ylim=c(0,max(c(data.all$decid[ni],dataS$decid))),
+               xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
+          points(dataS$ba[ni2],dataS$decid[ni2],col="red",pch=19,cex=0.2)
+          plot(data.all$ba[ni],data.all$dbh[ni],pch=19,cex=0.2,
+               ylim=c(0,max(c(data.all$dbh[ni],dataS$dbh))),
+               xlim=c(0,max(c(data.all$ba[ni],dataS$ba))),
+               main=paste0(regionNames_fi[r_no],": black MSNFI, red MSNFIcorr"))
+          points(dataS$ba[ni2],dataS$dbh[ni2],col="red",pch=19,cex=0.2)
           plot(data.all$h[ni],data.all$dbh[ni],pch=19,cex=0.2,
                ylim=c(0,max(c(data.all$dbh[ni],dataS$dbh))),
                xlim=c(0,max(c(data.all$h[ni],dataS$h))))
