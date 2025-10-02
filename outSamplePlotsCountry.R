@@ -66,7 +66,6 @@ ikaluokat2021 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.x
 #lajiV2021 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.xlsx",  
 #                        sheet = "lajitilavuudet", range = "B26:H47")
 
-landclassMSNFI <- array(0,c(length(rids),2),dimnames = list(regionNames_fi[rids],c("metsämaa","kitumaa")))
 # minDharvX = 999
 setwd("/scratch/project_2000994/PREBASruns/PREBAStesting/")
 
@@ -155,7 +154,7 @@ if(!FIGsOnly){
     netsinksreg_per_ha <- as.numeric(netsinksreg_per_ha)
     
     print(paste("Start running region",r_no,"/",rname))
-    landclassMSNFI[r_noi,] <- c(sum(data.all$area[which(data.all$landclass==1)]),
+    main = regs[r_noi][r_noi,] <- c(sum(data.all$area[which(data.all$landclass==1)]),
                                 sum(data.all$area[which(data.all$landclass==2)]))  
     
     
@@ -1237,50 +1236,96 @@ if(!FIGsOnly){
     gc()
     
   }
-} else {
-  for(r_noi in 1:length(rids)){
-    toMem <- ls()
-    set.seed(1)
-    r_no <- rids[r_noi]
-    rname <- regionNames[r_no]
-    rname_fi <- regionNames_fi[r_no]
-    rnameid <- r_nos[r_no]
-    mortMod <- 13
-    landClassX <- 1:2
-    if(!exists("compHarvX")) compHarvX <- 0
-    if(!exists("thinFactX")) thinFactX <- 0.25
-    #  print(paste("CompHarv =", compHarvX))
-    noPrebasLoading <- T
-    source("~/finruns_to_update/settings.R")
-    
-    areasLandClass2015 <- as.numeric(landclass2015[which(landclass2015[,1]==rname_fi),2:3])
-    areasLandClass2021 <- as.numeric(landclass2021[which(landclass2021[,1]==rname_fi),2:3])
-    Vstats <- as.numeric(c(V2015[which(V2015[,1]==rname_fi),ncol(V2015)],
-                           V2021[which(V2021[,1]==rname_fi),ncol(V2015)]))*
-      1e6/1000/as.numeric(c(sum(areasLandClass2015),sum(areasLandClass2021)))  
-    
-    ggstats <- as.numeric(c(gg2015[which(gg2015[,1]==rname_fi),ncol(gg2015)],
-                            gg2021[which(gg2021[,1]==rname_fi),ncol(gg2015)]))
-    wstats <- 0.5*as.numeric(c(W2015[which(W2015[,1]==rname_fi),ncol(W2015)],
-                               W2021[which(W2021[,1]==rname_fi),ncol(W2015)]))*
-      1e6/as.numeric(c(sum(areasLandClass2015),sum(areasLandClass2021)))  
-    ageclassstats <- rbind(as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),-1]),
-                           as.numeric(ikaluokat2021[which(ikaluokat2021[,1]==rname_fi),-1]))
-    ageclassstats <- ageclassstats[,-ncol(ageclassstats)]
-    ageclassstats[1,] <- cumsum(ageclassstats[1,]/areasLandClass2015[1])
-    ageclassstats[2,] <- cumsum(ageclassstats[2,]/areasLandClass2021[1])
-    lajistats2015 <- as.numeric(V2015[which(V2015[,1]==rname_fi),2:5])
-    lajistats2021 <- as.numeric(V2021[which(V2021[,1]==rname_fi),2:5])
-    
-    print(paste("Start figs of region",r_no,"/",rname))
-    landclassMSNFI[r_noi,] <- c(sum(data.all$area[which(data.all$landclass==1)]),
-                                sum(data.all$area[which(data.all$landclass==2)]))  
-    #areaRegion <- totArea <- sum(data.all$area,na.rm=T)
-    
-    gc()
-    
-    sortVar <- c("landclass","peatID","cons")
-    load(paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,".rdata"))  
+} 
+
+
+regionIDs <- as.numeric(c("1","21","16","06","09","13","11","19","05",
+                          "15","02","14","07","04","08","18","10","12","17"))
+regs <- c("Uu","Ah","KP","Pi","EK","KS","PS","La","KH","Po","VS",
+          "EP","PH","Sa","Ky","Ka","ES","PK","PP")
+regs <- paste(regionIDs,regionNames_fi)
+regs[match(c(1:2,4:19),r_nos)]
+r_nois0 <- match(c(1:2,4:19),r_nos)
+r_nois[-1] <- r_nois0[-1]-1
+
+load(paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",1,"_",rcps,".rdata"))  
+outresults_all <- array(0,dim=c(dim(outresults)[1],dim(outresults)[2],length(rids)),
+                        dimnames = list(c(2016:2024),
+                                        colnames(outresults),
+                                        regionNames[rids]))
+validation_all <- array(0,dim=c(2,18,length(rids)),
+                        dimnames = list(c("NFI","sim"),
+                                        c("gg2015","gg2021","V2015","V2021",
+                                          paste0("NBEtot",2015:2021),
+                                          paste0("NBEave",2015:2021)),
+                                        regionNames[rids]))
+r_noi <-1
+for(r_noi in r_nois0){#1:length(rids)){
+  toMem <- ls()
+  set.seed(1)
+  #r_no <- rids[r_noi]
+  r_no <- r_noi#s0[r_noi]
+  rname <- regionNames[r_no]
+  rname_fi <- regionNames_fi[r_no]
+  print(rname)
+  rnameid <- r_nos[r_no]
+  mortMod <- 13
+  landClassX <- 1:2
+  if(!exists("compHarvX")) compHarvX <- 0
+  if(!exists("thinFactX")) thinFactX <- 0.25
+  #  print(paste("CompHarv =", compHarvX))
+  noPrebasLoading <- T
+  source("~/finruns_to_update/settings.R")
+  
+  areasLandClass2015 <- as.numeric(landclass2015[which(landclass2015[,1]==rname_fi),2:3])
+  areasLandClass2021 <- as.numeric(landclass2021[which(landclass2021[,1]==rname_fi),2:3])
+  Vstats <- as.numeric(c(V2015[which(V2015[,1]==rname_fi),ncol(V2015)],
+                         V2021[which(V2021[,1]==rname_fi),ncol(V2015)]))*
+    1e6/1000/as.numeric(c(sum(areasLandClass2015),sum(areasLandClass2021)))  
+  
+  ggstats <- as.numeric(c(gg2015[which(gg2015[,1]==rname_fi),ncol(gg2015)],
+                          gg2021[which(gg2021[,1]==rname_fi),ncol(gg2015)]))
+  wstats <- 0.5*as.numeric(c(W2015[which(W2015[,1]==rname_fi),ncol(W2015)],
+                             W2021[which(W2021[,1]==rname_fi),ncol(W2015)]))*
+    1e6/as.numeric(c(sum(areasLandClass2015),sum(areasLandClass2021)))  
+  ageclassstats <- rbind(as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),-1]),
+                         as.numeric(ikaluokat2021[which(ikaluokat2021[,1]==rname_fi),-1]))
+  ageclassstats <- ageclassstats[,-ncol(ageclassstats)]
+  ageclassstats[1,] <- cumsum(ageclassstats[1,]/areasLandClass2015[1])
+  ageclassstats[2,] <- cumsum(ageclassstats[2,]/areasLandClass2021[1])
+  lajistats2015 <- as.numeric(V2015[which(V2015[,1]==rname_fi),2:5])
+  lajistats2021 <- as.numeric(V2021[which(V2021[,1]==rname_fi),2:5])
+  netsinksreg <- NetSinks[which(NetSinks[,1]==regionNames_fi[r_no]),-1]
+  netsinksreg[which(netsinksreg=="..")] <- NA  
+  netsinksreg <- as.numeric(netsinksreg)
+  netsinksreg_per_ha <- NetSinks_per_ha[which(NetSinks_per_ha[,1]==regionNames_fi[r_no]),-1]
+  netsinksreg_per_ha[which(netsinksreg_per_ha=="..")] <- NA  
+  netsinksreg_per_ha <- as.numeric(netsinksreg_per_ha)
+  
+  print(paste("Start figs of region",r_no,"/",rname))
+  #    main = regs[r_noi][r_noi,] <- c(sum(data.all$area[which(data.all$landclass==1)]),
+  #                                sum(data.all$area[which(data.all$landclass==2)]))  
+  #areaRegion <- totArea <- sum(data.all$area,na.rm=T)
+  
+  gc()
+  
+  sortVar <- c("landclass","peatID","cons")
+  ri <- max(1,r_noi-1)
+  dimnames(outresults_all)[[3]][ri]
+  load(paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",ri,"_",rcps,".rdata"))  
+  outresults_all[,,ri] <- array(unlist(outresults),dim(outresults))
+  totArea <- areatable$areaTot
+  netsinksreg_per_ha <-netsinksreg*1e9/totArea
+  validation_all[1,5:11,ri] <- netsinksreg*1e3 
+  validation_all[2,5:11,ri] <- outresults$NBEsum[which(timei%in%2016:2022)]/1e6
+  validation_all[1,1:2,ri] <- ggstats
+  validation_all[2,1:2,ri] <- outresults$grossGrowth_forest[c(1,which(timei==2021))]
+  validation_all[1,3:4,ri] <- Vstats
+  validation_all[2,3:4,ri] <- outresults$V_forest[c(1,which(timei==2021))]
+  validation_all[1,12:18,ri] <- netsinksreg_per_ha 
+  validation_all[2,12:18,ri] <- outresults$NBE[which(timei%in%2016:2022)]
+  
+  if(FIGsOnly){
     sortid <- 1
     for(sortid in 1:nsorts){
       if(sortid==1){
@@ -1291,185 +1336,157 @@ if(!FIGsOnly){
         sortVarnams <- c("managed","cons")
       }    
       
-      
-      timei <- 2015+1:nrow(outresults)
-      par(mfrow=c(2,2))
-      ij <- which(colnames(outresults)=="grossGrowth")
-      tmp <- unlist(outresults[,..ij])
-      plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
-           xlim = c(timei[1]-1,timei[length(timei)]),
-           ylim = c(0,9), ylab = "grossgrowth, m3/ha",lwd=3)
-      points(c(2015,2021),ggstats,pch=19,col="red")
-      colorsi <- c("blue","green","pink")
-      for(ik in 1:length(sortVarnams)){
-        ijk <- ij + ik
-        tmp <- unlist(outresults[,..ijk])
-        if(length(tmp)>1){
-          lines(timei, tmp,col=colorsi[ik])
-        }
-      }
-      legend("bottomright",c(paste0("all "),
-                             paste0(sortVarnams," ")),
-             pch=rep(1,length(sortVarnams)+1),cex=0.7,
-             bty = "n",
-             col=c("black",colorsi[1:length(sortVarnams)]))
-      
-      # NEP
-      ij <- which(colnames(outresults)=="NEP")
-      tmp <- unlist(outresults[,..ij])
-      ij2 <- c(ij,match(paste0("NEP_",sortVarnams),colnames(outresults)))
-      ymax <- max(0,max(outresults[,..ij2]))
-      ymin <- min(0,min(outresults[,..ij2]))
-      plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
-           xlim = c(timei[1]-1,timei[length(timei)]),
-           ylab = "NEP, g/m2", ylim = c(ymin,ymax),
-           lwd=3)
-      colorsi <- c("blue","green","pink")
-      for(ik in 1:length(sortVarnams)){
-        ijk <- which(paste0("NEP_",sortVarnams[ik])==colnames(outresults))
-        tmp <- unlist(outresults[,..ijk])
-        if(length(tmp)>1){
-          lines(timei, tmp,col=colorsi[ik])
-        }
-      }
-      lines(timei,0*timei, col="black")
-      
-      # V
-      ij <- which(colnames(outresults)=="V")
-      tmp <- unlist(outresults[,..ij])
-      ij2 <- c(ij,match(paste0("V_",sortVarnams),colnames(outresults)))
-      ymax <- max(outresults[,..ij2])
-      ymin <- min(outresults[,..ij2])
-      plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
-           xlim = c(timei[1]-1,timei[length(timei)]),
-           ylab = "V, m3/ha", ylim = c(0,ymax),
-           lwd=3)
-      points(c(2015,2021),Vstats,pch=19,col="red")
-      colorsi <- c("blue","green","pink")
-      for(ik in 1:length(sortVarnams)){
-        ijk <- which(paste0("V_",sortVarnams[ik])==colnames(outresults))
-        tmp <- unlist(outresults[,..ijk])
-        if(length(tmp)>1){
-          lines(timei, tmp,col=colorsi[ik])
-        }
-      }
-      
-      # age
-      ij <- which(colnames(outresults)=="age")[1]
-      tmp <- unlist(outresults[,..ij])
-      ij2 <- c(ij,match(paste0("age_",sortVarnams),colnames(outresults)))
-      ymax <- max(outresults[,..ij2])
-      ymin <- min(outresults[,..ij2])
-      plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
-           xlim = c(timei[1]-1,timei[length(timei)]),
-           ylab = "age, years", ylim = c(0,ymax),
-           lwd=3)
-      colorsi <- c("blue","green","pink")
-      for(ik in 1:length(sortVarnams)){
-        ijk <- which(paste0("age_",sortVarnams[ik])==colnames(outresults))
-        tmp <- unlist(outresults[,..ijk])
-        if(length(tmp)>1){
-          lines(timei, tmp,col=colorsi[ik])
-        }
-      }
-      
-      # Wtot
-      ij <- which(colnames(outresults)=="Wtot")
-      tmp <- unlist(outresults[,..ij])
-      ij2 <- c(ij,match(paste0("Wtot_",sortVarnams),colnames(outresults)))
-      ymax <- max(outresults[,..ij2])
-      ymin <- min(outresults[,..ij2])
-      plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
-           xlim = c(timei[1]-1,timei[length(timei)]),
-           ylab = "Wtot, kg C/ha", ylim = c(0,ymax),
-           lwd=3)
-      colorsi <- c("blue","green","pink")
-      for(ik in 1:length(sortVarnams)){
-        ijk <- ij2[ik+1]
-        tmp <- unlist(outresults[,..ijk])
-        if(length(tmp)>1){
-          lines(timei, tmp,col=colorsi[ik])
-        }
-      }
-      legend("bottomright",c(paste0("all "),
-                             paste0(sortVarnams," ")),
-             pch=rep(1,length(sortVarnams)+1),cex=0.7,
-             bty = "n",
-             col=c("black",colorsi[1:length(sortVarnams)]))
-      
-      # Vharvested
-      ij <- which(colnames(outresults)=="Vharvested")
-      tmp <- unlist(outresults[,..ij])
-      ij2 <- c(ij,match(paste0("Vharvested_",sortVarnams),colnames(outresults)))
-      ymax <- max(outresults[,..ij2])
-      ymin <- min(outresults[,..ij2])
-      plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
-           xlim = c(timei[1]-1,timei[length(timei)]),
-           ylab = "Vharv, m3/ha", ylim = c(0,ymax),
-           lwd=3)
-      colorsi <- c("blue","green","pink")
-      for(ik in 1:length(sortVarnams)){
-        ijk <- ij2[1 + ik]
-        tmp <- unlist(outresults[,..ijk])
-        if(length(tmp)>1){
-          lines(timei, tmp,col=colorsi[ik])
-        }
-      }
-      points(timei[1:nYears],rowSums(HarvLimMaak[1:nYears,])/totArea*1000,col="red")
-
-      # Wharvested
-      ij <- which(colnames(outresults)=="Wharvested")
-      CO2eq_C <- 44/12 
-      tmp <- unlist(outresults[,..ij])*CO2eq_C
-      ij2 <- c(ij,match(paste0("Wharvested_",sortVarnams),colnames(outresults)))
-      ymax <- max(outresults[,..ij2])*CO2eq_C
-      ymin <- min(outresults[,..ij2])*CO2eq_C
-      plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
-           xlim = c(timei[1]-1,timei[length(timei)]),
-           ylab = "Wharv, kg CO2eq/ha", ylim = c(0,ymax),
-           lwd=3)
-      colorsi <- c("blue","green","pink")
-      for(ik in 1:length(sortVarnams)){
-        ijk <- ij2[1 + ik]
-        tmp <- unlist(outresults[,..ijk])*CO2eq_C
-        if(length(tmp)>1){
-          lines(timei, tmp,col=colorsi[ik])
-        }
-      }
-
-      # NEE
-      ij <- which(colnames(outresults)=="NEE")
-      tmp <- unlist(outresults[,..ij])*CO2eq_C
-      ij2 <- c(ij,match(paste0("NEE_",sortVarnams),colnames(outresults)))
-      ymax <- max(0,max(outresults[,..ij2])*CO2eq_C)
-      ymin <- min(0,min(outresults[,..ij2])*CO2eq_C)
-      plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
-           xlim = c(timei[1]-1,timei[length(timei)]),
-           ylab = "NEE, kg CO2eq/ha", ylim = c(ymin,ymax),
-           lwd=3)
-      colorsi <- c("blue","green","pink")
-      for(ik in 1:length(sortVarnams)){
-        ijk <- ij2[1 + ik]
-        tmp <- unlist(outresults[,..ijk])*CO2eq_C
-        if(length(tmp)>1){
-          lines(timei, tmp,col=colorsi[ik])
-        }
-      }
-      lines(timei,0*timei, col="black")
-      
-      
-      
-      if(TRUE){
-        
-        # NBE
-        ij <- which(colnames(outresults)=="NBE")
+      KUVA <- T
+      if(KUVA){
+        timei <- 2015+1:nrow(outresults)
+        par(mfrow=c(3,2))
+        ij <- which(colnames(outresults)=="grossGrowth")
         tmp <- unlist(outresults[,..ij])
-        ij2 <- c(ij,match(paste0("NBE_",sortVarnams),colnames(outresults)))
+        plot(timei, tmp, type="l",main=paste("Region",r_no,regionNames_fi[r_no]), 
+             xlim = c(timei[1]-1,timei[length(timei)]),
+             ylim = c(0,9), ylab = "grossgrowth, m3/ha",lwd=3)
+        points(c(2015,2021),ggstats,pch=19,col="red")
+        colorsi <- c("blue","green","pink")
+        for(ik in 1:length(sortVarnams)){
+          ijk <- ij + ik
+          tmp <- unlist(outresults[,..ijk])
+          if(length(tmp)>1){
+            lines(timei, tmp,col=colorsi[ik])
+          }
+        }
+        legend("bottomright",c(paste0("all "),
+                               paste0(sortVarnams)),
+               pch=rep(1,length(sortVarnams)+1),cex=0.7,
+               bty = "n",
+               col=c("black",colorsi[1:length(sortVarnams)]))
+        
+        # NEP
+        ij <- which(colnames(outresults)=="NEP_yasso")
+        tmp <- unlist(outresults[,..ij])
+        ij2 <- c(ij,match(paste0("NEP_yasso_",sortVarnams),colnames(outresults)))
+        ij3 <- c(ij2,match(c("NEP",paste0("NEP_",sortVarnams)),colnames(outresults)))
+        ymax <- max(0,max(outresults[,..ij3]))
+        ymin <- min(0,min(outresults[,..ij3]))
+        plot(timei, tmp, type="l",main = regs[r_noi], 
+             xlim = c(timei[1]-1,timei[length(timei)]),
+             xlab = "time, dotted=NEPyasso, solid=NEP (incl.ditched peatlands)",
+             ylab = "NEP, g/m2", ylim = c(ymin,ymax),
+             lwd=3, lty=3)
+        colorsi <- c("blue","green","pink")
+        for(ik in 1:length(sortVarnams)){
+          ijk <- which(paste0("NEP_yasso_",sortVarnams[ik])==colnames(outresults))
+          tmp <- unlist(outresults[,..ijk])
+          if(length(tmp)>1){
+            lines(timei, tmp,col=colorsi[ik],lty=3)
+          }
+        }
+        
+        ij <- which(colnames(outresults)=="NEP")
+        tmp <- unlist(outresults[,..ij])
+        ij2 <- c(ij,match(paste0("NEP_",sortVarnams),colnames(outresults)))
         ymax <- max(0,max(outresults[,..ij2]))
         ymin <- min(0,min(outresults[,..ij2]))
-        plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
+        lines(timei, tmp, lwd=3, col="black")
+        #plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
+        #     xlim = c(timei[1]-1,timei[length(timei)]),
+        #     ylab = "NEP, g/m2", ylim = c(ymin,ymax),
+        #     lwd=3)
+        colorsi <- c("blue","green","pink")
+        for(ik in 1:length(sortVarnams)){
+          ijk <- which(paste0("NEP_",sortVarnams[ik])==colnames(outresults))
+          tmp <- unlist(outresults[,..ijk])
+          if(length(tmp)>1){
+            lines(timei, tmp,col=colorsi[ik])
+          }
+        }
+        lines(timei,0*timei, col="black")
+        
+        # V
+        ij <- which(colnames(outresults)=="V")
+        tmp <- unlist(outresults[,..ij])
+        ij2 <- c(ij,match(paste0("V_",sortVarnams),colnames(outresults)))
+        ymax <- max(Vstats,max(outresults[,..ij2]))
+        ymin <- min(outresults[,..ij2])
+        plot(timei, tmp, type="l",main = regs[r_noi], 
              xlim = c(timei[1]-1,timei[length(timei)]),
-             ylab="NBE, kg CO2eq/ha", ylim = c(ymin,ymax),
+             ylab = "V, m3/ha", ylim = c(0,ymax),
+             lwd=3)
+        points(c(2015,2021),Vstats,pch=19,col="red")
+        colorsi <- c("blue","green","pink")
+        for(ik in 1:length(sortVarnams)){
+          ijk <- which(paste0("V_",sortVarnams[ik])==colnames(outresults))
+          tmp <- unlist(outresults[,..ijk])
+          if(length(tmp)>1){
+            lines(timei, tmp,col=colorsi[ik])
+          }
+        }
+        
+        # age
+        ij <- which(colnames(outresults)=="age")[1]
+        tmp <- unlist(outresults[,..ij])
+        ij2 <- c(ij,match(paste0("age_",sortVarnams),colnames(outresults)))
+        ymax <- max(outresults[,..ij2])
+        ymin <- min(outresults[,..ij2])
+        plot(timei, tmp, type="l",main = regs[r_noi], 
+             xlim = c(timei[1]-1,timei[length(timei)]),
+             ylab = "age, years", ylim = c(0,ymax),
+             lwd=3)
+        colorsi <- c("blue","green","pink")
+        for(ik in 1:length(sortVarnams)){
+          ijk <- which(paste0("age_",sortVarnams[ik])==colnames(outresults))
+          tmp <- unlist(outresults[,..ijk])
+          if(length(tmp)>1){
+            lines(timei, tmp,col=colorsi[ik])
+          }
+        }
+        
+        # BA
+        ij <- which(colnames(outresults)=="BA")
+        tmp <- unlist(outresults[,..ij])
+        ij2 <- c(ij,match(paste0("BA_",sortVarnams),colnames(outresults)))
+        ymax <- max(outresults[,..ij2])
+        ymin <- min(outresults[,..ij2])
+        plot(timei, tmp, type="l",main = regs[r_noi], 
+             xlim = c(timei[1]-1,timei[length(timei)]),
+             ylab = "BA m2/ha", ylim = c(0,ymax),
+             lwd=3)
+        colorsi <- c("blue","green","pink")
+        for(ik in 1:length(sortVarnams)){
+          ijk <- ij2[ik+1]
+          tmp <- unlist(outresults[,..ijk])
+          if(length(tmp)>1){
+            lines(timei, tmp,col=colorsi[ik])
+          }
+        }
+        
+        # Wtot
+        ij <- which(colnames(outresults)=="Wtot")
+        tmp <- unlist(outresults[,..ij])
+        ij2 <- c(ij,match(paste0("Wtot_",sortVarnams),colnames(outresults)))
+        ymax <- max(outresults[,..ij2])
+        ymin <- min(outresults[,..ij2])
+        plot(timei, tmp, type="l",main = regs[r_noi], 
+             xlim = c(timei[1]-1,timei[length(timei)]),
+             ylab = "Wtot, kg C/ha", ylim = c(0,ymax),
+             lwd=3)
+        colorsi <- c("blue","green","pink")
+        for(ik in 1:length(sortVarnams)){
+          ijk <- ij2[ik+1]
+          tmp <- unlist(outresults[,..ijk])
+          if(length(tmp)>1){
+            lines(timei, tmp,col=colorsi[ik])
+          }
+        }
+        
+        # Vharvested
+        ij <- which(colnames(outresults)=="Vharvested")
+        tmp <- unlist(outresults[,..ij])
+        ij2 <- c(ij,match(paste0("Vharvested_",sortVarnams),colnames(outresults)))
+        ymax <- max(outresults[,..ij2])
+        ymin <- min(outresults[,..ij2])
+        plot(timei, tmp, type="l",main = regs[r_noi], 
+             xlim = c(timei[1]-1,timei[length(timei)]),
+             ylab = "Vharv, m3/ha", ylim = c(0,ymax),
              lwd=3)
         colorsi <- c("blue","green","pink")
         for(ik in 1:length(sortVarnams)){
@@ -1479,30 +1496,115 @@ if(!FIGsOnly){
             lines(timei, tmp,col=colorsi[ik])
           }
         }
-        lines(c(timei[1],timei[length(timei)]),c(0,0),col="black")
+        points(timei[1:nYears],rowSums(HarvLimMaak[1:nYears,])/totArea*1000,col="red")
+        legend("bottomright",c(paste0("all "),
+                               paste0(sortVarnams)),
+               pch=rep(1,length(sortVarnams)+1),cex=0.7,
+               bty = "n",
+               col=c("black",colorsi[1:length(sortVarnams)]))
         
-        # NBEsum
-        ij <- which(colnames(outresults)=="NBEsum")
-        tmp <- unlist(outresults[,..ij])
-        ij2 <- c(ij,match(paste0("NBEsum_",sortVarnams),colnames(outresults)))
-        ymax <- max(0,max(outresults[,..ij2]))
-        ymin <- min(0,min(outresults[,..ij2]))
-        plot(timei, tmp/1e6, type="l",main=paste("Region",r_no,rname), 
+        
+        # Wharvested
+        ij <- which(colnames(outresults)=="Wharvested")
+        CO2eq_C <- 44/12 
+        tmp <- unlist(outresults[,..ij])*CO2eq_C
+        ij2 <- c(ij,match(paste0("Wharvested_",sortVarnams),colnames(outresults)))
+        ymax <- max(outresults[,..ij2])*CO2eq_C
+        ymin <- min(outresults[,..ij2])*CO2eq_C
+        plot(timei, tmp, type="l",main = regs[r_noi], 
              xlim = c(timei[1]-1,timei[length(timei)]),
-             ylab="NBEsum, million kg CO2eq", ylim = c(ymin,ymax)/1e6,
+             ylab = "Wharv, kg CO2eq/ha", ylim = c(0,ymax),
              lwd=3)
         colorsi <- c("blue","green","pink")
         for(ik in 1:length(sortVarnams)){
           ijk <- ij2[1 + ik]
-          tmp <- unlist(outresults[,..ijk])
+          tmp <- unlist(outresults[,..ijk])*CO2eq_C
           if(length(tmp)>1){
-            lines(timei, tmp/1e6,col=colorsi[ik])
+            lines(timei, tmp,col=colorsi[ik])
           }
         }
-        lines(c(timei[1],timei[length(timei)]),c(0,0),col="black")
         
+        # NEE
+        ij <- which(colnames(outresults)=="NEE")
+        tmp <- unlist(outresults[,..ij])*CO2eq_C
+        ij2 <- c(ij,match(paste0("NEE_",sortVarnams),colnames(outresults)))
+        ymax <- max(0,max(outresults[,..ij2])*CO2eq_C)
+        ymin <- min(0,min(outresults[,..ij2])*CO2eq_C)
+        plot(timei, tmp, type="l",main = regs[r_noi], 
+             xlim = c(timei[1]-1,timei[length(timei)]),
+             ylab = "NEE, kg CO2eq/ha", ylim = c(ymin,ymax),
+             lwd=3)
+        colorsi <- c("blue","green","pink")
+        for(ik in 1:length(sortVarnams)){
+          ijk <- ij2[1 + ik]
+          tmp <- unlist(outresults[,..ijk])*CO2eq_C
+          if(length(tmp)>1){
+            lines(timei, tmp,col=colorsi[ik])
+          }
+        }
+        lines(timei,0*timei, col="black")
+        
+        
+        if(TRUE){
+          # NBE
+          ij <- which(colnames(outresults)=="NBE")
+          tmp <- unlist(outresults[,..ij])
+          ij2 <- c(ij,match(paste0("NBE_",sortVarnams),colnames(outresults)))
+          if(!is.na(netsinksreg[1])){ 
+            netsinksreg_per_ha <-netsinksreg*1e9/totArea
+            ymax <- 1.05*max(0,max(max(netsinksreg_per_ha,na.rm = T),max(outresults[,..ij2])))
+            ymin <- 1.05*min(0,min(min(netsinksreg_per_ha,na.rm = T),min(outresults[,..ij2])))
+          } else {
+            ymax <- max(0,max(outresults[,..ij2]))
+            ymin <- min(0,min(outresults[,..ij2]))
+          }
+          plot(timei, tmp, type="l",main = regs[r_noi], 
+               xlim = c(timei[1]-1,timei[length(timei)]),
+               ylab="NBE, kg CO2eq/ha", ylim = c(ymin,ymax),
+               lwd=3)
+          points(2015:2021, netsinksreg_per_ha, pch=19,col="red")
+          colorsi <- c("blue","green","pink")
+          for(ik in 1:length(sortVarnams)){
+            ijk <- ij2[1 + ik]
+            tmp <- unlist(outresults[,..ijk])
+            if(length(tmp)>1){
+              lines(timei, tmp,col=colorsi[ik])
+            }
+          }
+          lines(c(timei[1],timei[length(timei)]),c(0,0),col="black")
+          
+          # NBEsum
+          ij <- which(colnames(outresults)=="NBEsum")
+          tmp <- unlist(outresults[,..ij])
+          ij2 <- c(ij,match(paste0("NBEsum_",sortVarnams),colnames(outresults)))
+          if(!is.na(netsinksreg[1])){          
+            ymax <- 1.05*max(0,max(max(netsinksreg*1e9,na.rm = T),max(outresults[,..ij2])))
+            ymin <- 1.05*min(0,min(min(netsinksreg*1e9,na.rm = T),min(outresults[,..ij2])))
+          } else {
+            ymax <- max(0,max(outresults[,..ij2]))
+            ymin <- min(0,min(outresults[,..ij2]))
+          }
+          plot(timei, tmp/1e6, type="l",main = regs[r_noi], 
+               xlim = c(timei[1]-1,timei[length(timei)]),
+               ylab="NBEsum, million kg CO2eq", ylim = c(ymin,ymax)/1e6,
+               lwd=3)
+          points(2015:2021,netsinksreg*1e9/1e6,pch=19,col="red")
+          colorsi <- c("blue","green","pink")
+          for(ik in 1:length(sortVarnams)){
+            ijk <- ij2[1 + ik]
+            tmp <- unlist(outresults[,..ijk])
+            if(length(tmp)>1){
+              lines(timei, tmp/1e6,col=colorsi[ik])
+            }
+          }
+          lines(c(timei[1],timei[length(timei)]),c(0,0),col="black")
+          
+        }
       }
+      
     }
+    rm(list=setdiff(ls(),toMem))
+    gc()
   }
 }
 
@@ -1535,8 +1637,8 @@ if(toFile){
   }    
   
   #if(toFile) 
-  save(outresults_wholecountry, areatable_wholecountry,
-                  file = paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_wholeCountry_",rcps,".rdata"))  
+  save(outresults_wholecountry, outresults_all, validation_all, areatable_wholecountry,
+       file = paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_wholeCountry_",rcps,".rdata"))  
   par(mfrow=c(3,1))
   sortid <- 1
   cnames <- colnames(outresults_wholecountry)
@@ -1573,4 +1675,53 @@ if(toFile){
     
   }
 }
+
+
+#if(FIGsOnly){
+regionIDs <- as.numeric(c("1","21","16","06","09","13","11","19","05",
+                          "15","02","14","07","04","08","18","10","12","17"))
+regs <- c("Uu","Ah","KP","Pi","EK","KS","PS","La","KH","Po","VS",
+          "EP","PH","Sa","Ky","Ka","ES","PK","PP")
+regs <- paste(regionIDs,regs)
+regs[match(c(1:2,4:19),r_nos)]
+r_nois0 <- match(c(1:2,4:19),r_nos)
+r_nois[-1] <- r_nois0[-1]-1
+par(mfrow=c(2,1))
+barplot(validation_all[1:2,1,r_nois],names.arg=regs[r_nois0],
+        beside=T, legend.text =c("NFI","sim"), main="grossgrowth 2015/2016")
+barplot(validation_all[1:2,2,r_nois],names.arg=regs[r_nois0],
+        beside=T, main="grossgrowth 2021")
+barplot(validation_all[1:2,3,r_nois],names.arg=regs[r_nois0],
+        beside=T, main="volume 2015/2016")
+barplot(validation_all[1:2,4,r_nois],names.arg=regs[r_nois0],
+        beside=T, main="volume 2021")
+
+ylims <- c(min(validation_all[,12:18,],na.rm = T),
+           max(validation_all[,12:18,],na.rm = T))
+par(mfrow=c(3,3))  
+for(ii in r_nois){
+  plot(2015:2021, 
+       validation_all[2,12:18,ii], type="l",
+       ylim = ylims, col="blue",
+       main=dimnames(validation_all)[[3]][ii],
+       xlab="year, blue=sim, red=NFI",ylab="NBEave")
+  points(2015:2021, validation_all[1,12:18,ii], pch=19,col="red")
+  lines(c(2015,2021),c(0,0),col="black")
+}
+
+if(FALSE){
+  ylims <- c(min(validation_all[,5:11,],na.rm = T),
+             max(validation_all[,5:11,],na.rm = T))
+  par(mfrow=c(3,3))  
+  for(ii in r_nois){
+    plot(2015:2021, 
+         validation_all[2,5:11,ii], type="l",
+         ylim = ylims, col="blue",
+         main=dimnames(validation_all)[[3]][ii],
+         xlab="year",ylab="NBEsum")
+    points(2015:2021, validation_all[1,5:11,ii], pch=19,col="red")
+    lines(c(2015,2021),c(0,0),col="black")
+  }
+}
+
 if(toFile) dev.off()
