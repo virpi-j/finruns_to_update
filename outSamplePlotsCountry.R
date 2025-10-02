@@ -114,7 +114,7 @@ if(toFile) pdf(paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",c
 if(!exists("FIGsOnly")) FIGsOnly <- F
 if(!FIGsOnly){
   noPrebasLoading <- F
-  for(r_noi in 1:length(rids)){
+  for(r_noi in 11:length(rids)){
     if(r_noi>1) noPrebasLoading <- T
     toMem <- ls()
     set.seed(1)
@@ -446,13 +446,13 @@ if(!FIGsOnly){
         #load("~/finruns_to_update/quantile_data_2021.rdata")
         load(paste0("~/finruns_to_update/quantile_data_2021_landclass12_",
         r_no,"_",regionNames_fi[r_no],".rdata"))
-        if(max(data.all$ba)>max(qMSNFI[[1]]$x)) qMSNFI[[1]] <- rbind(qMSNFI[[1]],data.table(ecdf=1,x=max(data.all$ba)))
-        if(max(data.all$decid)>max(qMSNFI[[2]]$x)) qMSNFI[[2]] <- rbind(qMSNFI[[2]],data.table(ecdf=1,x=max(data.all$decid)))
-        if(max(data.all$pine)>max(qMSNFI[[3]]$x)) qMSNFI[[3]] <- rbind(qMSNFI[[3]],data.table(ecdf=1,x=max(data.all$pine)))
-        if(max(data.all$spruce)>max(qMSNFI[[4]]$x)) qMSNFI[[4]] <- rbind(qMSNFI[[4]],data.table(ecdf=1,x=max(data.all$spruce)))
-        if(max(data.all$age)>max(qMSNFI[[6]]$x)) qMSNFI[[6]] <- rbind(qMSNFI[[6]],data.table(ecdf=1,x=max(data.all$age)))
-        if((max(data.all$h)/10)>max(qMSNFI[[7]]$x)) qMSNFI[[7]] <- rbind(qMSNFI[[7]],data.table(ecdf=1,x=max(data.all$h/10)))
-        if(max(data.all$dbh)>max(qMSNFI[[8]]$x)) qMSNFI[[8]] <- rbind(qMSNFI[[8]],data.table(ecdf=1,x=max(data.all$dbh)))
+        if(max(data.all$ba)>max(qMSNFI[[1]]$x)) qMSNFI[[1]] <- rbind(qMSNFI[[1]],data.table(ecdf=1,x=max(data.all$ba)*1.05))
+        if(max(data.all$decid)>max(qMSNFI[[2]]$x)) qMSNFI[[2]] <- rbind(qMSNFI[[2]],data.table(ecdf=1,x=max(data.all$decid)*1.05))
+        if(max(data.all$pine)>max(qMSNFI[[3]]$x)) qMSNFI[[3]] <- rbind(qMSNFI[[3]],data.table(ecdf=1,x=max(data.all$pine)*1.05))
+        if(max(data.all$spruce)>max(qMSNFI[[4]]$x)) qMSNFI[[4]] <- rbind(qMSNFI[[4]],data.table(ecdf=1,x=max(data.all$spruce)*1.05))
+        if(max(data.all$age)>max(qMSNFI[[6]]$x)) qMSNFI[[6]] <- rbind(qMSNFI[[6]],data.table(ecdf=1,x=max(data.all$age)*1.05))
+        if((max(data.all$h)/10)>max(qMSNFI[[7]]$x)) qMSNFI[[7]] <- rbind(qMSNFI[[7]],data.table(ecdf=1,x=max(data.all$h/10)*1.05))
+        if(max(data.all$dbh)>max(qMSNFI[[8]]$x)) qMSNFI[[8]] <- rbind(qMSNFI[[8]],data.table(ecdf=1,x=max(data.all$dbh)*1.05))
 
         if(NFIlocal){
           VMIages <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
