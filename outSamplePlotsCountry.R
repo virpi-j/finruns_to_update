@@ -1245,10 +1245,12 @@ regs <- c("Uu","Ah","KP","Pi","EK","KS","PS","La","KH","Po","VS",
           "EP","PH","Sa","Ky","Ka","ES","PK","PP")
 regs <- paste(regionIDs,regionNames_fi)
 regs[match(c(1:2,4:19),r_nos)]
-r_nois0 <- match(c(1:2,4:19),r_nos)
+r_nois <- r_nois0 <- match(c(1:2,4:19),r_nos)
+
 r_nois[-1] <- r_nois0[-1]-1
 
 load(paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",1,"_",rcps,".rdata"))  
+timei <- 2015+1:nrow(outresults)
 outresults_all <- array(0,dim=c(dim(outresults)[1],dim(outresults)[2],length(rids)),
                         dimnames = list(c(2016:2024),
                                         colnames(outresults),
