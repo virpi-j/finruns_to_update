@@ -154,8 +154,8 @@ if(!FIGsOnly){
     netsinksreg_per_ha <- as.numeric(netsinksreg_per_ha)
     
     print(paste("Start running region",r_no,"/",rname))
-    main = regs[r_noi][r_noi,] <- c(sum(data.all$area[which(data.all$landclass==1)]),
-                                sum(data.all$area[which(data.all$landclass==2)]))  
+  #  landclass <- c(sum(data.all$area[which(data.all$landclass==1)]),
+  #                              sum(data.all$area[which(data.all$landclass==2)]))  
     
     
     if(TRUE){
