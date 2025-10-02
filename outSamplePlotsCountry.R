@@ -460,6 +460,7 @@ if(!FIGsOnly){
           eVMI <- cumsum(VMIages)/sum(VMIages)
           eVMI <- c(eVMI[1]-.0001,eVMI,1)
           qFCNFI <- data.table(ecdf=eVMI,x=VMIxs)
+          qFC[[6]] <- qFCNFI
           ex <- sort(unique(round(data.all$age)))
           ex <- c(ex,max(ex)*1.01)
           eMSNFI <- ex*0
@@ -469,6 +470,7 @@ if(!FIGsOnly){
             eMSNFI[exi] <- sum(data.all$area[which(data.all$age<=ex[exi])])/totA
           }
           qMSNFI_NFI <- data.table(ecdf=eMSNFI,x=ex)
+          qMSNFI[[6]] <- qMSNFI_NFI
           ageS <- dataS$age
           source("~/finruns_to_update/correction_function.R")
           for(ii in 1:nSegs){
