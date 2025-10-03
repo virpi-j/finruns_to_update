@@ -205,6 +205,9 @@ if(!FIGsOnly){
       data.all$peatID[which(data.all$peatID==700)]<-2
       data.all <- data.all[which(data.all$peatID!=2),]
       rm(list=c("finPeats","peatIDs"))
+      #print(unique(data.all$fert[which(data.all$landclass>1)]))
+      data.all$fert[which(data.all$landclass>1)] <- 9
+      #print(unique(data.all$fert[which(data.all$landclass>1)]))
       gc()
     }
     areaRegion <- totArea <- sum(data.all$area,na.rm=T)
@@ -352,7 +355,6 @@ if(!FIGsOnly){
             eMSNFI[exi] <- sum(data.all$area[which(data.all$age<=ex[exi])])/totA
           }
           qMSNFI[[6]] <- data.table(ecdf=eMSNFI,x=ex)
-          TEST <- F
           if(TEST){
             ex <- sort(unique(round(data.all$ba)))
             ex <- c(ex,max(ex)*1.01)
@@ -452,14 +454,13 @@ if(!FIGsOnly){
         if(max(data.all$age)>max(qMSNFI[[6]]$x)) qMSNFI[[6]] <- rbind(qMSNFI[[6]],data.table(ecdf=1,x=max(data.all$age)*1.05))
         if((max(data.all$h)/10)>max(qMSNFI[[7]]$x)) qMSNFI[[7]] <- rbind(qMSNFI[[7]],data.table(ecdf=1,x=max(data.all$h/10)*1.05))
         if(max(data.all$dbh)>max(qMSNFI[[8]]$x)) qMSNFI[[8]] <- rbind(qMSNFI[[8]],data.table(ecdf=1,x=max(data.all$dbh)*1.05))
-
         if(NFIlocal){
           VMIages <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
           VMIxs <- c(0,1,20,40,60,80,100,120,140,max(qFC[[6]]$x),max(qFC[[6]]$x)*1.01)
           eVMI <- cumsum(VMIages)/sum(VMIages)
           eVMI <- c(eVMI[1]-.0001,eVMI,1)
           qFCNFI <- data.table(ecdf=eVMI,x=VMIxs)
-          qFC[[6]] <- qFCNFI
+          if(!TEST) qFC[[6]] <- qFCNFI
           ex <- sort(unique(round(data.all$age)))
           ex <- c(ex,max(ex)*1.01)
           eMSNFI <- ex*0
@@ -469,77 +470,62 @@ if(!FIGsOnly){
             eMSNFI[exi] <- sum(data.all$area[which(data.all$age<=ex[exi])])/totA
           }
           qMSNFI_NFI <- data.table(ecdf=eMSNFI,x=ex)
-          qMSNFI[[6]] <- qMSNFI_NFI
-          TEST <- F
+          if(!TEST) qMSNFI[[6]] <- qMSNFI_NFI
           if(TEST){
             ageS <- dataS$age
             source("~/finruns_to_update/correction_function.R")
             for(ii in 1:nSegs){
               ageS[ii] <- correction_f(dataS$age[ii],6,ecdfx = qMSNFI_NFI,ecdfz = qFCNFI)
             }
-            VMIages <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
-            VMIxs <- c(0,1,20,40,60,80,100,120,140,max(qFC[[6]]$x),max(qFC[[6]]$x)*1.01)
-            eVMI <- cumsum(VMIages)/sum(VMIages)
-            eVMI <- c(eVMI[1]-.0001,eVMI,1)
-            qFC[[6]] <- data.table(ecdf=eVMI,x=VMIxs)
-            ex <- sort(unique(round(data.all$age)))
-            ex <- c(ex,max(ex)*1.01)
-            eMSNFI <- ex*0
-            exi <- 1
-            totA <- sum(data.all$area)
-            for(exi in 1:length(ex)){
-              eMSNFI[exi] <- sum(data.all$area[which(data.all$age<=ex[exi])])/totA
+            if(FALSE){
+              ex <- sort(unique(round(data.all$ba)))
+              ex <- c(ex,max(ex)*1.01)
+              eMSNFI <- ex*0
+              for(exi in 1:length(ex)){
+                eMSNFI[exi] <- sum(data.all$area[which(data.all$ba<=ex[exi])])/totA
+              }
+              qMSNFI[[1]] <- data.table(ecdf=eMSNFI,x=ex)
+              ##
+              ex <- sort(unique(round(data.all$decid)))
+              ex <- c(ex,max(ex)*1.01)
+              eMSNFI <- ex*0
+              for(exi in 1:length(ex)){
+                eMSNFI[exi] <- sum(data.all$area[which(data.all$decid<=ex[exi])])/totA
+              }
+              qMSNFI[[2]] <- data.table(ecdf=eMSNFI,x=ex)
+              ##
+              ex <- sort(unique(round(data.all$pine)))
+              ex <- c(ex,max(ex)*1.01)
+              eMSNFI <- ex*0
+              for(exi in 1:length(ex)){
+                eMSNFI[exi] <- sum(data.all$area[which(data.all$pine<=ex[exi])])/totA
+              }
+              qMSNFI[[3]] <- data.table(ecdf=eMSNFI,x=ex)
+              ##
+              ex <- sort(unique(round(data.all$spruce)))
+              ex <- c(ex,max(ex)*1.01)
+              eMSNFI <- ex*0
+              for(exi in 1:length(ex)){
+                eMSNFI[exi] <- sum(data.all$area[which(data.all$spruce<=ex[exi])])/totA
+              }
+              qMSNFI[[4]] <- data.table(ecdf=eMSNFI,x=ex)
+              ##
+              ex <- sort(unique(round(data.all$h)))
+              ex <- c(ex,max(ex)*1.01)
+              eMSNFI <- ex*0
+              for(exi in 1:length(ex)){
+                eMSNFI[exi] <- sum(data.all$area[which(data.all$h<=ex[exi])])/totA
+              }
+              qMSNFI[[7]] <- data.table(ecdf=eMSNFI,x=ex)
+              ##
+              ex <- sort(unique(round(data.all$dbh)))
+              ex <- c(ex,max(ex)*1.01)
+              eMSNFI <- ex*0
+              for(exi in 1:length(ex)){
+                eMSNFI[exi] <- sum(data.all$area[which(data.all$dbh<=ex[exi])])/totA
+              }
+              qMSNFI[[8]] <- data.table(ecdf=eMSNFI,x=ex)
             }
-            qMSNFI[[6]] <- data.table(ecdf=eMSNFI,x=ex)
-            
-            ex <- sort(unique(round(data.all$ba)))
-            ex <- c(ex,max(ex)*1.01)
-            eMSNFI <- ex*0
-            for(exi in 1:length(ex)){
-              eMSNFI[exi] <- sum(data.all$area[which(data.all$ba<=ex[exi])])/totA
-            }
-            qMSNFI[[1]] <- data.table(ecdf=eMSNFI,x=ex)
-            ##
-            ex <- sort(unique(round(data.all$decid)))
-            ex <- c(ex,max(ex)*1.01)
-            eMSNFI <- ex*0
-            for(exi in 1:length(ex)){
-              eMSNFI[exi] <- sum(data.all$area[which(data.all$decid<=ex[exi])])/totA
-            }
-            qMSNFI[[2]] <- data.table(ecdf=eMSNFI,x=ex)
-            ##
-            ex <- sort(unique(round(data.all$pine)))
-            ex <- c(ex,max(ex)*1.01)
-            eMSNFI <- ex*0
-            for(exi in 1:length(ex)){
-              eMSNFI[exi] <- sum(data.all$area[which(data.all$pine<=ex[exi])])/totA
-            }
-            qMSNFI[[3]] <- data.table(ecdf=eMSNFI,x=ex)
-            ##
-            ex <- sort(unique(round(data.all$spruce)))
-            ex <- c(ex,max(ex)*1.01)
-            eMSNFI <- ex*0
-            for(exi in 1:length(ex)){
-              eMSNFI[exi] <- sum(data.all$area[which(data.all$spruce<=ex[exi])])/totA
-            }
-            qMSNFI[[4]] <- data.table(ecdf=eMSNFI,x=ex)
-            ##
-            ex <- sort(unique(round(data.all$h)))
-            ex <- c(ex,max(ex)*1.01)
-            eMSNFI <- ex*0
-            for(exi in 1:length(ex)){
-              eMSNFI[exi] <- sum(data.all$area[which(data.all$h<=ex[exi])])/totA
-            }
-            qMSNFI[[7]] <- data.table(ecdf=eMSNFI,x=ex)
-            ##
-            ex <- sort(unique(round(data.all$dbh)))
-            ex <- c(ex,max(ex)*1.01)
-            eMSNFI <- ex*0
-            for(exi in 1:length(ex)){
-              eMSNFI[exi] <- sum(data.all$area[which(data.all$dbh<=ex[exi])])/totA
-            }
-            qMSNFI[[8]] <- data.table(ecdf=eMSNFI,x=ex)
-            
           }
         }
         source("~/finruns_to_update/correction_function.R")
@@ -554,34 +540,19 @@ if(!FIGsOnly){
           dataS[ii,"dbh"] <- correction_f(dataS$dbh[ii],8)  
         }
         print("done.")
-        if(NFIlocal==2){
-          ninew <- which(ageS==0)
-          ni <- which(dataS$age==0)
-          dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")]<-dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")]*colMeans(dataS[ni,c("ba","decid","pine","spruce","age","h","dbh")])/colMeans(dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")])
-          ninew <- which(ageS>0 & ageS<=20)
-          ni <- which(dataS$age>0 & dataS$age<=20)
-          dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")]<-dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")]*colMeans(dataS[ni,c("ba","decid","pine","spruce","age","h","dbh")])/colMeans(dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")])
-          ninew <- which(ageS>20 & ageS<=40)
-          ni <- which(dataS$age>20 & dataS$age<=40)
-          dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")]<-dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")]*colMeans(dataS[ni,c("ba","decid","pine","spruce","age","h","dbh")])/colMeans(dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")])
-          ninew <- which(ageS>40 & ageS<=60)
-          ni <- which(dataS$age>40 & dataS$age<=60)
-          dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")]<-dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")]*colMeans(dataS[ni,c("ba","decid","pine","spruce","age","h","dbh")])/colMeans(dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")])
-          ninew <- which(ageS>60 & ageS<=80)
-          ni <- which(dataS$age>60 & dataS$age<=80)
-          dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")]<-dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")]*colMeans(dataS[ni,c("ba","decid","pine","spruce","age","h","dbh")])/colMeans(dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")])
-          ninew <- which(ageS>80 & ageS<=100)
-          ni <- which(dataS$age>80 & dataS$age<=100)
-          dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")]<-dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")]*colMeans(dataS[ni,c("ba","decid","pine","spruce","age","h","dbh")])/colMeans(dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")])
-          ninew <- which(ageS>100 & ageS<=120)
-          ni <- which(dataS$age>100 & dataS$age<=120)
-          dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")]<-dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")]*colMeans(dataS[ni,c("ba","decid","pine","spruce","age","h","dbh")])/colMeans(dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")])
-          ninew <- which(ageS>120 & ageS<=140)
-          ni <- which(dataS$age>120 & dataS$age<=140)
-          dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")]<-dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")]*colMeans(dataS[ni,c("ba","decid","pine","spruce","age","h","dbh")])/colMeans(dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")])
-          ninew <- which(ageS>140)
-          ni <- which(dataS$age>140)
-          dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")]<-dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")]*colMeans(dataS[ni,c("ba","decid","pine","spruce","age","h","dbh")])/colMeans(dataS[ninew,c("ba","decid","pine","spruce","age","h","dbh")])
+        if(NFIlocal & TEST){
+          print("start NFI age hist based sampling...")
+          dataS2 <- dataS
+          for(ii in 1:nSegs){
+            ntmp <- which(ageS[ii]==dataS$age)
+            if(length(ntmp)<1) ntmp <- which.min((ageS[ii]-dataS$age)^2)[1]
+            if(length(ntmp)>1) ntmp <- sample(ntmp,1)
+            dataS2[ii,] <- dataS[ntmp,]
+          }
+          dataS <- dataS2 
+          rm(list=c("dataS2","ntmp"))
+          gc()
+          print("done.")
         }
         dataS[which(dataS$age==0),c("ba","decid","pine","spruce","age","h","dbh")]<-0
         dataS[which(dataS$h==0),c("ba","decid","pine","spruce","age","h","dbh")]<-0
@@ -709,7 +680,6 @@ if(!FIGsOnly){
     #plot(timei, NEP_yasso,ylim=c(0,250),type="l",main="Currclim",ylab="NEPmin")
     }    
     print(paste("Sample area:",sum(dataS$area)))
-    
     if(HarvScen!="Base" | fmi_from_allas){
       workdir <- paste0(getwd(),"/")  
       startingYear <- 2015
