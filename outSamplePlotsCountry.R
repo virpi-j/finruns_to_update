@@ -807,10 +807,10 @@ if(!FIGsOnly){
       #areas1 <- areas[n_lc1]
       #areas2 <- areas[n_lc2]
       #if(sortid==3) areas3 <- areas[n_lc3]
-      varis <- c("NEP_yasso","V","age","Wtot","BA","grossGrowth","NEP/SMI[layer_1]",
+      varis <- c("wf_STKG","NEP_yasso","V","age","Wtot","BA","grossGrowth","NEP/SMI[layer_1]",
                  "Wharvested","Vharvested","VroundWood","Venergywood",
                  "Vmort","CH4em","N2Oem")
-      variNams <- c("NEP_yasso","V","age","Wtot","BA","grossGrowth","NEP",
+      variNams <- c("wf_STKG","NEP_yasso","V","age","Wtot","BA","grossGrowth","NEP",
                     "Wharvested","Vharvested","VroundWood","Venergywood",
                     "Vmort","CH4em","N2Oem")
       #  outresults <- outresultsSum <- data.table()
@@ -833,7 +833,7 @@ if(!FIGsOnly){
         } else {
           tmp <- output[,,which(varNames==varis[ij]),,1]
         }
-        if(varis[ij]%in%c("NEP_yasso","V","Wtot","BA","grossGrowth","NEP/SMI[layer_1]","Wharvested","Vharvested","VroundWood","Venergywood","Vmort","CH4em","N2Oem")){ # sums
+        if(varis[ij]%in%c("wf_STKG","NEP_yasso","V","Wtot","BA","grossGrowth","NEP/SMI[layer_1]","Wharvested","Vharvested","VroundWood","Venergywood","Vmort","CH4em","N2Oem")){ # sums
           if(varis[ij]%in%c("CH4em","N2Oem")){
             outres <- sum(tmp*areas)/sum(areas)
           } else {
@@ -1006,6 +1006,25 @@ if(!FIGsOnly){
         colorsi <- c("blue","green","pink")
         for(ik in 1:length(sortVarnams)){
           ijk <- which(paste0("V_",sortVarnams[ik])==colnames(outresults))
+          tmp <- unlist(outresults[,..ijk])
+          if(length(tmp)>1){
+            lines(timei, tmp,col=colorsi[ik])
+          }
+        }
+        
+        # wf_STKG
+        ij <- which(colnames(outresults)=="wf_STKG")
+        tmp <- unlist(outresults[,..ij])
+        ij2 <- c(ij,match(paste0("wf_STKG_",sortVarnams),colnames(outresults)))
+        ymax <- max(outresults[,..ij2])
+        ymin <- min(outresults[,..ij2])
+        plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
+             xlim = c(timei[1]-1,timei[length(timei)]),
+             ylab = "Foliage biomass, kgC/ha", ylim = c(0,ymax),
+             lwd=3)
+        colorsi <- c("blue","green","pink")
+        for(ik in 1:length(sortVarnams)){
+          ijk <- which(paste0("wf_STKG_",sortVarnams[ik])==colnames(outresults))
           tmp <- unlist(outresults[,..ijk])
           if(length(tmp)>1){
             lines(timei, tmp,col=colorsi[ik])
