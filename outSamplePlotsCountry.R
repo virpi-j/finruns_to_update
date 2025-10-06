@@ -1241,7 +1241,7 @@ r_nois[-1] <- r_nois0[-1]-1
 load(paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",1,"_",rcps,".rdata"))  
 timei <- 2015+1:nrow(outresults)
 outresults_all <- array(0,dim=c(dim(outresults)[1],dim(outresults)[2],length(rids)),
-                        dimnames = list(c(2016:2024),
+                        dimnames = list(c(2015+1:dim(outresults)[1]),
                                         colnames(outresults),
                                         regionNames[rids]))
 validation_all <- array(0,dim=c(2,18,length(rids)),
@@ -1410,6 +1410,27 @@ for(r_noi in r_nois0){#1:length(rids)){
           if(length(tmp)>1){
             lines(timei, tmp,col=colorsi[ik])
           }
+        }
+        
+        # wf_STKG
+        if(any(colnames(outresults)=="wf_STKG")){
+        ij <- which(colnames(outresults)=="wf_STKG")
+        tmp <- unlist(outresults[,..ij])
+        ij2 <- c(ij,match(paste0("wf_STKG_",sortVarnams),colnames(outresults)))
+        ymax <- max(outresults[,..ij2])
+        ymin <- min(outresults[,..ij2])
+        plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
+             xlim = c(timei[1]-1,timei[length(timei)]),
+             ylab = "Foliage biomass, kgC/ha", ylim = c(0,ymax),
+             lwd=3)
+        colorsi <- c("blue","green","pink")
+        for(ik in 1:length(sortVarnams)){
+          ijk <- which(paste0("wf_STKG_",sortVarnams[ik])==colnames(outresults))
+          tmp <- unlist(outresults[,..ijk])
+          if(length(tmp)>1){
+            lines(timei, tmp,col=colorsi[ik])
+          }
+        }
         }
         
         # age
