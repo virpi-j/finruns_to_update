@@ -179,6 +179,7 @@ if(!FIGsOnly){
       proj4string(xy) <- crsX
       #cord = SpatialPoints(xy, proj4string=CRS("+init=EPSG:3067"))
       location<-as.data.frame(spTransform(xy, CRS("+init=epsg:4326")))
+      data.all$lon <- location$coords.x1#location$y
       data.all$lat <- location$coords.x2#location$y
       rm(list=c("xy","location"))
       gc()
@@ -1069,25 +1070,45 @@ if(!FIGsOnly){
           }
         }
         
-        # Wtot
-        ij <- which(colnames(outresults)=="Wtot")
-        tmp <- unlist(outresults[,..ij])
-        ij2 <- c(ij,match(paste0("Wtot_",sortVarnams),colnames(outresults)))
-        ymax <- max(outresults[,..ij2])
-        ymin <- min(outresults[,..ij2])
-        plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
-             xlim = c(timei[1]-1,timei[length(timei)]),
-             ylab = "Wtot, kg C/ha", ylim = c(0,ymax),
-             lwd=3)
-        colorsi <- c("blue","green","pink")
+        # fertility histograms
+        xi <- 1:10
+        ah <- array(0,c(length(sortVarnams),length(xi)))
+        ii <- 1
+        ik <- 1
         for(ik in 1:length(sortVarnams)){
-          ijk <- ij2[ik+1]
-          tmp <- unlist(outresults[,..ijk])
-          if(length(tmp)>1){
-            lines(timei, tmp,col=colorsi[ik])
+          if(ik==1) ni <- n_lc1
+          if(ik==2) ni <- n_lc2
+          if(ik==3) ni <- n_lc3
+          Ah <- sum(dataS$area[ni])
+          for(ii in 1:length(xi)){
+            ah[ik,ii] <- sum(dataS$area[ni[which(dataS$fert[ni]==ii)]])
+          }
+          ah[ik,] <- round(ah[ik,]/Ah,4)*100
+        } 
+        barplot(ah, names.arg = xi, beside=T, col=c("blue","green"),
+                main="fertility in sample",ylab="% of area", xlab="fert",
+                legend.text=c(sortVarnams))
+        
+        if(FALSE){
+          # Wtot
+          ij <- which(colnames(outresults)=="Wtot")
+          tmp <- unlist(outresults[,..ij])
+          ij2 <- c(ij,match(paste0("Wtot_",sortVarnams),colnames(outresults)))
+          ymax <- max(outresults[,..ij2])
+          ymin <- min(outresults[,..ij2])
+          plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
+               xlim = c(timei[1]-1,timei[length(timei)]),
+               ylab = "Wtot, kg C/ha", ylim = c(0,ymax),
+               lwd=3)
+          colorsi <- c("blue","green","pink")
+          for(ik in 1:length(sortVarnams)){
+            ijk <- ij2[ik+1]
+            tmp <- unlist(outresults[,..ijk])
+            if(length(tmp)>1){
+              lines(timei, tmp,col=colorsi[ik])
+            }
           }
         }
-        
         # Vharvested
         ij <- which(colnames(outresults)=="Vharvested")
         tmp <- unlist(outresults[,..ij])

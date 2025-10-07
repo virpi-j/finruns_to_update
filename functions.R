@@ -1203,7 +1203,6 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
   initVar[nLay1,3:6,2:3] <- 0
   initVar[nLay2,3:6,3] <- 0
   
-  #siteInfo[, 2]  = match(as.numeric(siteInfo[, 2]), clim$id)#as.numeric(rownames(clim[[1]])))
   siteInfo[, 2]  = match(as.numeric(siteInfo[, 2]), as.numeric(rownames(clim[[1]])))
   
   #defaultThin <- energyCut <- rep(0,nSites)
