@@ -673,7 +673,7 @@ if(!FIGsOnly){
                     harvScen="Base", harvInten="Base", procDrPeat=T, 
                     thinFactX= thinFactX, landClassUnman = landClassUnman,
                     compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
-                    forceSaveInitSoil=F, sampleX = dataS)
+                    forceSaveInitSoil=F, sampleX = dataS, HcMod_Init = HcMod_Init)
     clim1 <- out$clim
     NEP_yasso <- out$region$multiOut[,,"NEP/SMI[layer_1]",,1]
     timei1 <- (1:dim(out$region$multiOut)[2])+2015
@@ -690,7 +690,7 @@ if(!FIGsOnly){
                       harvScen=harvScen, harvInten=HarvInten, procDrPeat=T, 
                       thinFactX= thinFactX, landClassUnman = landClassUnman,
                       compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
-                      forceSaveInitSoil=F, sampleX = dataS)
+                      forceSaveInitSoil=F, sampleX = dataS, HcMod_Init = HcMod_Init)
       clim2 <-out$clim
       NEP_yasso <- out$region$multiOut[,,"NEP/SMI[layer_1]",,1]
       timei2 <- (1:dim(out$region$multiOut)[2])+2015

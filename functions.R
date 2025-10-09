@@ -19,7 +19,9 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
                      ageHarvPriorX = 0,
                      outModReStart=NULL,reStartYear=1,climdata=NULL,
                      sampleX=NULL,P0currclim=NA, fT0=NA, 
-                     disturbanceON=NA, TminTmax=NA){
+                     disturbanceON=NA, TminTmax=NA,
+                     HcMod_Init=0 ####hCmodel (0 = uses the default prebas model, 1 = uses the fHc_fol funcion
+                     ){
   # outType determines the type of output:
   # dTabs -> standard run, mod outputs saved as data.tables 
   # testRun-> test run reports the mod out and initPrebas as objects
@@ -214,6 +216,31 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
     TminTmax[,,2] <- t( dcast(dat[, list(id, rday, tmax)], rday ~ id,
                               value.var="tmax")[, -1])
     print("done.")
+  } else if(rcpfile=="fireClim"){
+    print("Load fireClim data...")
+    load(paste0(climatepath,"fireClim_JKL.rdata"))
+    climIDs <- unique(sampleX$climID)
+    
+    clim2 <- cbind(clim[,-1])
+    #colnames(clim2) <- c("PAR","TAir","VPD","Precip","CO2")
+    nr <- length(climIDs)
+    clim <- list(PAR = t(replicate(nr,clim2$PAR)),
+                 TAir = t(replicate(nr,clim2$Tair)),
+                 VPD = t(replicate(nr,clim2$VPD)),
+                 Precip = t(replicate(nr,clim2$precip)),
+                 CO2 = t(replicate(nr,clim2$CO2)),
+                 id = climIDs)
+    rownames(clim$PAR)<-climIDs     
+    colnames(clim$PAR)<-1:ncol(clim$PAR)    
+    
+    print("Run with Tmin Tmax values.")
+    TminTmax2 <- array(0,c(length(climIDs),nrow(clim2),2))
+    TminTmax2[,,1] <- t(array(TminTmax$Tmin,c(nrow(clim2),length(climIDs))))
+    TminTmax2[,,2] <- t(array(TminTmax$Tmax,c(nrow(clim2),length(climIDs))))
+    TminTmax <- TminTmax2
+    rm(list=c("clim2","TminTmax2"))
+    gc()
+    print("done.")
   } else if(climScen>0){
     print(paste("Load",rcpfile,"data."))
     climatepath = "/scratch/project_2000994/RCP/"
@@ -311,7 +338,8 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
                                          sampleX=sampleX, 
                                          P0currclim=NA, fT0=NA, 
                                          TminTmax=TminTmax,
-                                         disturbanceON = disturbanceON)
+                                         disturbanceON = disturbanceON,
+                                         HcMod_in=HcMod_Init)
   print("... done.")
   
 
@@ -769,7 +797,7 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
     rm(list=bioIndNames); gc()
   }  
   
-  if(outType=="testRun") return(list(region = region,initPrebas=initPrebas, clim=clim))
+  if(outType%in%c("testRun","fireRun")) return(list(region = region,initPrebas=initPrebas, clim=clim))
   if(outType=="hiiliKartta"){
     
     V <- apply(region$multiOut[1:nSitesRun0,,"V",,1],1:2,"sum")
@@ -1005,7 +1033,9 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
                                      rcps = CurrClim,
                                      sampleX=sampleX, 
                                      P0currclim=NA, fT0=NA, 
-                                     TminTmax=NA, disturbanceON = NA){
+                                     TminTmax=NA, disturbanceON = NA,
+                                     HcMod_in=0 ####hCmodel (0 = uses the default prebas model, 1 = uses the fHc_fol funcion)
+                                     ){
   nSites <- nrow(data.sample)
   areas <- data.sample$area
   print(paste("HcFactor =",HcFactorX))
@@ -1215,8 +1245,16 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
   ## Set to match climate data years
   if(!exists("ftTapioParX")) ftTapioParX = ftTapio
   if(!exists("tTapioParX")) tTapioParX = tTapio
-  initVar[,6,] <- aaply(initVar,1,findHcNAs,pHcM,pCrobasX,HcModVx)[,6,]*HcFactorX
-
+  
+  ### height of the crown initialization
+  if(HcMod_in==0){
+    initVar[,6,] <- aaply(initVar,1,findHcNAs,pHcM,pCrobasX,HcModVx)[,6,]*HcFactorX
+  }else if(HcMod_in==1){
+    for(inj in 1:(dim(initVar)[1])){
+      initVar[inj,6,] <- fHc_fol(initVar[inj,4,],initVar[inj,5,],initVar[inj,3,],pCrobasX)
+    }
+  }
+  
   xy <- sampleX[,c("segID","x","y")]
   coordinates(xy) <- c("x","y")
   proj4string(xy) <- crsX
