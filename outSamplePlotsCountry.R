@@ -11,7 +11,7 @@ library(ggplot2)
 
 library(data.table)
 print(toFile)
-vPREBAS <- "newVersion"
+#vPREBAS <- "newVersion"
 #vPREBAS <- "master"
 if(!exists("nSegs")) nSegs <- 5000
 if(!exists("fmi_from_allas")) fmi_from_allas <- F

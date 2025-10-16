@@ -328,7 +328,8 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
   print("Disturbances")
   print(disturbanceON)
   print("initPrebas...")
-  initPrebas = create_prebas_input_tmp.f(r_no, clim, data.sample, nYears, 
+  initPrebas = create_prebas_input_tmp.f(r_no, clim, data.sample, 
+                                         nYears, 
                                          harv=harvScen,
                                          #ClCut=clcut,
                                          rcps = rcpfile,
@@ -588,7 +589,7 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
     if(savings){
       print("save regionPrebas input...")
       save(initPrebas, HarvLimX, minDharvX,cutArX,ageHarvPriorX,compHarvX,thinFactX,reStartYear,
-           file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/testRun_",harvScen,"_",climScen,".rdata"))
+           file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/testRun_",harvScen,"_",climScen,"_",r_no,".rdata"))
       print("done.")
     }
     print(head(initPrebas$ClCut))
@@ -1033,7 +1034,8 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
                                      rcps = CurrClim,
                                      sampleX=sampleX, 
                                      P0currclim=NA, fT0=NA, 
-                                     TminTmax=NA, disturbanceON = NA,
+                                     TminTmax=NA, 
+                                     disturbanceON = NA,
                                      HcMod_in=0 ####hCmodel (0 = uses the default prebas model, 1 = uses the fHc_fol funcion)
                                      ){
   nSites <- nrow(data.sample)
@@ -1248,8 +1250,10 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
   
   ### height of the crown initialization
   if(HcMod_in==0){
+    print("height of the crown initialization: default")
     initVar[,6,] <- aaply(initVar,1,findHcNAs,pHcM,pCrobasX,HcModVx)[,6,]*HcFactorX
   }else if(HcMod_in==1){
+    print("height of the crown initialization: modified")
     for(inj in 1:(dim(initVar)[1])){
       initVar[inj,6,] <- fHc_fol(initVar[inj,4,],initVar[inj,5,],initVar[inj,3,],pCrobasX)
     }
