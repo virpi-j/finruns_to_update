@@ -832,7 +832,12 @@ if(!FIGsOnly){
         }  else if(varis[ij]=="N2Oem"){
           tmp <- out$region$N2OemisDrPeat_kgyear
         } else {
-          tmp <- output[,,which(varNames==varis[ij]),,1]
+          ijid <- which(varNames==varis[ij])
+          if(length(ijid)==0){
+            ijid <- which(str_detect(varNames,"grossGrowth"))[1]
+            print(paste0("'",varis[ij],"' replaced with '",varNames[ijid],"'"))      
+          }
+          tmp <- output[,,ijid,,1]
         }
         if(varis[ij]%in%c("wf_STKG","NEP_yasso","V","Wtot","BA","grossGrowth","NEP/SMI[layer_1]","Wharvested","Vharvested","VroundWood","Venergywood","Vmort","CH4em","N2Oem")){ # sums
           if(varis[ij]%in%c("CH4em","N2Oem")){
