@@ -1249,11 +1249,12 @@ if(!FIGsOnly){
             netsinksreg_per_ha <-netsinksreg*1e9/totArea
             ymax <- 1.05*max(0,max(max(netsinksreg_per_ha,na.rm = T),max(outresults[,..ij2])))
             ymin <- 1.05*min(0,min(min(netsinksreg_per_ha,na.rm = T),min(outresults[,..ij2])))
-            ymax <- max(ymax, 1.05*c(max(netsinksreg_per_ha2025),max(netsinksreg_per_ha2025_min),max(netsinksreg_per_ha2025_org)))
-            ymin <- min(ymin, 1.05*c(min(netsinksreg_per_ha2025),min(netsinksreg_per_ha2025_min),min(netsinksreg_per_ha2025_org)))
           } else {
             ymax <- max(0,max(outresults[,..ij2]))
             ymin <- min(0,min(outresults[,..ij2]))
+            ymax <- max(ymax, 1000*1.05*c(max(netsinksreg_per_ha2025),max(netsinksreg_per_ha2025_min),max(netsinksreg_per_ha2025_org)))
+            ymin <- min(ymin, 1000*1.05*c(min(netsinksreg_per_ha2025),min(netsinksreg_per_ha2025_min),min(netsinksreg_per_ha2025_org)))
+            
           }
           plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
                xlim = c(timei[1]-1,timei[length(timei)]),
@@ -1283,12 +1284,12 @@ if(!FIGsOnly){
           if(!is.na(netsinksreg[1])){          
             ymax <- 1.05*max(0,max(max(netsinksreg*1e9,na.rm = T),max(outresults[,..ij2])))
             ymin <- 1.05*min(0,min(min(netsinksreg*1e9,na.rm = T),min(outresults[,..ij2])))
-              ymax <- max(ymax, 1.05*c(max(netsinksreg2025),max(netsinksreg2025_min),max(netsinksreg2025_org)))
-              ymin <- min(ymin, 1.05*c(min(netsinksreg2025),min(netsinksreg2025_min),min(netsinksreg2025_org)))
           } else {
             ymax <- max(0,max(outresults[,..ij2]))
             ymin <- min(0,min(outresults[,..ij2]))
           }
+          ymax <- max(ymax, 1e9*1.05*c(max(netsinksreg2025),max(netsinksreg2025_min),max(netsinksreg2025_org)))
+          ymin <- min(ymin, 1e9*1.05*c(min(netsinksreg2025),min(netsinksreg2025_min),min(netsinksreg2025_org)))
           plot(timei, tmp/1e6, type="l",main=paste("Region",r_no,rname), 
                xlim = c(timei[1]-1,timei[length(timei)]),
                ylab="NBEsum, million kg CO2eq", ylim = c(ymin,ymax)/1e6,
