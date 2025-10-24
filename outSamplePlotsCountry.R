@@ -1287,11 +1287,11 @@ outresults_all <- array(0,dim=c(dim(outresults)[1],dim(outresults)[2],length(rid
                         dimnames = list(c(2015+1:dim(outresults)[1]),
                                         colnames(outresults),
                                         regionNames[rids]))
-validation_all <- array(0,dim=c(2,18,length(rids)),
+validation_all <- array(NA,dim=c(2,2*2+9*2,length(rids)),
                         dimnames = list(c("NFI","sim"),
                                         c("gg2015","gg2021","V2015","V2021",
-                                          paste0("NBEtot",2015:2021),
-                                          paste0("NBEave",2015:2021)),
+                                          paste0("NBEtot",2015:2023),
+                                          paste0("NBEave",2015:2023)),
                                         regionNames[rids]))
 r_noi <-1
 for(r_noi in r_nois0){#1:length(rids)){
@@ -1335,6 +1335,12 @@ for(r_noi in r_nois0){#1:length(rids)){
   netsinksreg_per_ha <- NetSinks_per_ha[which(NetSinks_per_ha[,1]==regionNames_fi[r_no]),-1]
   netsinksreg_per_ha[which(netsinksreg_per_ha=="..")] <- NA  
   netsinksreg_per_ha <- as.numeric(netsinksreg_per_ha)
+  netsinksreg2025 <- NetSinks_2025[which(NetSinks_2025[,1]==regionNames_fi[r_no]),-1]
+  netsinksreg2025[which(netsinksreg2025=="..")] <- NA  
+  netsinksreg2025 <- as.numeric(netsinksreg2025)
+  netsinksreg_per_ha2025 <- NetSinks_per_ha_2025[which(NetSinks_per_ha_2025[,1]==regionNames_fi[r_no]),-1]
+  netsinksreg_per_ha2025[which(netsinksreg_per_ha2025=="..")] <- NA  
+  netsinksreg_per_ha2025 <- as.numeric(netsinksreg_per_ha2025)
   
   print(paste("Start figs of region",r_no,"/",rname))
   #    main = regs[r_noi][r_noi,] <- c(sum(data.all$area[which(data.all$landclass==1)]),
@@ -1350,14 +1356,16 @@ for(r_noi in r_nois0){#1:length(rids)){
   outresults_all[,,ri] <- array(unlist(outresults),dim(outresults))
   totArea <- areatable$areaTot
   netsinksreg_per_ha <-netsinksreg*1e9/totArea
-  validation_all[1,5:11,ri] <- netsinksreg*1e3 
-  validation_all[2,5:11,ri] <- outresults$NBEsum[which(timei%in%2016:2022)]/1e6
+  #validation_all[1,5:11,ri] <- netsinksreg*1e3 
+  validation_all[1,5:13,ri] <- netsinksreg2025*1e3 
+  validation_all[2,6:13,ri] <- outresults$NBEsum[which(timei%in%2016:2023)]/1e6
   validation_all[1,1:2,ri] <- ggstats
   validation_all[2,1:2,ri] <- outresults$grossGrowth_forest[c(1,which(timei==2021))]
   validation_all[1,3:4,ri] <- Vstats
   validation_all[2,3:4,ri] <- outresults$V_forest[c(1,which(timei==2021))]
-  validation_all[1,12:18,ri] <- netsinksreg_per_ha 
-  validation_all[2,12:18,ri] <- outresults$NBE[which(timei%in%2016:2022)]
+  #validation_all[1,12:18,ri] <- netsinksreg_per_ha 
+  validation_all[1,14:22,ri] <- netsinksreg_per_ha2025*1000 
+  validation_all[2,15:22,ri] <- outresults$NBE[which(timei%in%2016:2023)]
   
   if(FIGsOnly){
     sortid <- 1
@@ -1618,6 +1626,7 @@ for(r_noi in r_nois0){#1:length(rids)){
                ylab="NBE, kg CO2eq/ha", ylim = c(ymin,ymax),
                lwd=3)
           points(2015:2021, netsinksreg_per_ha, pch=19,col="red")
+          points(2015:2023, netsinksreg_per_ha2025*1000, pch=19,col="purple")
           colorsi <- c("blue","green","pink")
           for(ik in 1:length(sortVarnams)){
             ijk <- ij2[1 + ik]
@@ -1644,6 +1653,7 @@ for(r_noi in r_nois0){#1:length(rids)){
                ylab="NBEsum, million kg CO2eq", ylim = c(ymin,ymax)/1e6,
                lwd=3)
           points(2015:2021,netsinksreg*1e9/1e6,pch=19,col="red")
+          points(2015:2023,netsinksreg2025*1e9/1e6,pch=19,col="purple")
           colorsi <- c("blue","green","pink")
           for(ik in 1:length(sortVarnams)){
             ijk <- ij2[1 + ik]
@@ -1751,31 +1761,31 @@ barplot(validation_all[1:2,3,r_nois],names.arg=regs[r_nois0],
 barplot(validation_all[1:2,4,r_nois],names.arg=regs[r_nois0],
         beside=T, main="volume 2021")
 
-ylims <- c(min(validation_all[,12:18,],na.rm = T),
-           max(validation_all[,12:18,],na.rm = T))
+ylims <- c(min(validation_all[,14:22,],na.rm = T),
+           max(validation_all[,14:22,],na.rm = T))
 par(mfrow=c(3,3))  
 for(ii in r_nois){
-  plot(2015:2021, 
-       validation_all[2,12:18,ii], type="l",
+  plot(2015:2023, 
+       validation_all[2,14:22,ii], type="l",
        ylim = ylims, col="blue",
        main=dimnames(validation_all)[[3]][ii],
        xlab="year, blue=sim, red=NFI",ylab="NBEave")
-  points(2015:2021, validation_all[1,12:18,ii], pch=19,col="red")
-  lines(c(2015,2021),c(0,0),col="black")
+  points(2015:2023, validation_all[1,14:22,ii], pch=19,col="red")
+  lines(c(2015,2023),c(0,0),col="black")
 }
 
-if(FALSE){
-  ylims <- c(min(validation_all[,5:11,],na.rm = T),
-             max(validation_all[,5:11,],na.rm = T))
+if(TRUE){
+  ylims <- c(min(validation_all[,5:13,],na.rm = T),
+             max(validation_all[,5:13,],na.rm = T))
   par(mfrow=c(3,3))  
   for(ii in r_nois){
-    plot(2015:2021, 
-         validation_all[2,5:11,ii], type="l",
+    plot(2015:2023, 
+         validation_all[2,5:13,ii], type="l",
          ylim = ylims, col="blue",
          main=dimnames(validation_all)[[3]][ii],
          xlab="year",ylab="NBEsum")
-    points(2015:2021, validation_all[1,5:11,ii], pch=19,col="red")
-    lines(c(2015,2021),c(0,0),col="black")
+    points(2015:2023, validation_all[1,5:13,ii], pch=19,col="red")
+    lines(c(2015,2023),c(0,0),col="black")
   }
 }
 
