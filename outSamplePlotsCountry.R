@@ -32,7 +32,7 @@ regionNames_fi <- c("Uusimaa", "Ahvenanmaa", "Keski-Pohjanmaa", "Pirkanmaa",
                     "Kainuu", "Etelä-Savo", "Pohjois-Karjala", "Pohjois-Pohjanmaa")
 r_nos <- c(1, 21, 16, 6, 9, 13, 11, 19, 5, 15, 2, 14, 7, 4, 8, 18, 10, 12, 17) 
 #regionNames <- fread("/scratch/project_2000994/PREBASruns/metadata/maakunta/maakunta_names.txt")
-if(exists("rids")) rids <- c(1,3:19)
+if(!exists("rids")) rids <- c(1,3:19)
 
 NetSinks <- read_excel(path = "/users/vjunttil/finruns_to_update/LUKE_maak_nettonielu_kokeellinen.xlsx",  
                     sheet = "nettonielu", range = "A3:J24")
@@ -726,7 +726,8 @@ if(!FIGsOnly){
       HcFactor <- HcFactor2
       ageHarvPriorX <- ageHarvPriorX2 # 160
     }
-    if( save_fmi_data | !fmi_from_allas){
+    if(!exists("climFIG")) climFIG <-F
+    if(climFIG | save_fmi_data | !fmi_from_allas){
     out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
                     harvScen="Base", harvInten="Base", procDrPeat=T, 
                     thinFactX= thinFactX, landClassUnman = landClassUnman,
@@ -753,7 +754,7 @@ if(!FIGsOnly){
       NEP_yasso <- out$region$multiOut[,,"NEP/SMI[layer_1]",,1]
       timei2 <- (1:dim(out$region$multiOut)[2])+2015
       NEP_yasso2 <- colMeans(apply(NEP_yasso,1:2,sum))
-      if(TRUE & (save_fmi_data | fmi_from_allas)){
+      if(climFIG | (TRUE & (save_fmi_data | !fmi_from_allas))){
         par(mfrow=c(3,2))
         for(ij in 1:(length(clim1)-1)){
           ylims  <- c(min(min(clim1[[ij]]),min(clim2[[ij]])),
