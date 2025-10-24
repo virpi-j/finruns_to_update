@@ -269,6 +269,8 @@ if(!FIGsOnly){
     }
     areaRegion <- totArea <- sum(data.all$area,na.rm=T)
     
+    set.seed(1)
+  
     if(samplaus==1){
       data.all$age <- round(data.all$age)
       sampleArea <- nSegs*median(data.all$area)*1.3
