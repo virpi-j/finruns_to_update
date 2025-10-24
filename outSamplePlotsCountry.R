@@ -40,6 +40,13 @@ NetSinks <- NetSinks[-c(2),-c(2,3)]
 NetSinks_per_ha <- read_excel(path = "/users/vjunttil/finruns_to_update/LUKE_maak_nettonielu_kokeellinen.xlsx",  
                        sheet = "nettonielu_per_ha", range = "A3:J24")
 NetSinks_per_ha <- NetSinks_per_ha[-c(2),-c(2,3)]
+NetSinks_2025 <- read_excel(path = "/users/vjunttil/finruns_to_update/LUKE_maak_nettonielu_kokeellinen.xlsx",  
+                       sheet = "nettonielu_2025", range = "A3:L22")
+NetSinks_2025 <- NetSinks_2025[,-c(2,3)]
+NetSinks_per_ha_2025 <- read_excel(path = "/users/vjunttil/finruns_to_update/LUKE_maak_nettonielu_kokeellinen.xlsx",  
+                              sheet = "nettonielu_per_ha_2025", 
+                              range = "A3:L22")
+NetSinks_per_ha_2025 <- NetSinks_per_ha_2025[,-c(2,3)]
 
 V2015 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.xlsx",  
                     sheet = "tilavuus", range = "B3:G25")
@@ -152,6 +159,13 @@ if(!FIGsOnly){
     netsinksreg_per_ha <- NetSinks_per_ha[which(NetSinks_per_ha[,1]==regionNames_fi[r_no]),-1]
     netsinksreg_per_ha[which(netsinksreg_per_ha=="..")] <- NA  
     netsinksreg_per_ha <- as.numeric(netsinksreg_per_ha)
+    
+    netsinksreg2025 <- NetSinks_2025[which(NetSinks_2025[,1]==regionNames_fi[r_no]),-1]
+    netsinksreg2025[which(netsinksreg2025=="..")] <- NA  
+    netsinksreg2025 <- as.numeric(netsinksreg2025)
+    netsinksreg_per_ha2025 <- NetSinks_per_ha_2025[which(NetSinks_per_ha_2025[,1]==regionNames_fi[r_no]),-1]
+    netsinksreg_per_ha2025[which(netsinksreg_per_ha2025=="..")] <- NA  
+    netsinksreg_per_ha2025 <- as.numeric(netsinksreg_per_ha2025)
     
     print(paste("Start running region",r_no,"/",rname))
   #  landclass <- c(sum(data.all$area[which(data.all$landclass==1)]),
@@ -1199,6 +1213,8 @@ if(!FIGsOnly){
                ylab="NBE, kg CO2eq/ha", ylim = c(ymin,ymax),
                lwd=3)
           points(2015:2021, netsinksreg_per_ha, pch=19,col="red")
+          points(2015:2023, netsinksreg_per_ha2025*1000, pch=19,col="purple")
+          
           colorsi <- c("blue","green","pink")
           for(ik in 1:length(sortVarnams)){
             ijk <- ij2[1 + ik]
@@ -1225,6 +1241,7 @@ if(!FIGsOnly){
                ylab="NBEsum, million kg CO2eq", ylim = c(ymin,ymax)/1e6,
                lwd=3)
           points(2015:2021,netsinksreg*1e9/1e6,pch=19,col="red")
+          points(2015:2023,netsinksreg2025*1e9/1e6,pch=19,col="purple")
           colorsi <- c("blue","green","pink")
           for(ik in 1:length(sortVarnams)){
             ijk <- ij2[1 + ik]

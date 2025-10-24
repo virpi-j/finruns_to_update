@@ -218,7 +218,8 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
     print("done.")
   } else if(rcpfile=="fireClim"){
     print("Load fireClim data...")
-    load(paste0(climatepath,"fireClim_JKL.rdata"))
+    #load(paste0(climatepath,"fireClim_JKL.rdata"))
+    load(climatepath)
     climIDs <- unique(sampleX$climID)
     
     clim2 <- cbind(clim[,-1])
