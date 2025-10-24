@@ -753,7 +753,7 @@ if(!FIGsOnly){
       NEP_yasso <- out$region$multiOut[,,"NEP/SMI[layer_1]",,1]
       timei2 <- (1:dim(out$region$multiOut)[2])+2015
       NEP_yasso2 <- colMeans(apply(NEP_yasso,1:2,sum))
-      if(TRUE & (save_fmi_data | !fmi_from_allas)){
+      if(TRUE & (save_fmi_data | fmi_from_allas)){
         par(mfrow=c(3,2))
         for(ij in 1:(length(clim1)-1)){
           ylims  <- c(min(min(clim1[[ij]]),min(clim2[[ij]])),
