@@ -40,14 +40,42 @@ NetSinks <- NetSinks[-c(2),-c(2,3)]
 NetSinks_per_ha <- read_excel(path = "/users/vjunttil/finruns_to_update/LUKE_maak_nettonielu_kokeellinen.xlsx",  
                        sheet = "nettonielu_per_ha", range = "A3:J24")
 NetSinks_per_ha <- NetSinks_per_ha[-c(2),-c(2,3)]
+
+## New Luke data
 NetSinks_2025 <- read_excel(path = "/users/vjunttil/finruns_to_update/LUKE_maak_nettonielu_kokeellinen.xlsx",  
-                       sheet = "nettonielu_2025", range = "A3:L22")
+                            sheet = "nettonielu_2025", range = "A3:L22")
 NetSinks_2025 <- NetSinks_2025[,-c(2,3)]
 NetSinks_per_ha_2025 <- read_excel(path = "/users/vjunttil/finruns_to_update/LUKE_maak_nettonielu_kokeellinen.xlsx",  
-                              sheet = "nettonielu_per_ha_2025", 
-                              range = "A3:L22")
+                                   sheet = "nettonielu_per_ha_2025", 
+                                   range = "A3:L22")
 NetSinks_per_ha_2025 <- NetSinks_per_ha_2025[,-c(2,3)]
 
+# min org from new LUke data
+NetSinks_2025_min_org <- read_excel(path = "/users/vjunttil/finruns_to_update/LUKE_maak_nettonielu_kokeellinen.xlsx",  
+                                    sheet = "nettonielu_2025_min_org", range = "A3:L98")
+NetSinks_2025_min_org <- NetSinks_2025_min_org[,-c(3)]
+NetSinks_2025_org <- NetSinks_2025_min <- NetSinks_2025
+ri <- 1
+for(ri in 1:nrow(NetSinks_2025)){
+  nri <- which(NetSinks_2025_min_org[,1]==as.character(NetSinks_2025[ri,1]))
+  NetSinks_2025_min[ri,-1] <- t(as.numeric(unlist(colSums(NetSinks_2025_min_org[c(nri,nri+2),-c(1:2)]))))
+  NetSinks_2025_org[ri,-1] <- t(as.numeric(unlist(colSums(NetSinks_2025_min_org[c(nri+1,nri+3:4),-c(1:2)]))))
+}
+
+NetSinks_per_ha_2025_min_org <- read_excel(path = "/users/vjunttil/finruns_to_update/LUKE_maak_nettonielu_kokeellinen.xlsx",  
+                                    sheet = "nettonielu_per_ha_2025_min_org", range = "A3:L98")
+NetSinks_per_ha_2025_min_org <- NetSinks_per_ha_2025_min_org[,-c(3)]
+NetSinks_per_ha_2025_org <- NetSinks_per_ha_2025_min <- NetSinks_per_ha_2025
+ri <- 1
+for(ri in 1:nrow(NetSinks_2025)){
+  nri <- which(NetSinks_per_ha_2025_min_org[,1]==as.character(NetSinks_per_ha_2025[ri,1]))
+  NetSinks_per_ha_2025_min[ri,-1] <- t(as.numeric(unlist(colSums(NetSinks_per_ha_2025_min_org[c(nri,nri+2),-c(1:2)]))))
+  NetSinks_per_ha_2025_org[ri,-1] <- t(as.numeric(unlist(colSums(NetSinks_per_ha_2025_min_org[c(nri+1,nri+3:4),-c(1:2)]))))
+}
+
+
+
+##
 V2015 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.xlsx",  
                     sheet = "tilavuus", range = "B3:G25")
 V2021 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.xlsx",  
@@ -166,7 +194,21 @@ if(!FIGsOnly){
     netsinksreg_per_ha2025 <- NetSinks_per_ha_2025[which(NetSinks_per_ha_2025[,1]==regionNames_fi[r_no]),-1]
     netsinksreg_per_ha2025[which(netsinksreg_per_ha2025=="..")] <- NA  
     netsinksreg_per_ha2025 <- as.numeric(netsinksreg_per_ha2025)
+
+    netsinksreg2025_min <- NetSinks_2025_min[which(NetSinks_2025_min[,1]==regionNames_fi[r_no]),-1]
+    netsinksreg2025_min[which(netsinksreg2025_min=="..")] <- NA  
+    netsinksreg2025_min <- as.numeric(netsinksreg2025_min)
+    netsinksreg_per_ha2025_min <- NetSinks_per_ha_2025_min[which(NetSinks_per_ha_2025_min[,1]==regionNames_fi[r_no]),-1]
+    netsinksreg_per_ha2025_min[which(netsinksreg_per_ha2025_min=="..")] <- NA  
+    netsinksreg_per_ha2025_min <- as.numeric(netsinksreg_per_ha2025_min)
     
+    netsinksreg2025_org <- NetSinks_2025_org[which(NetSinks_2025_org[,1]==regionNames_fi[r_no]),-1]
+    netsinksreg2025_org[which(netsinksreg2025_org=="..")] <- NA  
+    netsinksreg2025_org <- as.numeric(netsinksreg2025_org)
+    netsinksreg_per_ha2025_org <- NetSinks_per_ha_2025_org[which(NetSinks_per_ha_2025_org[,1]==regionNames_fi[r_no]),-1]
+    netsinksreg_per_ha2025_org[which(netsinksreg_per_ha2025_org=="..")] <- NA  
+    netsinksreg_per_ha2025_org <- as.numeric(netsinksreg_per_ha2025_org)
+
     print(paste("Start running region",r_no,"/",rname))
   #  landclass <- c(sum(data.all$area[which(data.all$landclass==1)]),
   #                              sum(data.all$area[which(data.all$landclass==2)]))  
@@ -1214,6 +1256,10 @@ if(!FIGsOnly){
                lwd=3)
           points(2015:2021, netsinksreg_per_ha, pch=19,col="red")
           points(2015:2023, netsinksreg_per_ha2025*1000, pch=19,col="purple")
+          if(sortid==2){
+            points(2015:2023, netsinksreg_per_ha2025_min*1000, pch=1, col="blue")
+            points(2015:2023, netsinksreg_per_ha2025_org*1000, pch=1, col="green")
+          }
           
           colorsi <- c("blue","green","pink")
           for(ik in 1:length(sortVarnams)){
@@ -1242,6 +1288,10 @@ if(!FIGsOnly){
                lwd=3)
           points(2015:2021,netsinksreg*1e9/1e6,pch=19,col="red")
           points(2015:2023,netsinksreg2025*1e9/1e6,pch=19,col="purple")
+          if(sortid==2){
+            points(2015:2023, netsinksreg2025_min*1000, pch=1, col="blue")
+            points(2015:2023, netsinksreg2025_org*1000, pch=1, col="green")
+          }
           colorsi <- c("blue","green","pink")
           for(ik in 1:length(sortVarnams)){
             ijk <- ij2[1 + ik]
