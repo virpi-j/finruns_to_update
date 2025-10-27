@@ -147,7 +147,6 @@ r_noi <- 1
 if(toFile) pdf(paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_",rcps,"_HcMod_Init",HcMod_Init,".pdf"))
 if(!exists("FIGsOnly")) FIGsOnly <- F
 if(!FIGsOnly){
-  noPrebasLoading <- F
   for(r_noi in 1:length(rids)){
     if(r_noi>1) noPrebasLoading <- T
     toMem <- ls()
