@@ -144,7 +144,7 @@ dimnames(results) <- list(c("grossgrowth","V","Vharvested", "NEE", "Wharvested",
 r_noi <- 1
 
 #if(!toFile) rids <- rids[1:3]
-if(toFile) pdf(paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_",rcps,".pdf"))
+if(toFile) pdf(paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_",rcps,"_HcMod_Init",HcMod_Init,".pdf"))
 if(!exists("FIGsOnly")) FIGsOnly <- F
 if(!FIGsOnly){
   noPrebasLoading <- F
