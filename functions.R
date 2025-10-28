@@ -134,27 +134,8 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
     }
   }
   
-  #if(outType %in% c("uncRun","uncSeg")){
-  #  area_tot <- sum(data.all$area) # ha
-  #  sampleX[,area := 16^2/10000] 
-  #  cA <- 1/nrow(sampleX) #area_tot/nrow(sampleX) 
-  #  harvestLims <- as.numeric(harvestLimsr[sampleID,])
-  #  HarvLimMaak[,1]<-harvestLims[1]*HarvLimMaak[,1]
-  #  HarvLimMaak[,2]<-harvestLims[2]*HarvLimMaak[,2]
-  #  print(paste("sampleID",sampleID,"harvestLims ="))
-  #  print(harvestLims)
-  #  if(outType=="uncRun"){
-  #    coeffPeat1 <- EC1[sampleID]
-  #    coeffPeat2 <- EC2[sampleID]
-  #  }
-  #print(paste("RCP",RCP))
-    #if(RCP>0) {
-    #  rcps <- paste0(climMod[climModids[sampleID]],rcpx[RCP])
-    #} #else {rcps <- "CurrClim"}
-    print(paste0("Climate model ",sampleID,": ",rcps))
-  #} else {
-  #  sampleX[,area := N*16^2/10000] 
-  #}
+  print(paste0("Climate model ",sampleID,": ",rcps))
+  
   sampleX[,id:=climID]
   HarvLimX <- harvestLims * sum(sampleX$area)/totArea#sum(data.all$area)
   nSample = nrow(sampleX)#200#nrow(data.all)
@@ -170,21 +151,9 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
     print(paste("Load",rcpfile,"data."))
     load(paste(climatepath, rcpfile,".rdata", sep=""))  
     #####process data considering only current climate###
-    # dat <- dat[rday %in% 1:10958] #uncomment to select some years (10958 needs to be modified)
     maxRday <- max(dat$rday)
-    #if(outType %in% c("uncRun","uncSeg")){
-    #  if(unc100){
-    #    xday <- c(dat$rday,(dat$rday+maxRday),(dat$rday+maxRday*2),
-    #              (dat$rday+maxRday*3),(dat$rday+maxRday*4))
-    #    dat = rbind(dat,dat,dat,dat,dat)
-    #  } else {
-    #    xday <- c(dat$rday,(dat$rday+maxRday),(dat$rday+maxRday*2))
-    #    dat = rbind(dat,dat,dat)
-    #  }
-    #} else {
     xday <- c(dat$rday,(dat$rday+maxRday),(dat$rday+maxRday*2))
     dat = rbind(dat,dat,dat)
-    #}
     dat[,rday:=xday]
   } else if(rcpfile=="CurrClim_fmi"){
     print(paste("Load",rcpfile,"data, file",fmi_vars_PREBAS_file))
@@ -196,7 +165,6 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
     gc()
     #####process data considering only current climate###
     dat[,rday := as.numeric(dat$time)-min(as.numeric(dat$time))+1]
-    # dat <- dat[rday %in% 1:10958] #uncomment to select some years (10958 needs to be modified)
     maxRday <- max(dat$rday)
     colnames(dat)[which(colnames(dat)=="precip")] <- "Precip"
     colnames(dat)[which(colnames(dat)=="tair")] <- "TAir"
@@ -204,10 +172,10 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
     colnames(dat)[which(colnames(dat)=="vpd")] <- "VPD"
     colnames(dat)[which(colnames(dat)=="co2")] <- "CO2"
     dat$CO2[which(is.na(dat$CO2))] <- max(na.omit(dat$CO2))
+    print("scale different fmi data"); dat$VPD <- dat$VPD*.6; dat$Precip <- 0.5*dat$Precip; dat$CO2 <- 380
     
     # TminTmax array, repeat Tmin and Tmax for all climIDs
     print("Setup Tmin Tmax values...")
-    
     tmp <-  t( dcast(dat[, list(id, rday, tmin)], rday ~ id,
                      value.var="tmin")[, -1])
     TminTmax <- array(0,c(length(unique(dat$id)),ncol(tmp),2))
@@ -218,12 +186,10 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
     print("done.")
   } else if(rcpfile=="fireClim"){
     print("Load fireClim data...")
-    #load(paste0(climatepath,"fireClim_JKL.rdata"))
     load(climatepath)
     climIDs <- unique(sampleX$climID)
     
     clim2 <- cbind(clim[,-1])
-    #colnames(clim2) <- c("PAR","TAir","VPD","Precip","CO2")
     nr <- length(climIDs)
     clim <- list(PAR = t(replicate(nr,clim2$PAR)),
                  TAir = t(replicate(nr,clim2$Tair)),
@@ -260,7 +226,6 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
     }
   } else {
     climatepath_adapt <- "~/adaptFirst_runs/Data/" #"/scratch/project_2000994/PREBASruns/adaptFirst/tempData/"
-    #read.csv2(file=paste0(climatepath,rcpsFile),sep = ",")
     dat2 <- read.csv(paste0(climatepath_adapt, rcpfile)) 
     dat2 <- dat2[which(dat2$Year2>=startingYear & 
                          dat2$deltaT==deltaTP[1,deltaID] & 
@@ -317,7 +282,6 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
   areas <- data.sample$area
   totAreaSample <- sum(data.sample$area)
   print(paste("Simulate for ",nYears,"years."))
-  #clim = prep.climate.f(dat, data.sample, startingYear, nYears, rcps)
   if(rcpfile%in%c("CurrClim","CurrClim_fmi") | climScen >0) {
     clim <-prep.climate.f(dat, data.sample, startingYear, nYears, rcps = rcpfile)
     rm("dat")
@@ -332,7 +296,6 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
   initPrebas = create_prebas_input_tmp.f(r_no, clim, data.sample, 
                                          nYears, 
                                          harv=harvScen,
-                                         #ClCut=clcut,
                                          rcps = rcpfile,
                                          HcFactorX=HcFactor, 
                                          climScen=climScen, 
@@ -385,14 +348,8 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
   
   ##here mix years for weather inputs for Curr Climate
   if(rcpfile=="CurrClim"){
-    #if(outType=="uncRun"){
-    #if(outType %in% c("uncRun","uncSeg")){
-    #  resampleYear <- resampleYears[sampleID,] 
-    #  #sample(1:nYears,nYears,replace=T)
-    #}else{
-      set.seed(10)
-      resampleYear <- sample(1:nYears,(nYears-7))
-    #} 
+    set.seed(10)
+    resampleYear <- sample(1:nYears,(nYears-7))
     initPrebas$ETSy[,8:nYears] <- initPrebas$ETSy[,resampleYear]
     initPrebas$P0y[,8:nYears,] <- initPrebas$P0y[,resampleYear,]
     initPrebas$weather[,8:nYears,,] <- initPrebas$weather[,resampleYear,,]
@@ -1292,7 +1249,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
   print("latitudes...")
   print(lat[1:5])
     
-  if(harv == "NoHarv"  & !rcps%in%c("CurrClim_fmi")) ClCuts <- -1+0*ClCuts
+  if(harv == "NoHarv"  & !rcps%in%c("CurrClim_fmis")) ClCuts <- -1+0*ClCuts
   #print(paste("ClCuts",ClCuts))  
   initPrebas <- InitMultiSite(nYearsMS = rep(nYears,nSites),
                               siteInfo=siteInfo,
@@ -1317,7 +1274,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
                               mortMod = mortMod, TminTmax = TminTmax, 
                               disturbanceON = disturbanceON)
   
-  if(harv == "NoHarv" & !rcps%in%c("CurrClim_fmi")){
+  if(harv == "NoHarv" & !rcps%in%c("CurrClim_fmis")){
   #if(harv == "NoHarv" & !rcps%in%c("CurrClim_fmi")){
       initPrebas$ClCut = rep(-1, nSites) 
   }
@@ -1349,7 +1306,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
 
 
 # StartingYear = climate data that detrermines simulation period must have year greater than this.
-create_prebas_input.f = function(r_no, clim, data.sample, nYears,
+create_prebas_input_delete_this.f = function(r_no, clim, data.sample, nYears,
                                  startingYear=0,domSPrun=0, ingrowth = F,
                                  harv, HcFactorX=HcFactor, reStartYear=1,
                                  outModReStart=NULL,initSoilC=NULL

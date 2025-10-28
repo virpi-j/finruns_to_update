@@ -727,16 +727,16 @@ if(!FIGsOnly){
     }
     if(!exists("climFIG")) climFIG <-F
     if(climFIG | save_fmi_data | !fmi_from_allas){
-    out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
-                    harvScen="Base", harvInten="Base", procDrPeat=T, 
-                    thinFactX= thinFactX, landClassUnman = landClassUnman,
-                    compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
-                    forceSaveInitSoil=F, sampleX = dataS, HcMod_Init = HcMod_Init)
-    clim1 <- out$clim
-    NEP_yasso <- out$region$multiOut[,,"NEP/SMI[layer_1]",,1]
-    timei1 <- (1:dim(out$region$multiOut)[2])+2015
-    NEP_yasso1 <- colMeans(apply(NEP_yasso,1:2,sum))
-    #plot(timei, NEP_yasso,ylim=c(0,250),type="l",main="Currclim",ylab="NEPmin")
+      out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
+                      harvScen="Base", harvInten="Base", procDrPeat=T, 
+                      thinFactX= thinFactX, landClassUnman = landClassUnman,
+                      compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
+                      forceSaveInitSoil=F, sampleX = dataS, HcMod_Init = HcMod_Init)
+      clim1 <- out$clim
+      NEP_yasso1 <- apply(out$region$multiOut[,,"NEP/SMI[layer_1]",,1],1:2,sum)
+      timei1 <- (1:dim(out$region$multiOut)[2])+2015
+      #plot(timei, NEP_yasso,ylim=c(0,250),type="l",main="Currclim",ylab="NEPmin")
+      out_currclim <- out
     }    
     print(paste("Sample area:",sum(dataS$area)))
     if(HarvScen!="Base" | fmi_from_allas){
@@ -749,24 +749,43 @@ if(!FIGsOnly){
                       thinFactX= thinFactX, landClassUnman = landClassUnman,
                       compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
                       forceSaveInitSoil=F, sampleX = dataS, HcMod_Init = HcMod_Init)
+      out_currclim_fmi <- out
       clim2 <-out$clim
-      NEP_yasso <- out$region$multiOut[,,"NEP/SMI[layer_1]",,1]
+      NEP_yasso <- apply(out$region$multiOut[,,"NEP/SMI[layer_1]",,1],1:2,sum)
       timei2 <- (1:dim(out$region$multiOut)[2])+2015
-      NEP_yasso2 <- colMeans(apply(NEP_yasso,1:2,sum))
       if(climFIG | (TRUE & (save_fmi_data | !fmi_from_allas))){
         par(mfrow=c(3,2))
+        plotID <- 101
+        id_currclim_1 <- which(clim1$id==dataS$CurrClimID[plotID])
+        id_currclimfmi_1 <- which(clim2$id==out$region$siteInfo[plotID,"climID"])
         for(ij in 1:(length(clim1)-1)){
           ylims  <- c(min(min(clim1[[ij]]),min(clim2[[ij]])),
                       max(max(clim1[[ij]]),max(clim2[[ij]])))
           if(ij%in%c(1,3,4)) ylims[1] <-  0
-          plot(clim2[[ij]][1,1:(9*365)],ylab=names(clim1)[ij],
+          plot(clim2[[ij]][id_currclimfmi_1,1:(9*365)],ylab=names(clim1)[ij],
                ylim =ylims, col="red",main="black: CurrClim, red: Currclimfmi",pch=19,cex=.2)
-          points(clim1[[ij]][1,1:(9*365)],pch=19,col="black",cex=0.2)
+          points(clim1[[ij]][id_currclim_1,1:(9*365)],pch=19,col="black",cex=0.2)
         }
-        ylims  <- c(min(c(NEP_yasso1,NEP_yasso2)),max(c(NEP_yasso1,NEP_yasso2)))
-        plot(timei1, NEP_yasso1,type="l",ylim=ylims,main="black: Currclim, red: Currclimfmi",ylab="NEPmin")
-        lines(timei2,NEP_yasso2,col="red")      
+        ylims  <- c(0,1.5*max(c(colMeans(NEP_yasso1),colMeans(NEP_yasso))))
+        plot(timei1, NEP_yasso1[plotID,],type="l",ylim=ylims,main="black: Currclim, red: Currclimfmi",ylab="NEPmin")
+        lines(timei1,colMeans(NEP_yasso1),col="blue",lwd=4)      
+        lines(timei2,colMeans(NEP_yasso),col="red",lwd=4)      
+        lines(timei1,NEP_yasso1[plotID,],col="blue")      
+        lines(timei2,NEP_yasso[plotID,],col="red")
+        for(ij in 1:(length(clim1)-1)){
+          ylims  <- c(min(min(clim1[[ij]]),min(clim2[[ij]])),
+                      max(max(clim1[[ij]]),max(clim2[[ij]])))
+          if(ij%in%c(1,3,4)) ylims[1] <-  0
+          plot(clim2[[ij]][id_currclimfmi_1,1:(1*365)],
+               clim1[[ij]][id_currclim_1,1:(1*365)],
+               ylab=paste("Currclim"),
+               xlab=paste("Currclim_fmi"),
+               ylim =ylims, xlim = ylims,
+               main=names(clim1)[ij],pch=19)
+        }
       }
+      if(exists("NEP_yasso1")) rm("NEP_yasso1") 
+      NEP_yasso <- colMeans(NEP_yasso)
     }
     #lapply(sampleIDs, 
     #       function(jx) { 
