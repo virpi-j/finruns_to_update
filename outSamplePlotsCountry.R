@@ -665,7 +665,7 @@ if(!FIGsOnly){
       eval(parse(text = init_funs))
       rm(init_funs, file_path, repo)
       # SET PARAMETERS
-      resolution <- 1 # Resolution in km (1, 5 or 9)
+      if(!exists("resolution")) resolution <- 1 # Resolution in km (1, 5 or 9)
       years <- c(2015:2024) # For which years to extract (1961:2023 are full years)
       save_path <- paste0(getwd()) # Where to save the extracted data.table as .rdata
       repo_url <- "https://github.com/ForModLabUHel/fmi.weather.finland.git" # Project repository to use
@@ -773,8 +773,10 @@ if(!FIGsOnly){
         lines(timei1,NEP_yasso1[plotID,],col="blue")      
         lines(timei2,NEP_yasso[plotID,],col="red")
         for(ij in 1:(length(clim1)-1)){
-          ylims  <- c(min(min(clim1[[ij]]),min(clim2[[ij]])),
-                      max(max(clim1[[ij]]),max(clim2[[ij]])))
+          ylims  <- c(min(min(clim1[[ij]][id_currclim_1,1:(365)]),
+                          min(clim2[[ij]][id_currclimfmi_1,1:(1*365)])),
+                      max(max(clim1[[ij]][id_currclim_1,1:(1*365)]),
+                          max(clim2[[ij]][id_currclimfmi_1,1:(1*365)])))
           if(ij%in%c(1,3,4)) ylims[1] <-  0
           plot(clim2[[ij]][id_currclimfmi_1,1:(1*365)],
                clim1[[ij]][id_currclim_1,1:(1*365)],
