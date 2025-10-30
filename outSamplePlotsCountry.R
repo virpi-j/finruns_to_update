@@ -273,6 +273,7 @@ if(!FIGsOnly){
     if(samplaus==0){
       dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F)]
     } else if(samplaus==1){
+      par(mfrow=c(1,1))
       data.all$age <- round(data.all$age)
       sampleArea <- nSegs*median(data.all$area)*1.3
       sample_weight <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
@@ -786,6 +787,42 @@ if(!FIGsOnly){
                xlab=paste("Currclim_fmi"),
                ylim =ylims, xlim = ylims,
                main=names(clim1)[ij],pch=19)
+        }
+        analyzeClim <- function(climx, ir = 1, vname){
+            outx <- array(0,dim = c(12,4),
+                          dimnames = list(c(1:12),paste0(vname,c("_overzerodays","_sum","_meanofall","_meanofoverzerodays"))))
+          dds <- c(0,as.vector(cumsum(days_in_month(1:12))))
+          if(is.null(dim(climx))) climx <- array(climx,c(1,length(climx)))
+          for(ik in 1:12){
+            ddss <- (dds[ik]+1):dds[ik+1]
+            outx[ik,1] <- sum(as.numeric(climx[ir,ddss]>0))          
+            outx[ik,2] <- sum(climx[ir,ddss])    
+            outx[ik,3] <- mean(climx[ir,ddss])    
+            outx[ik,4] <- mean((climx[ir,ddss])[(climx[ir,ddss]>0)])
+          }
+          return(outx)
+        }
+        climStats <- list()
+        for(ij in 1:(length(clim1)-2)){
+          outxx <- array(0,dim = c(12,4,4),
+                        dimnames = list(c(1:12),paste0(vname,c("_overzerodays","_sum","_meanofall","_meanofoverzerodays")),
+                                        c("currclim_i","currclimfmi_i","currclim_all","currclimfmi_all")))
+          outxx[,,1] <- analyzeClim(clim1[[ij]], ir=id_currclim_1, names(clim1)[ij])  
+          outxx[,,2] <- analyzeClim(clim2[[ij]], ir=id_currclimfmi_1, names(clim2)[ij])  
+          outxx[,,3] <- analyzeClim(colMeans(clim1[[ij]]), ir=1, names(clim1)[ij])  
+          outxx[,,4] <- analyzeClim(colMeans(clim2[[ij]]), ir=1, names(clim2)[ij])  
+          climStats[[ij]] <- outxx
+          names(climStats)[ij] <- names(clim1)[ij]
+          par(mfrow=c(2,2))
+          for(ik in 1:4){
+          barplot(rbind(climStats[[ij]][,ik,"currclim_i"],
+                        climStats[[ij]][,ik,"currclimfmi_i"],
+                        climStats[[ij]][,ik,"currclim_all"],
+                        climStats[[ij]][,ik,"currclimfmi_all"]),
+                  beside=T,
+                  legend=dimnames(climStats[[ij]])[[3]],
+                  main=dimnames(climStats[[ij]])[[2]][ik])
+            }
         }
       }
       if(exists("NEP_yasso1")) rm("NEP_yasso1") 
