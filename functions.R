@@ -172,7 +172,7 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
     colnames(dat)[which(colnames(dat)=="vpd")] <- "VPD"
     colnames(dat)[which(colnames(dat)=="co2")] <- "CO2"
     dat$CO2[which(is.na(dat$CO2))] <- max(na.omit(dat$CO2))
-    print("scale different fmi data"); dat$VPD <- dat$VPD*.6; dat$Precip <- 0.5*dat$Precip; dat$CO2 <- 380
+    #print("scale different fmi data"); dat$VPD <- dat$VPD*1; dat$Precip <- 0.5*dat$Precip; #dat$CO2 <- 380
     
     # TminTmax array, repeat Tmin and Tmax for all climIDs
     print("Setup Tmin Tmax values...")

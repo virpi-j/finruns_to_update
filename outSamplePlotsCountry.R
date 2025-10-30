@@ -270,7 +270,9 @@ if(!FIGsOnly){
     
     set.seed(1)
   
-    if(samplaus==1){
+    if(samplaus==0){
+      dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F)]
+    } else if(samplaus==1){
       data.all$age <- round(data.all$age)
       sampleArea <- nSegs*median(data.all$area)*1.3
       sample_weight <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
