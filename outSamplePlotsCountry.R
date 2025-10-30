@@ -805,7 +805,7 @@ if(!FIGsOnly){
         climStats <- list()
         for(ij in 1:(length(clim1)-2)){
           outxx <- array(0,dim = c(12,4,4),
-                        dimnames = list(c(1:12),paste0(vname,c("_overzerodays","_sum","_meanofall","_meanofoverzerodays")),
+                        dimnames = list(c(1:12),paste0(names(clim1)[ij],c("_overzerodays","_sum","_meanofall","_meanofoverzerodays")),
                                         c("currclim_i","currclimfmi_i","currclim_all","currclimfmi_all")))
           outxx[,,1] <- analyzeClim(clim1[[ij]], ir=id_currclim_1, names(clim1)[ij])  
           outxx[,,2] <- analyzeClim(clim2[[ij]], ir=id_currclimfmi_1, names(clim2)[ij])  
@@ -815,14 +815,24 @@ if(!FIGsOnly){
           names(climStats)[ij] <- names(clim1)[ij]
           par(mfrow=c(2,2))
           for(ik in 1:4){
-          barplot(rbind(climStats[[ij]][,ik,"currclim_i"],
-                        climStats[[ij]][,ik,"currclimfmi_i"],
-                        climStats[[ij]][,ik,"currclim_all"],
-                        climStats[[ij]][,ik,"currclimfmi_all"]),
-                  beside=T,
-                  legend=dimnames(climStats[[ij]])[[3]],
-                  main=dimnames(climStats[[ij]])[[2]][ik])
+            if(ik==1){ 
+              barplot(rbind(climStats[[ij]][,ik,"currclim_i"],
+                            climStats[[ij]][,ik,"currclimfmi_i"],
+                            climStats[[ij]][,ik,"currclim_all"],
+                            climStats[[ij]][,ik,"currclimfmi_all"]),
+                      beside=T,
+                      legend=dimnames(climStats[[ij]])[[3]],
+                      main=dimnames(climStats[[ij]])[[2]][ik])
+            } else {
+              barplot(rbind(climStats[[ij]][,ik,"currclim_i"],
+                            climStats[[ij]][,ik,"currclimfmi_i"],
+                            climStats[[ij]][,ik,"currclim_all"],
+                            climStats[[ij]][,ik,"currclimfmi_all"]),
+                      beside=T,
+                      main=dimnames(climStats[[ij]])[[2]][ik])
+              
             }
+          }
         }
       }
       if(exists("NEP_yasso1")) rm("NEP_yasso1") 
