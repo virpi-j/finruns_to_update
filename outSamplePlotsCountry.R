@@ -274,6 +274,83 @@ if(!FIGsOnly){
       dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F)]
     } else if(samplaus==1){
       par(mfrow=c(1,1))
+      ## correction of data.all
+      if(TRUE){
+        data.all$decid <- data.all$birch+data.all$decid
+        data.all$birch <- 0
+        dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F),]
+        #dataS$decid <- dataS$birch + dataS$decid
+        #dataS$birch <- 0
+        gc()
+        print("region specific qq-correction of initial state data, start...")
+        #load("~/finruns_to_update/quantile_data_2021.rdata")
+        load(paste0("~/finruns_to_update/quantile_data_2021_landclass12_",
+                    r_no,"_",regionNames_fi[r_no],".rdata"))
+        if(max(data.all$ba)>max(qMSNFI[[1]]$x)) qMSNFI[[1]] <- rbind(qMSNFI[[1]],data.table(ecdf=1,x=max(data.all$ba)*1.05))
+        if(max(data.all$decid)>max(qMSNFI[[2]]$x)) qMSNFI[[2]] <- rbind(qMSNFI[[2]],data.table(ecdf=1,x=max(data.all$decid)*1.05))
+        if(max(data.all$pine)>max(qMSNFI[[3]]$x)) qMSNFI[[3]] <- rbind(qMSNFI[[3]],data.table(ecdf=1,x=max(data.all$pine)*1.05))
+        if(max(data.all$spruce)>max(qMSNFI[[4]]$x)) qMSNFI[[4]] <- rbind(qMSNFI[[4]],data.table(ecdf=1,x=max(data.all$spruce)*1.05))
+        if(max(data.all$age)>max(qMSNFI[[6]]$x)) qMSNFI[[6]] <- rbind(qMSNFI[[6]],data.table(ecdf=1,x=max(data.all$age)*1.05))
+        if((max(data.all$h)/10)>max(qMSNFI[[7]]$x)) qMSNFI[[7]] <- rbind(qMSNFI[[7]],data.table(ecdf=1,x=max(data.all$h/10)*1.05))
+        if(max(data.all$dbh)>max(qMSNFI[[8]]$x)) qMSNFI[[8]] <- rbind(qMSNFI[[8]],data.table(ecdf=1,x=max(data.all$dbh)*1.05))
+        source("~/finruns_to_update/correction_function.R")
+        ii <- 1
+        bamax <- max(data.all$ba)
+        dataS <- data.all
+        dataCorr <- function(ii){
+          if(ii%%1e4==0) print(paste(ii,"/",nrow(dataS)))
+          dataSout<- array(c(min(bamax*1.1,correction_f(dataS$ba[ii],1)),
+                       correction_f(dataS$decid[ii],2),
+                       correction_f(dataS$pine[ii],3),
+                       correction_f(dataS$spruce[ii],4),
+                       correction_f(dataS$age[ii],6),
+                       correction_f(dataS$h[ii]/10,7)*10,
+                       correction_f(dataS$dbh[ii],8)),c(1,7))
+          return(dataSout)
+        }
+        dataS <- apply(array(1:nrow(data.all),c(nrow(data.all),1)),1:2,dataCorr)
+        print("done.")
+        dataS <- data.table(t(dataS[,,1]))
+        colnames(dataS) <- c("ba","decid","pine","spruce","age","h","dbh")
+        dataS[which(dataS$age==0),c("ba","decid","pine","spruce","age","h","dbh")]<-0
+        dataS[which(dataS$h==0),c("ba","decid","pine","spruce","age","h","dbh")]<-0
+        if(FIGS){
+          par(mfrow=c(3,2))
+          ni <- sample(1:nrow(data.all),1000,replace = F)
+          ni2 <- sample(1:nrow(dataS),1000,replace = F)
+          plot(data.all$ba[ni],data.all$age[ni],pch=19,cex=0.2,
+               ylim=c(0,max(c(data.all$age[ni],dataS$age))),
+               xlim=c(0,max(c(data.all$ba[ni],dataS$ba))),
+               main=paste0(regionNames_fi[r_no],": black MSNFI, red MSNFIcorr"))
+          points(dataS$ba[ni2],dataS$age[ni2],col="red",pch=19,cex=0.2)
+          plot(data.all$ba[ni],data.all$pine[ni],pch=19,cex=0.2,
+               ylim=c(0,max(c(data.all$pine[ni],dataS$pine))),
+               xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
+          points(dataS$ba[ni2],dataS$pine[ni2],col="red",pch=19,cex=0.2)
+          plot(data.all$ba[ni],data.all$spruce[ni],pch=,cex=0.219,
+               ylim=c(0,max(c(data.all$spruce[ni],dataS$spruce))),
+               xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
+          points(dataS$ba[ni2],dataS$spruce[ni2],col="red",pch=19,cex=0.2)
+          plot(data.all$ba[ni],data.all$decid[ni],pch=19,cex=0.2,
+               ylim=c(0,max(c(data.all$decid[ni],dataS$decid))),
+               xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
+          points(dataS$ba[ni2],dataS$decid[ni2],col="red",pch=19,cex=0.2)
+          plot(data.all$ba[ni],data.all$dbh[ni],pch=19,cex=0.2,
+               ylim=c(0,max(c(data.all$dbh[ni],dataS$dbh))),
+               xlim=c(0,max(c(data.all$ba[ni],dataS$ba))),
+               main=paste0(regionNames_fi[r_no],": black MSNFI, red MSNFIcorr"))
+          points(dataS$ba[ni2],dataS$dbh[ni2],col="red",pch=19,cex=0.2)
+          plot(data.all$h[ni],data.all$dbh[ni],pch=19,cex=0.2,
+               ylim=c(0,max(c(data.all$dbh[ni],dataS$dbh))),
+               xlim=c(0,max(c(data.all$h[ni],dataS$h))))
+          points(dataS$h[ni2],dataS$dbh[ni2],col="red",pch=19,cex=0.2)
+        }
+        data.all[,c("ba","decid","pine","spruce","age","h","dbh")] <- dataS
+        rm("dataS")
+        gc()
+      }
+      
+      ##
       data.all$age <- round(data.all$age)
       sampleArea <- nSegs*median(data.all$area)*1.3
       sample_weight <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
@@ -304,6 +381,7 @@ if(!FIGsOnly){
         pagedata_lc1[ii] <- sum(data.all$area[n_lc1[which(data.all$age[n_lc1]<=agelimitsii[ii])]])/totArea_lc1
         pagedata[ii] <- sum(data.all$area[which(data.all$age<=agelimitsii[ii])])/totArea
       }
+      par(mfrow=c(1,1))
       plot(agelimitsii, pagelimitsii, type="l", xlab="age", ylab="cumsum(area) quantiles")
       points(agelimits, pwages, pch=19)
       lines(agelimitsii,pagedata, col="red")
@@ -814,20 +892,15 @@ if(!FIGsOnly){
           climStats[[ij]] <- outxx
           names(climStats)[ij] <- names(clim1)[ij]
           par(mfrow=c(2,2))
+          ik <- 1
           for(ik in 1:4){
             if(ik==1){ 
-              barplot(rbind(climStats[[ij]][,ik,"currclim_i"],
-                            climStats[[ij]][,ik,"currclimfmi_i"],
-                            climStats[[ij]][,ik,"currclim_all"],
-                            climStats[[ij]][,ik,"currclimfmi_all"]),
+              barplot(t(climStats[[ij]][,ik,]),
                       beside=T,
                       legend=dimnames(climStats[[ij]])[[3]],
                       main=dimnames(climStats[[ij]])[[2]][ik])
             } else {
-              barplot(rbind(climStats[[ij]][,ik,"currclim_i"],
-                            climStats[[ij]][,ik,"currclimfmi_i"],
-                            climStats[[ij]][,ik,"currclim_all"],
-                            climStats[[ij]][,ik,"currclimfmi_all"]),
+              barplot(t(climStats[[ij]][,ik,]),
                       beside=T,
                       main=dimnames(climStats[[ij]])[[2]][ik])
               
