@@ -967,7 +967,6 @@ if(!FIGsOnly){
     a2 <- geom_point(data = data2, 
                      mapping = aes(x = time, y = shares, colour = classes))
     print(a1+a2)
-    
     #totArea <- sum(data.all$area)
     #areaRegion <- totArea <- sum(data.all$area,na.rm=T)
     sortVar <- c("landclass","peatID","cons")

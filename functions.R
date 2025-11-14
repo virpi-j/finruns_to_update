@@ -989,7 +989,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
                                      reStartYear=1,
                                      HcFactorX=HcFactor, climScen=climScen, 
                                      ingrowth=F,
-                                     rcps = CurrClim,
+                                     rcps = "CurrClim",
                                      sampleX=sampleX, 
                                      P0currclim=NA, fT0=NA, 
                                      TminTmax=NA, 
@@ -1004,7 +1004,55 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
   siteInfo[,1] <- data.sample$segID
   siteInfo[,2] <- as.numeric(data.sample[,id])
   siteInfo[,3] <- data.sample[,fert]
+  soilGridData <- 2
+  if(soilGridData == 1){
+    print("Soil data from database")
+    soilgrd <- read_csv("~/finruns_to_update/grd5_soil_fin.csv")
+    soilInfo <- function(j){
+      nj <- which.min((data.sample$lon[j]-soilgrd$longitude)^2+(data.sample$lat[j]-soilgrd$latitude)^2)
+      return(nj)
+    }
+    njs <- apply(array(1:nrow(data.sample),c(nrow(data.sample),1)),1,soilInfo)
+    siteout <- soilgrd[njs,c("soil_depth","FC","WP")]
+    siteout$soil_depth <- siteout$soil_depth
+    siteout$FC <- siteout$FC/siteout$soil_depth
+    siteout$WP <- siteout$WP/siteout$soil_depth
+    siteInfo[,c(10:12)] <- cbind(siteout$soil_depth,
+                                   siteout$FC,siteout$WP)
+    print(paste("soil siteInfo NAs?:",any(is.na(siteInfo[,c(10:12)]))))
+    if(any(is.na(siteInfo[,c(10:12)]))){
+      nas <- which(is.na(rowSums(siteInfo[,c(10:12)])))
+      siteInfo[nas,c(10:12)] <- t(array(colMeans(siteInfo[,c(10:12)],na.rm = T),
+                                        c(3,length(nas))))
+      rm("nas")
+      gc()
+      print(paste("soil siteInfo NAs?:",any(is.na(siteInfo[,c(10:12)]))))
+    }
+   # plot(soilgrd$x[njs],soilgrd$y[njs],pch=19, col="black")
+  #  points(data.sample$x,data.sample$y, pch=20, col="red")
+  #  plot(siteout$soil_depth,siteout$FC)
+  #  plot(siteout$soil_depth,siteout$WP)
+    #`FC`: Field capacity [mm]
+    #`WP`: Wilting point [mm]
+    #`AWC`: Available water capacity [mm]
+    #`soil_depth`: Depth to bedrock [cm]
+    rm(list=c("soilgrd","siteout","njs"))
+    gc()
   
+  } else if(soilGridData==2){
+    print("Set poorly productive soild depth to 1cm")
+    #siteInfo[,10] <- 300
+    if(r_no%in%c(8,16,19)){
+      print(paste("North",r_no))
+      siteInfo[,10] <- 100
+    }
+    if(r_no%in%c(1,11)){
+      print(paste("South",r_no))
+      siteInfo[,10] <- 200
+    }
+    siteInfo[which(data.sample$landclass==2),10] <- 10
+    print(unique(siteInfo[,10]))
+  }
   
   ####### Wind disturbance module from Jonathan
   sid <- NA
