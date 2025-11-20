@@ -143,6 +143,9 @@ dimnames(results) <- list(c("grossgrowth","V","Vharvested", "NEE", "Wharvested",
 
 r_noi <- 1
 
+if(!exists("ECMmod")) ECMmod <- 0
+if(!exists("soilGridData")) soilGridData <- 0
+
 #if(!toFile) rids <- rids[1:3]
 fname <- paste0("results_agesample",samplaus,NFIlocal,
                 "_ECMmod",ECMmod,"soilGridData",soilGridData,"_",rcps,"_HcMod_Init",HcMod_Init)
@@ -809,6 +812,7 @@ if(!FIGsOnly){
       out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
                       harvScen="Base", harvInten="Base", procDrPeat=T, 
                       ECMmod = ECMmod,
+                      soilGridData = soilGridData,
                       thinFactX= thinFactX, landClassUnman = landClassUnman,
                       compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
                       forceSaveInitSoil=F, sampleX = dataS, HcMod_Init = HcMod_Init)
@@ -827,6 +831,8 @@ if(!FIGsOnly){
       out <- runModel(1,sampleID=1, outType = "testRun", rcps = rcps, climScen = 0,#RCP=0,
                       harvScen=harvScen, harvInten=HarvInten, procDrPeat=T, 
                       thinFactX= thinFactX, landClassUnman = landClassUnman,
+                      ECMmod = ECMmod,
+                      soilGridData = soilGridData,
                       compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
                       forceSaveInitSoil=F, sampleX = dataS, HcMod_Init = HcMod_Init)
       out_currclim_fmi <- out

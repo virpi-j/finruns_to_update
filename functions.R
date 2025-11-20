@@ -17,7 +17,8 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
                      funPreb = regionPrebas, ingrowth = F,
                      initSoilCreStart=NULL,thinFactX = 0.25,
                      ageHarvPriorX = 0,
-                     ECMmod = 1, # on if default
+                     soilGridData = 0, # 1 soil properties from data
+                     ECMmod = 0, # ECMmod off by default
                      outModReStart=NULL,reStartYear=1,climdata=NULL,
                      sampleX=NULL,P0currclim=NA, fT0=NA, 
                      disturbanceON=NA, TminTmax=NA,
@@ -1015,8 +1016,8 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
   soilGridData <- 0
   if(soilGridData == 1){
     print("Soil data from database")
-    soilgrd <- read_csv("~/finruns_to_update/grd5_soil_fin.csv")
-    soildpth <- read.csv("~/finruns_to_update/soilDepth.csv")
+    soilgrd <- read_csv("~/Soils/grd5_soil_fin.csv")
+    soildpth <- read.csv("~/Soils/soilDepth.csv")
     soilInfo <- function(j){
       nj <- which.min((data.sample$lon[j]-soilgrd$longitude)^2+(data.sample$lat[j]-soilgrd$latitude)^2)
       return(nj)
