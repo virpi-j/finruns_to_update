@@ -132,7 +132,7 @@ if(manualRun){
   easyInit=FALSE; forceSaveInitSoil=F; cons10run = F
   procDrPeat=T; coeffPeat1=-240; coeffPeat2=70
   coefCH4 = 0.34; coefN20_1 = 0.23; coefN20_2 = 0.077#g m-2 y-1
-  landClassUnman=NULL; funPreb = "regionPrebas"
+  funPreb = "regionPrebas"
   initSoilCreStart=NULL; outModReStart=NULL; reStartYear=1
   sampleX=NULL; P0currclim=NA; fT0=NA
   sampleID = 1; initAge=NA; disturbanceON <- NA; ingrowth <- F; TminTmax <- NA
@@ -794,7 +794,7 @@ if(!FIGsOnly){
     if(MANUALRUN){
       easyInit=FALSE; forceSaveInitSoil=F; cons10run = F; coeffPeat1=-240; coeffPeat2=70; coefCH4 = 0.34; coefN20_1 = 0.23; coefN20_2 = 0.077; climScen = 0; clcut=1;  funPreb = regionPrebas; ingrowth = F; initSoilCreStart=NULL; outModReStart=NULL; reStartYear=1; climdata=NULL; sampleX=dataS; P0currclim=NA; fT0=NA; disturbanceON=NA; TminTmax=NA
       deltaID <- 1; outType <- "TestRun"; harvScen="Base"; harvInten="Base"; climScen=0  
-      procDrPeat=T; landClassUnman = 2; forceSaveInitSoil=F; sampleX = dataS  
+      procDrPeat=T; forceSaveInitSoil=F; sampleX = dataS  
     }
     startingYear <- 2015
     endingYear <- 2050

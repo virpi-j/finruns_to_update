@@ -305,6 +305,7 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
                                          sampleX=sampleX, 
                                          P0currclim=NA, fT0=NA, 
                                          TminTmax=TminTmax,
+                                         landClassUnman=landClassUnman,
                                          disturbanceON = disturbanceON,
                                          HcMod_in=HcMod_Init)
   print("... done.")
@@ -998,6 +999,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
                                      reStartYear=1,
                                      HcFactorX=HcFactor, climScen=climScen, 
                                      ingrowth=F,
+                                     landClassUnman=NULL,
                                      rcps = "CurrClim",
                                      sampleX=sampleX, 
                                      P0currclim=NA, fT0=NA, 
@@ -1013,11 +1015,10 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
   siteInfo[,1] <- data.sample$segID
   siteInfo[,2] <- as.numeric(data.sample[,id])
   siteInfo[,3] <- data.sample[,fert]
-  soilGridData <- 0
   if(soilGridData == 1){
     print("Soil data from database")
     soilgrd <- read_csv("~/Soils/grd5_soil_fin.csv")
-    soildpth <- read.csv("~/Soils/soilDepth.csv")
+    soildpth <- read.csv2("~/Soils/soilDepth.csv")
     soilInfo <- function(j){
       nj <- which.min((data.sample$lon[j]-soilgrd$longitude)^2+(data.sample$lat[j]-soilgrd$latitude)^2)
       return(nj)
@@ -1034,7 +1035,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
     }
     njs <- apply(array(1:nrow(data.sample),c(nrow(data.sample),1)),1,soilInfo)
     njdepths <- apply(array(1:nrow(data.sample),c(nrow(data.sample),1)),1,soildepthInfo)
-    siteout <- cbind(soildpth[njdepths,"soil_depth"],soilgrd[njs,c("FC","WP")])
+    siteout <- cbind(soil_depth=soildpth[njdepths,"soil_depth"],soilgrd[njs,c("FC","WP")])
     siteout$soil_depth <- siteout$soil_depth*10
     siteout$FC <- siteout$FC/1000
     siteout$WP <- siteout$WP/1000
@@ -1049,9 +1050,11 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
       gc()
       print(paste("soil siteInfo NAs?:",any(is.na(siteInfo[,c(10:12)]))))
     }
-    poorlyprod <- F
-    if(poorlyprod) siteInfo[which(data.sample$landclass==2),10] <- 100
-    
+    poorlyprod <- T
+    if(poorlyprod & landClassUnman==2){
+      print("set landclass 2 soil depth to 10cm.")
+      siteInfo[which(data.sample$landclass==2),10] <- 100
+    }
    # plot(soilgrd$x[njs],soilgrd$y[njs],pch=19, col="black")
   #  points(data.sample$x,data.sample$y, pch=20, col="red")
   #  plot(siteout$soil_depth,siteout$FC)
