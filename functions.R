@@ -17,6 +17,7 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
                      funPreb = regionPrebas, ingrowth = F,
                      initSoilCreStart=NULL,thinFactX = 0.25,
                      ageHarvPriorX = 0,
+                     ECMmod = 1, # on if default
                      outModReStart=NULL,reStartYear=1,climdata=NULL,
                      sampleX=NULL,P0currclim=NA, fT0=NA, 
                      disturbanceON=NA, TminTmax=NA,
@@ -606,6 +607,13 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
       save(initSoilC,file=paste0("/scratch/project_2000994/PREBASruns/adaptFirst/initSoilC/initSoilC",station_id,".rdata"))
     }
     print(paste0("initsoil saved"))
+    ##
+    print("Save P0CurrClim")
+    P0currclim <- rowMeans(region$P0y[,,1])
+    fT0 <- rowMeans(fTfun(region$weatherYasso[,,1],
+                          region$weatherYasso[,,2],region$weatherYasso[,,3]))
+    save(P0currclim,fT0,file=paste0("Ninfo_station",r_no,".rdata"))
+    #initPrebas$P0y[,1,1] <- P0currclim
     
     ###run yasso (starting from steady state) using PREBAS litter
     # region <- yassoPREBASin(region,initSoilC)
@@ -1004,19 +1012,31 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
   siteInfo[,1] <- data.sample$segID
   siteInfo[,2] <- as.numeric(data.sample[,id])
   siteInfo[,3] <- data.sample[,fert]
-  soilGridData <- 2
+  soilGridData <- 0
   if(soilGridData == 1){
     print("Soil data from database")
     soilgrd <- read_csv("~/finruns_to_update/grd5_soil_fin.csv")
+    soildpth <- read.csv("~/finruns_to_update/soilDepth.csv")
     soilInfo <- function(j){
       nj <- which.min((data.sample$lon[j]-soilgrd$longitude)^2+(data.sample$lat[j]-soilgrd$latitude)^2)
       return(nj)
     }
+    bb <- c(min(data.sample$lon)*.99,max(data.sample$lon)*1.01,
+            min(data.sample$lat)*.99, max(data.sample$lat)*1.01)
+    soildpth <- soildpth[which(soildpth$x>=bb[1] & soildpth$x<=bb[2],
+                         soildpth$y>=bb[3] & soildpth$y<=bb[4]),]
+    gc()
+    soildepthInfo <- function(j){
+      nj <- which.min((data.sample$lon[j]-soildpth$x)^2+
+                        (data.sample$lat[j]-soildpth$y)^2)
+      return(nj)
+    }
     njs <- apply(array(1:nrow(data.sample),c(nrow(data.sample),1)),1,soilInfo)
-    siteout <- soilgrd[njs,c("soil_depth","FC","WP")]
-    siteout$soil_depth <- siteout$soil_depth
-    siteout$FC <- siteout$FC/siteout$soil_depth
-    siteout$WP <- siteout$WP/siteout$soil_depth
+    njdepths <- apply(array(1:nrow(data.sample),c(nrow(data.sample),1)),1,soildepthInfo)
+    siteout <- cbind(soildpth[njdepths,"soil_depth"],soilgrd[njs,c("FC","WP")])
+    siteout$soil_depth <- siteout$soil_depth*10
+    siteout$FC <- siteout$FC/1000
+    siteout$WP <- siteout$WP/1000
     siteInfo[,c(10:12)] <- cbind(siteout$soil_depth,
                                    siteout$FC,siteout$WP)
     print(paste("soil siteInfo NAs?:",any(is.na(siteInfo[,c(10:12)]))))
@@ -1028,6 +1048,9 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
       gc()
       print(paste("soil siteInfo NAs?:",any(is.na(siteInfo[,c(10:12)]))))
     }
+    poorlyprod <- F
+    if(poorlyprod) siteInfo[which(data.sample$landclass==2),10] <- 100
+    
    # plot(soilgrd$x[njs],soilgrd$y[njs],pch=19, col="black")
   #  points(data.sample$x,data.sample$y, pch=20, col="red")
   #  plot(siteout$soil_depth,siteout$FC)
@@ -1036,24 +1059,10 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
     #`WP`: Wilting point [mm]
     #`AWC`: Available water capacity [mm]
     #`soil_depth`: Depth to bedrock [cm]
-    rm(list=c("soilgrd","siteout","njs"))
+    rm(list=c("njdepths","soilgrd","siteout","njs","soildpth"))
     gc()
   
-  } else if(soilGridData==2){
-    print("Set poorly productive soild depth to 1cm")
-    #siteInfo[,10] <- 300
-    if(r_no%in%c(8,16,19)){
-      print(paste("North",r_no))
-      siteInfo[,10] <- 100
-    }
-    if(r_no%in%c(1,11)){
-      print(paste("South",r_no))
-      siteInfo[,10] <- 200
-    }
-    siteInfo[which(data.sample$landclass==2),10] <- 10
-    print(unique(siteInfo[,10]))
   }
-  
   ####### Wind disturbance module from Jonathan
   sid <- NA
   if("wind"%in%disturbanceON & climScen>=0){# & !rcps%in%c("CurrClim","CurrClim_fmi")){
@@ -1296,31 +1305,57 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
   #initVar[nn,2,] <- initVar[nn,2,]*ages[nn]/apply(initVar[nn,5,]*initVar[nn,2,]/apply(initVar[nn,5,],1,sum),1,sum)
   print("latitudes...")
   print(lat[1:5])
-    
   if(harv == "NoHarv"  & !rcps%in%c("CurrClim_fmis")) ClCuts <- -1+0*ClCuts
   #print(paste("ClCuts",ClCuts))  
-  initPrebas <- InitMultiSite(nYearsMS = rep(nYears,nSites),
-                              siteInfo=siteInfo,
-                              siteInfoDist = sid,
-                              # litterSize = litterSize,#pAWEN = parsAWEN,
-                              latitude = lat,#data.sample$lat,
-                              pCROBAS = pCrobasX,
-                              defaultThin=defaultThin,
-                              ClCut = ClCuts, 
-                              areas =areas,
-                              energyCut = energyCut, 
-                              ftTapioPar = ftTapioParX,
-                              tTapioPar = tTapioParX,
-                              ingrowth = ingrowth,
-                              multiInitVar = as.array(initVar),
-                              PAR = clim$PAR[, 1:(nYears*365)],
-                              TAir=clim$TAir[, 1:(nYears*365)],
-                              VPD=clim$VPD[, 1:(nYears*365)],
-                              Precip=clim$Precip[, 1:(nYears*365)],
-                              CO2=clim$CO2[, 1:(nYears*365)],
-                              yassoRun = 1,
-                              mortMod = mortMod, TminTmax = TminTmax, 
-                              disturbanceON = disturbanceON)
+  if(ECMmod == 1){ # ECM
+    initPrebas <- InitMultiSite(nYearsMS = rep(nYears,nSites),
+                                siteInfo=siteInfo,
+                                siteInfoDist = sid,
+                                latitude = lat,#data.sample$lat,
+                                pCROBAS = pCrobasX,
+                                defaultThin=defaultThin,
+                                ClCut = ClCuts, 
+                                areas =areas,
+                                energyCut = energyCut, 
+                                ftTapioPar = ftTapioParX,
+                                tTapioPar = tTapioParX,
+                                ingrowth = ingrowth,
+                                ECMmod = 1, # ECM
+                                alpharNcalc = TRUE, # ECM
+                                pCN_alfar = parsCN_alfar, # ECM
+                                alpharVersion = 1, # ECM
+                                multiInitVar = as.array(initVar),
+                                PAR = clim$PAR[, 1:(nYears*365)],
+                                TAir=clim$TAir[, 1:(nYears*365)],
+                                VPD=clim$VPD[, 1:(nYears*365)],
+                                Precip=clim$Precip[, 1:(nYears*365)],
+                                CO2=clim$CO2[, 1:(nYears*365)],
+                                yassoRun = 1,
+                                mortMod = mortMod, TminTmax = TminTmax, 
+                                disturbanceON = disturbanceON)
+  } else {
+    initPrebas <- InitMultiSite(nYearsMS = rep(nYears,nSites),
+                                siteInfo=siteInfo,
+                                siteInfoDist = sid,
+                                latitude = lat,#data.sample$lat,
+                                pCROBAS = pCrobasX,
+                                defaultThin=defaultThin,
+                                ClCut = ClCuts, 
+                                areas =areas,
+                                energyCut = energyCut, 
+                                ftTapioPar = ftTapioParX,
+                                tTapioPar = tTapioParX,
+                                ingrowth = ingrowth,
+                                multiInitVar = as.array(initVar),
+                                PAR = clim$PAR[, 1:(nYears*365)],
+                                TAir=clim$TAir[, 1:(nYears*365)],
+                                VPD=clim$VPD[, 1:(nYears*365)],
+                                Precip=clim$Precip[, 1:(nYears*365)],
+                                CO2=clim$CO2[, 1:(nYears*365)],
+                                yassoRun = 1,
+                                mortMod = mortMod, TminTmax = TminTmax, 
+                                disturbanceON = disturbanceON)
+  }  
   
   if(harv == "NoHarv" & !rcps%in%c("CurrClim_fmis")){
   #if(harv == "NoHarv" & !rcps%in%c("CurrClim_fmi")){

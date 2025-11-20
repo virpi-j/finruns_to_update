@@ -144,7 +144,8 @@ dimnames(results) <- list(c("grossgrowth","V","Vharvested", "NEE", "Wharvested",
 r_noi <- 1
 
 #if(!toFile) rids <- rids[1:3]
-if(toFile) pdf(paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_",rcps,"_HcMod_Init",HcMod_Init,".pdf"))
+if(toFile) pdf(paste0(outDir,"results_agesample",samplaus,NFIlocal,
+                      "_ECMmod",ECMmod,"_",rcps,"_HcMod_Init",HcMod_Init,".pdf"))
 if(!exists("FIGsOnly")) FIGsOnly <- F
 if(!FIGsOnly){
   for(r_noi in 1:length(rids)){
@@ -250,11 +251,7 @@ if(!FIGsOnly){
       } else {
         print("Extract peatIDs...")
         peatIDs <-extract(finPeats, cbind(data.all$x,data.all$y))
-        #peatIDs <-extract(finPeats, cbind(data.all$x,data.all$y))
-        #print("Save peatIDs.")
-        #save(peatIDs, file=paste0("uncRuns/peatID_reg",r_no,".rdata"))
       }
-      #data.all[,peatID:=peatIDs]
       data.all[,peatID:=peatIDs]
       data.all$peatID[which(data.all$peatID==100)]<-0
       data.all$peatID[which(data.all$peatID==400)]<-1
@@ -810,6 +807,7 @@ if(!FIGsOnly){
     if(climFIG | save_fmi_data | !fmi_from_allas){
       out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
                       harvScen="Base", harvInten="Base", procDrPeat=T, 
+                      ECMmod = ECMmod,
                       thinFactX= thinFactX, landClassUnman = landClassUnman,
                       compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
                       forceSaveInitSoil=F, sampleX = dataS, HcMod_Init = HcMod_Init)
@@ -1458,7 +1456,8 @@ if(!FIGsOnly){
     #
     #if(toFile) 
       save(outresults, areatable, 
-                    file = paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,"_",rcps,".rdata"))  
+                    file = paste0(outDir,"results_agesample",samplaus,NFIlocal,
+                      "_ECMmod",ECMmod,"_",rcps,"_HcMod_Init",HcMod_Init,"_rno",r_noi,".rdata"))  
     if(fmi_from_allas & delete_fmi_data){
       file.remove(paste0(workdir,fmi_vars_PREBAS_file))
       file.remove(paste0(workdir,climID_lookup_file))
@@ -1480,7 +1479,9 @@ r_nois <- r_nois0 <- match(c(1:2,4:19),r_nos)
 
 r_nois[-1] <- r_nois0[-1]-1
 
-load(paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",1,"_",rcps,".rdata"))  
+load(paste0(outDir,"results_agesample",samplaus,NFIlocal,
+              "_ECMmod",ECMmod,"_",rcps,"_HcMod_Init",HcMod_Init,"_rno",r_noi,".rdata"))
+#load(paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",1,"_",rcps,".rdata"))  
 timei <- 2015+1:nrow(outresults)
 outresults_all <- array(0,dim=c(dim(outresults)[1],dim(outresults)[2],length(rids)),
                         dimnames = list(c(2015+1:dim(outresults)[1]),
@@ -1551,7 +1552,9 @@ for(r_noi in r_nois0){#1:length(rids)){
   sortVar <- c("landclass","peatID","cons")
   ri <- max(1,r_noi-1)
   dimnames(outresults_all)[[3]][ri]
-  load(paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",ri,"_",rcps,".rdata"))  
+  load(paste0(outDir,"results_agesample",samplaus,NFIlocal,
+                "_ECMmod",ECMmod,"_",rcps,"_HcMod_Init",HcMod_Init,"_rno",r_noi,".rdata"))
+  #load(paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",ri,"_",rcps,".rdata"))  
   outresults_all[,,ri] <- array(unlist(outresults),dim(outresults))
   totArea <- areatable$areaTot
   netsinksreg_per_ha <-netsinksreg*1e9/totArea
@@ -1882,7 +1885,9 @@ if(toFile){
     rname <- regionNames[r_no]
     rname_fi <- regionNames_fi[r_no]
     rnameid <- r_nos[r_no]
-    load(file = paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,"_",rcps,".rdata"))  
+    load(file = paste0(outDir,"results_agesample",samplaus,NFIlocal,
+                  "_ECMmod",ECMmod,"_",rcps,"_HcMod_Init",HcMod_Init,"_rno",r_noi,".rdata"))
+    #load(file = paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",r_noi,"_",rcps,".rdata"))  
     
     if(r_noi==1){
       ij <- which(grepl("NBEsum",colnames(outresults)))
@@ -1902,7 +1907,9 @@ if(toFile){
   
   #if(toFile) 
   save(outresults_wholecountry, outresults_all, validation_all, areatable_wholecountry,
-       file = paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_wholeCountry_",rcps,".rdata"))  
+       file = paste0(outDir,"results_agesample",samplaus,NFIlocal,
+                          "_ECMmod",ECMmod,"_",rcps,"_HcMod_Init",HcMod_Init,"_wholeCountry",".rdata"))
+       #file = paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_wholeCountry_",rcps,".rdata"))  
   par(mfrow=c(3,1))
   sortid <- 1
   cnames <- colnames(outresults_wholecountry)
