@@ -134,7 +134,7 @@ if(manualRun){
   coefCH4 = 0.34; coefN20_1 = 0.23; coefN20_2 = 0.077#g m-2 y-1
   funPreb = "regionPrebas"
   initSoilCreStart=NULL; outModReStart=NULL; reStartYear=1
-  sampleX=NULL; P0currclim=NA; fT0=NA
+  sampleX=NULL; #P0currclim=NA; fT0=NA
   sampleID = 1; initAge=NA; disturbanceON <- NA; ingrowth <- F; TminTmax <- NA
 }
 
@@ -147,8 +147,8 @@ if(!exists("ECMmod")) ECMmod <- 0
 if(!exists("soilGridData")) soilGridData <- 0
 
 #if(!toFile) rids <- rids[1:3]
-fname <- paste0("results_agesample",samplaus,NFIlocal,
-                "_ECMmod",ECMmod,"soilGridData",soilGridData,"_",rcps,"_HcMod_Init",HcMod_Init)
+fname <- paste0("results_agesample",samplaus,
+                "_ECMmod",ECMmod,"_soilGridData",soilGridData,"_",rcps,"_HcModInit",HcMod_Init)
 if(toFile) pdf(paste0(outDir,fname,".pdf"))
 if(!exists("FIGsOnly")) FIGsOnly <- F
 if(!FIGsOnly){
@@ -790,12 +790,14 @@ if(!FIGsOnly){
       climID_lookup_file <- paste0("climID_lookup_dataS_",r_noi,".rdata")
     }
     
-    MANUALRUN <- F
+    MANUALRUN <- T
     if(MANUALRUN){
-      easyInit=FALSE; forceSaveInitSoil=F; cons10run = F; coeffPeat1=-240; coeffPeat2=70; coefCH4 = 0.34; coefN20_1 = 0.23; coefN20_2 = 0.077; climScen = 0; clcut=1;  funPreb = regionPrebas; ingrowth = F; initSoilCreStart=NULL; outModReStart=NULL; reStartYear=1; climdata=NULL; sampleX=dataS; P0currclim=NA; fT0=NA; disturbanceON=NA; TminTmax=NA
+      easyInit=FALSE; forceSaveInitSoil=F; cons10run = F; coeffPeat1=-240; coeffPeat2=70; coefCH4 = 0.34; coefN20_1 = 0.23; coefN20_2 = 0.077; climScen = 0; clcut=1;  funPreb = regionPrebas; ingrowth = F; initSoilCreStart=NULL; outModReStart=NULL; reStartYear=1; climdata=NULL; sampleX=dataS; disturbanceON=NA; TminTmax=NA
       deltaID <- 1; outType <- "TestRun"; harvScen="Base"; harvInten="Base"; climScen=0  
       procDrPeat=T; forceSaveInitSoil=F; sampleX = dataS  
     }
+    P0currclim=NA 
+    fT0=NA
     startingYear <- 2015
     endingYear <- 2050
     nYears <- endingYear-startingYear
@@ -809,9 +811,13 @@ if(!FIGsOnly){
     }
     if(!exists("climFIG")) climFIG <-F
     if(climFIG | save_fmi_data | !fmi_from_allas){
+      if(ECMmod) load(file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/RegionRuns/InitVals/Ninfo_station",r_no,".rdata"))
+      
       out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
                       harvScen="Base", harvInten="Base", procDrPeat=T, 
                       ECMmod = ECMmod,
+                      P0currclim = P0currclim,
+                      fT0 = fT0,
                       soilGridData = soilGridData,
                       thinFactX= thinFactX, landClassUnman = landClassUnman,
                       compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,

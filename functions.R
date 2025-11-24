@@ -303,7 +303,8 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
                                          climScen=climScen, 
                                          ingrowth=ingrowth,
                                          sampleX=sampleX, 
-                                         P0currclim=NA, fT0=NA, 
+                                         P0currclim=P0currclim, 
+                                         fT0=fT0, 
                                          TminTmax=TminTmax,
                                          landClassUnman=landClassUnman,
                                          disturbanceON = disturbanceON,
@@ -610,11 +611,13 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
     }
     print(paste0("initsoil saved"))
     ##
-    print("Save P0CurrClim")
-    P0currclim <- rowMeans(region$P0y[,,1])
-    fT0 <- rowMeans(fTfun(region$weatherYasso[,,1],
-                          region$weatherYasso[,,2],region$weatherYasso[,,3]))
-    save(P0currclim,fT0,file=paste0("Ninfo_station",r_no,".rdata"))
+    if(ECMmod==0){
+      print("Save P0CurrClim")
+      P0currclim <- rowMeans(region$P0y[,,1])
+      fT0 <- rowMeans(fTfun(region$weatherYasso[,,1],
+                            region$weatherYasso[,,2],region$weatherYasso[,,3]))
+      save(P0currclim,fT0,file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/RegionRuns/InitVals/Ninfo_station",r_no,".rdata"))
+    }
     #initPrebas$P0y[,1,1] <- P0currclim
     
     ###run yasso (starting from steady state) using PREBAS litter
@@ -1336,6 +1339,8 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
                                 Precip=clim$Precip[, 1:(nYears*365)],
                                 CO2=clim$CO2[, 1:(nYears*365)],
                                 yassoRun = 1,
+                                p0currClim = P0currclim,
+                                fT0AvgCurrClim = fT0,
                                 mortMod = mortMod, TminTmax = TminTmax, 
                                 disturbanceON = disturbanceON)
   } else {
