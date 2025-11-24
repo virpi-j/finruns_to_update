@@ -1498,10 +1498,12 @@ validation_all <- array(NA,dim=c(2,2*2+9*2,length(rids)),
                                           paste0("NBEtot",2015:2023),
                                           paste0("NBEave",2015:2023)),
                                         regionNames[rids]))
-r_noi <-1
-for(r_noi in r_nois0){#1:length(rids)){
+r_noi_id <- 3
+for(r_noi_id in 1:length(r_nois0)){#1:length(rids)){
   toMem <- ls()
   set.seed(1)
+  r_noi <- r_nois0[r_noi_id]
+  r_noi_file <- r_nois[r_noi_id]
   #r_no <- rids[r_noi]
   r_no <- r_noi#s0[r_noi]
   rname <- regionNames[r_no]
@@ -1557,7 +1559,7 @@ for(r_noi in r_nois0){#1:length(rids)){
   sortVar <- c("landclass","peatID","cons")
   ri <- max(1,r_noi-1)
   dimnames(outresults_all)[[3]][ri]
-  load(paste0(outDir,fname,"_rno",r_noi,".rdata"))
+  load(paste0(outDir,fname,"_rno",r_noi_file,".rdata"))
   #load(paste0(outDir,"results_agesample",samplaus,NFIlocal,"_compHarv",compHarvX,"ageHarvPrior",ageHarvPriorX,"_rno",ri,"_",rcps,".rdata"))  
   outresults_all[,,ri] <- array(unlist(outresults),dim(outresults))
   totArea <- areatable$areaTot
