@@ -700,6 +700,7 @@ if(!FIGsOnly){
           par(mfrow=c(3,2))
           ni <- sample(1:nrow(data.all),1000,replace = F)
           ni2 <- sample(1:nrow(dataS),1000,replace = F)
+          #ni2 <- c(ni2,18089)
           plot(data.all$ba[ni],data.all$age[ni],pch=19,cex=0.2,
                ylim=c(0,max(c(data.all$age[ni],dataS$age))),
                xlim=c(0,max(c(data.all$ba[ni],dataS$ba))),
@@ -812,7 +813,7 @@ if(!FIGsOnly){
     if(!exists("climFIG")) climFIG <-F
     if(climFIG | save_fmi_data | !fmi_from_allas){
       if(ECMmod) load(file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/RegionRuns/InitVals/Ninfo_station",r_no,".rdata"))
-      
+      print("Run runModel")
       out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
                       harvScen="Base", harvInten="Base", procDrPeat=T, 
                       ECMmod = ECMmod,
@@ -822,8 +823,13 @@ if(!FIGsOnly){
                       thinFactX= thinFactX, landClassUnman = landClassUnman,
                       compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
                       forceSaveInitSoil=F, sampleX = dataS, HcMod_Init = HcMod_Init)
-      clim1 <- out$clim
+
+      #NansRun <- any(is.na(out$region$multiOut[,,"NEP/SMI[layer_1]",,1]))
+      #print(paste("Any NaNs in NEP?", NansRun))
       NEP_yasso1 <- apply(out$region$multiOut[,,"NEP/SMI[layer_1]",,1],1:2,sum)
+      #if(NansRun) NEP_yasso1 <- NEP_yasso1[which(!is.na(rowSums(NEP_yasso1))),]     
+      
+      clim1 <- out$clim
       timei1 <- (1:dim(out$region$multiOut)[2])+2015
       #plot(timei, NEP_yasso,ylim=c(0,250),type="l",main="Currclim",ylab="NEPmin")
       out_currclim <- out
@@ -843,7 +849,12 @@ if(!FIGsOnly){
                       forceSaveInitSoil=F, sampleX = dataS, HcMod_Init = HcMod_Init)
       out_currclim_fmi <- out
       clim2 <-out$clim
+      
+      #NansRun <- any(is.na(out$region$multiOut[,,"NEP/SMI[layer_1]",,1]))
+      #print(paste("Any NaNs in NEP?", NansRun))
       NEP_yasso <- apply(out$region$multiOut[,,"NEP/SMI[layer_1]",,1],1:2,sum)
+      #if(NansRun) NEP_yasso <- NEP_yasso[which(!is.na(rowSums(NEP_yasso))),]     
+
       timei2 <- (1:dim(out$region$multiOut)[2])+2015
       if(climFIG | (TRUE & (save_fmi_data | !fmi_from_allas))){
         par(mfrow=c(3,2))
@@ -933,7 +944,12 @@ if(!FIGsOnly){
     gc()
 
     NEP_yasso <- out$region$multiOut[,,"NEP/SMI[layer_1]",,1]
-    
+    NansRun <- any(is.na(NEP_yasso))
+    #print(paste("Any NaNs in NEP?", NansRun))
+    if(NansRun){
+      niNa <- which(is.na(rowSums(apply(NEP_yasso,1:2,sum))))
+    #  NEP_yasso <- NEP_yasso[-niNa,,]
+    }   
     out$region <- peat_regression_model_multiSite(out$region,which(dataS$peatID==1)) 
     
     output <- out$region$multiOut
@@ -1054,7 +1070,11 @@ if(!FIGsOnly){
           if(varis[ij]%in%c("CH4em","N2Oem")){
             outres <- sum(tmp*areas)/sum(areas)
           } else {
-            outres <- colSums(apply(tmp,1:2,sum)*areas)/sum(areas)
+            if(varis[ij]%in%c("NEP_yasso","NEP/SMI[layer_1]")){
+              outres <- colSums(apply(tmp[-niNa,,],1:2,sum)*areas[-niNa])/sum(areas[-niNa])
+            } else {
+              outres <- colSums(apply(tmp,1:2,sum)*areas)/sum(areas)
+            }
           }
           #assign(varis[ij],outres)
           if(sortid==1){
@@ -1071,7 +1091,12 @@ if(!FIGsOnly){
             if(varis[ij]%in%c("CH4em","N2Oem")){
               outres <- sum(tmp[ni]*areas[ni])/sum(areas[ni])
             } else {
-              outres <- colSums(apply(tmp[ni,,],1:2,sum)*areas[ni])/sum(areas[ni])
+              if(varis[ij]%in%c("NEP_yasso","NEP/SMI[layer_1]")){
+                ni <- setdiff(ni,niNa)
+                outres <- colSums(apply(tmp[ni,,],1:2,sum)*areas[ni])/sum(areas[ni])
+              } else {
+                outres <- colSums(apply(tmp[ni,,],1:2,sum)*areas[ni])/sum(areas[ni])
+              }
             }
             outresults <- cbind(outresults, outres)
             colnames(outresults)[ncol(outresults)] <- paste0(variNams[ij],"_",sortVarnams[ik])
@@ -1173,8 +1198,8 @@ if(!FIGsOnly){
         tmp <- unlist(outresults[,..ij])
         ij2 <- c(ij,match(paste0("NEP_yasso_",sortVarnams),colnames(outresults)))
         ij3 <- c(ij2,match(c("NEP",paste0("NEP_",sortVarnams)),colnames(outresults)))
-        ymax <- max(0,max(outresults[,..ij3]))
-        ymin <- min(0,min(outresults[,..ij3]))
+        ymax <- max(0,max(outresults[,..ij3],na.rm = T))
+        ymin <- min(0,min(outresults[,..ij3],na.rm = T))
         plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
              xlim = c(timei[1]-1,timei[length(timei)]),
              xlab = "time, dotted=NEPyasso, solid=NEP (incl.ditched peatlands)",

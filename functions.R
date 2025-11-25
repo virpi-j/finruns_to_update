@@ -1020,7 +1020,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
   siteInfo[,3] <- data.sample[,fert]
   if(soilGridData == 1){
     print("Soil data from database")
-    soilgrd <- read_csv("~/Soils/grd5_soil_fin.csv")
+    soilgrd <- read_csv("~/Soils/grd5_soil_fin.csv", show_col_types = F)
     soildpth <- read.csv2("~/Soils/soilDepth.csv")
     soilInfo <- function(j){
       nj <- which.min((data.sample$lon[j]-soilgrd$longitude)^2+(data.sample$lat[j]-soilgrd$latitude)^2)
@@ -1044,7 +1044,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
     siteout$WP <- siteout$WP/1000
     siteInfo[,c(10:12)] <- cbind(siteout$soil_depth,
                                    siteout$FC,siteout$WP)
-    print(head(siteInfo[,c(10:12)]))
+    #print(head(siteInfo[,c(10:12)]))
     print(paste("soil siteInfo NAs?:",any(is.na(siteInfo[,c(10:12)]))))
     if(any(is.na(siteInfo[,c(10:12)]))){
       nas <- which(is.na(rowSums(siteInfo[,c(10:12)])))
@@ -1054,7 +1054,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
       gc()
       print(paste("soil siteInfo NAs?:",any(is.na(siteInfo[,c(10:12)]))))
     }
-    poorlyprod <- F
+    poorlyprod <- T
     if(poorlyprod & !is.null(landClassUnman)){
       print("set landclass 2 soil depth to 10cm.")
       siteInfo[which(data.sample$landclass==2),10] <- 100
