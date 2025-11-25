@@ -946,6 +946,7 @@ if(!FIGsOnly){
     NEP_yasso <- out$region$multiOut[,,"NEP/SMI[layer_1]",,1]
     NansRun <- any(is.na(NEP_yasso))
     #print(paste("Any NaNs in NEP?", NansRun))
+    niNa <- NA
     if(NansRun){
       niNa <- which(is.na(rowSums(apply(NEP_yasso,1:2,sum))))
     #  NEP_yasso <- NEP_yasso[-niNa,,]
