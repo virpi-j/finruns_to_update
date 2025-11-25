@@ -1071,7 +1071,7 @@ if(!FIGsOnly){
           if(varis[ij]%in%c("CH4em","N2Oem")){
             outres <- sum(tmp*areas)/sum(areas)
           } else {
-            if(varis[ij]%in%c("NEP_yasso","NEP/SMI[layer_1]")){
+            if(varis[ij]%in%c("NEP_yasso","NEP/SMI[layer_1]") & !is.na(niNa)){
               outres <- colSums(apply(tmp[-niNa,,],1:2,sum)*areas[-niNa])/sum(areas[-niNa])
             } else {
               outres <- colSums(apply(tmp,1:2,sum)*areas)/sum(areas)
@@ -1092,7 +1092,7 @@ if(!FIGsOnly){
             if(varis[ij]%in%c("CH4em","N2Oem")){
               outres <- sum(tmp[ni]*areas[ni])/sum(areas[ni])
             } else {
-              if(varis[ij]%in%c("NEP_yasso","NEP/SMI[layer_1]")){
+              if(varis[ij]%in%c("NEP_yasso","NEP/SMI[layer_1]") & !is.na(niNa)){
                 ni <- setdiff(ni,niNa)
                 outres <- colSums(apply(tmp[ni,,],1:2,sum)*areas[ni])/sum(areas[ni])
               } else {
