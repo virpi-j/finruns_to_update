@@ -297,6 +297,7 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
   print("initPrebas...")
   initPrebas = create_prebas_input_tmp.f(r_no, clim, data.sample, 
                                          nYears, 
+                                         ECMmod = ECMmod,
                                          harv=harvScen,
                                          rcps = rcpfile,
                                          HcFactorX=HcFactor, 
@@ -996,7 +997,9 @@ sample_data.f = function(sampleX, nSample) {
 
 
 
-create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, harv,
+create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, 
+                                     harv,
+                                     ECMmod = 0,
                                      startingYear=0, domSPrun=0,# ClCut=1,
                                      outModReStart=NULL, initSoilC=NULL,
                                      reStartYear=1,
