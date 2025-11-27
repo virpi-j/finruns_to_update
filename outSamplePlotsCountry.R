@@ -269,9 +269,9 @@ if(!FIGsOnly){
     }
     areaRegion <- totArea <- sum(data.all$area,na.rm=T)
     
-    set.seed(1)
   
     if(samplaus==0){
+      set.seed(1)
       dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F)]
     } else if(samplaus==1){
       par(mfrow=c(1,1))
@@ -423,6 +423,7 @@ if(!FIGsOnly){
       # add landclass 2 segments
       nLC2 <- round(length(n_lc2)/nrow(data.all)*length(nirandom))
       nirandom <- c(nirandom,n_lc2[sample(1:length(n_lc2),nLC2,replace = T)])
+      set.seed(1)
       print(paste("Sampled segments",length(nirandom),"versus nSegs =",nSegs))
       if(length(nirandom)>nSegs){ 
         nirandom <- nirandom[sample(1:length(nirandom),nSegs,replace=F)]
@@ -471,6 +472,7 @@ if(!FIGsOnly){
     } else {
       data.all$decid <- data.all$birch+data.all$decid
       data.all$birch <- 0
+      set.seed(1)
       dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F),]
       #dataS$decid <- dataS$birch + dataS$decid
       #dataS$birch <- 0

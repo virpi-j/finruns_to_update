@@ -149,6 +149,9 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
   i = 0
   rcpfile = rcps
   print(paste("ClimScen",climScen))
+  ligthnings = NULL
+  pop_dens = NULL
+  a_nd = NA
   if(rcpfile=="CurrClim"){
     print(paste("Load",rcpfile,"data."))
     load(paste(climatepath, rcpfile,".rdata", sep=""))  
@@ -208,6 +211,45 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
     TminTmax2[,,2] <- t(array(TminTmax$Tmax,c(nrow(clim2),length(climIDs))))
     TminTmax <- TminTmax2
     rm(list=c("clim2","TminTmax2"))
+    gc()
+    
+    ## population density, x = 1850:2100 by 10 years
+    x <- seq(1850,2100, by =10)
+    n <- which(x>=startingYear & x<=endingYear)
+    n <- c(min(n)-1,n,max(n)+1)
+    y <- population_density[n]
+    x <- x[n]
+    yy <- yn <-startingYear:endingYear
+    yy[which(yy<=startingYear)] <- y[1]
+    ni <- 1
+    for(ni in 1:(length(n)-1)){
+      xx <- max(x[ni],startingYear):min(x[ni+1], endingYear)
+      yy[which(yn%in%xx)] <- y[ni]+(xx-x[ni])/(x[ni+1]-x[ni])*(y[ni+1]-y[ni])
+    }
+    yy <- yy[-1]
+    #nd <- dim(clim$PAR)[2]
+    pop_dens <- matrix(rep(yy, each=365),
+                       nrow = nSitesRun, ncol = length(yy)*365, byrow = T)
+    #pop_dens <- matrix(c(rep(yy, each=365),rep(yy[length(yy)],8)),
+    #                   nrow = nSitesRun, ncol = nd, byrow = T)
+    
+    # lightnings 
+    library(lubridate)
+    for(ni in yn[-1]){
+      for(m in 1:12){
+        mi <- as.numeric(days_in_month(m))
+        #if(m==2 & ni%%4==0) mi <- mi+1
+        if(ni==yn[2] & m==1){
+          lightnings <- rep(lightning[m],mi)
+        } else {
+          lightnings <- c(lightnings, rep(lightning[m],mi))
+        }
+      }
+    }
+    lightnings <- matrix(lightnings,
+                         nrow = nSitesRun, ncol = length(lightnings), byrow = T)
+print(dim(lightnings))
+    rm(list=c("lightning","population_density"))
     gc()
     print("done.")
   } else if(climScen>0){
@@ -298,14 +340,18 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
   initPrebas = create_prebas_input_tmp.f(r_no, clim, data.sample, 
                                          nYears, 
                                          ECMmod = ECMmod,
+                                         soilGridData = soilGridData,
                                          harv=harvScen,
                                          rcps = rcpfile,
                                          HcFactorX=HcFactor, 
                                          climScen=climScen, 
                                          ingrowth=ingrowth,
+                                         lightnings = lightnings,
+                                         pop_dens = pop_dens,
+                                         a_nd = a_nd,
                                          sampleX=sampleX, 
                                          P0currclim=P0currclim, 
-                                         fT0=fT0, 
+                                         fT0=fT0,
                                          TminTmax=TminTmax,
                                          landClassUnman=landClassUnman,
                                          disturbanceON = disturbanceON,
@@ -547,7 +593,7 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
                         startSimYear=reStartYear)
     }
   }else{
-    savings <- F
+    savings <- T
     if(initPrebas$nSites<2000) savings <- T
     if(savings){
       print("save regionPrebas input...")
@@ -1000,6 +1046,7 @@ sample_data.f = function(sampleX, nSample) {
 create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, 
                                      harv,
                                      ECMmod = 0,
+                                     soilGridData = 0,
                                      startingYear=0, domSPrun=0,# ClCut=1,
                                      outModReStart=NULL, initSoilC=NULL,
                                      reStartYear=1,
@@ -1007,6 +1054,9 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
                                      ingrowth=F,
                                      landClassUnman=NULL,
                                      rcps = "CurrClim",
+                                     lightnings = NULL,
+                                     pop_dens = NULL,
+                                     a_nd = NA,
                                      sampleX=sampleX, 
                                      P0currclim=NA, fT0=NA, 
                                      TminTmax=NA, 
@@ -1042,6 +1092,8 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
     njs <- apply(array(1:nrow(data.sample),c(nrow(data.sample),1)),1,soilInfo)
     njdepths <- apply(array(1:nrow(data.sample),c(nrow(data.sample),1)),1,soildepthInfo)
     siteout <- cbind(soil_depth=soildpth[njdepths,"soil_depth"],soilgrd[njs,c("FC","WP")])
+    siteout$soil_depth[which(siteout$soil_depth==50)] <- 43
+    siteout$soil_depth[which(siteout$soil_depth==60)] <- 50
     siteout$soil_depth <- siteout$soil_depth*10
     siteout$FC <- siteout$FC/1000
     siteout$WP <- siteout$WP/1000
@@ -1059,8 +1111,8 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
     }
     poorlyprod <- T
     if(poorlyprod & !is.null(landClassUnman)){
-      print("set landclass 2 soil depth to 10cm.")
-      siteInfo[which(data.sample$landclass==2),10] <- 100
+      print("set landclass 2 soil depth to 5 cm.")
+      siteInfo[which(data.sample$landclass==2),10] <- 50
     }
    # plot(soilgrd$x[njs],soilgrd$y[njs],pch=19, col="black")
   #  points(data.sample$x,data.sample$y, pch=20, col="red")
@@ -1319,35 +1371,73 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
   if(harv == "NoHarv"  & !rcps%in%c("CurrClim_fmis")) ClCuts <- -1+0*ClCuts
   #print(paste("ClCuts",ClCuts))  
   if(ECMmod == 1){ # ECM
-    initPrebas <- InitMultiSite(nYearsMS = rep(nYears,nSites),
-                                siteInfo=siteInfo,
-                                siteInfoDist = sid,
-                                latitude = lat,#data.sample$lat,
-                                pCROBAS = pCrobasX,
-                                defaultThin=defaultThin,
-                                ClCut = ClCuts, 
-                                areas =areas,
-                                energyCut = energyCut, 
-                                ftTapioPar = ftTapioParX,
-                                tTapioPar = tTapioParX,
-                                ingrowth = ingrowth,
-                                ECMmod = 1, # ECM
-                                alpharNcalc = TRUE, # ECM
-                                pCN_alfar = parsCN_alfar, # ECM
-                                alpharVersion = 1, # ECM
-                                multiInitVar = as.array(initVar),
-                                PAR = clim$PAR[, 1:(nYears*365)],
-                                TAir=clim$TAir[, 1:(nYears*365)],
-                                VPD=clim$VPD[, 1:(nYears*365)],
-                                Precip=clim$Precip[, 1:(nYears*365)],
-                                CO2=clim$CO2[, 1:(nYears*365)],
-                                yassoRun = 1,
-                                p0currClim = P0currclim,
-                                fT0AvgCurrClim = fT0,
-                                mortMod = mortMod, TminTmax = TminTmax, 
-                                disturbanceON = disturbanceON)
+    if(rcps=="fireClim"){
+      print("include fire risk calculation")
+      initPrebas <- InitMultiSite(nYearsMS = rep(nYears,nSites),
+                                  siteInfo=siteInfo,
+                                  siteInfoDist = sid,
+                                  latitude = lat,#data.sample$lat,
+                                  pCROBAS = pCrobasX,
+                                  defaultThin=defaultThin,
+                                  ClCut = ClCuts, 
+                                  areas =areas,
+                                  energyCut = energyCut, 
+                                  ftTapioPar = ftTapioParX,
+                                  tTapioPar = tTapioParX,
+                                  ingrowth = ingrowth,
+                                  ECMmod = 1, # ECM
+                                  alpharNcalc = TRUE, # ECM
+                                  pCN_alfar = parsCN_alfar, # ECM
+                                  alpharVersion = 1, # ECM
+                                  multiInitVar = as.array(initVar),
+                                  popden = pop_dens,
+                                  lightnings = lightnings,
+                                  a_nd = a_nd,
+                                  FDIout = T,
+                                  PAR = clim$PAR[, 1:(nYears*365)],
+                                  TAir=clim$TAir[, 1:(nYears*365)],
+                                  VPD=clim$VPD[, 1:(nYears*365)],
+                                  Precip=clim$Precip[, 1:(nYears*365)],
+                                  CO2=clim$CO2[, 1:(nYears*365)],
+                                  yassoRun = 1,
+                                  p0currClim = P0currclim,
+                                  fT0AvgCurrClim = fT0,
+                                  mortMod = mortMod, TminTmax = TminTmax, 
+                                  disturbanceON = disturbanceON)
+    } else{
+      initPrebas <- InitMultiSite(nYearsMS = rep(nYears,nSites),
+                                  siteInfo=siteInfo,
+                                  siteInfoDist = sid,
+                                  latitude = lat,#data.sample$lat,
+                                  pCROBAS = pCrobasX,
+                                  defaultThin=defaultThin,
+                                  ClCut = ClCuts, 
+                                  areas =areas,
+                                  energyCut = energyCut, 
+                                  ftTapioPar = ftTapioParX,
+                                  tTapioPar = tTapioParX,
+                                  ingrowth = ingrowth,
+                                  ECMmod = 1, # ECM
+                                  alpharNcalc = TRUE, # ECM
+                                  pCN_alfar = parsCN_alfar, # ECM
+                                  alpharVersion = 1, # ECM
+                                  multiInitVar = as.array(initVar),
+                                  PAR = clim$PAR[, 1:(nYears*365)],
+                                  TAir=clim$TAir[, 1:(nYears*365)],
+                                  VPD=clim$VPD[, 1:(nYears*365)],
+                                  Precip=clim$Precip[, 1:(nYears*365)],
+                                  CO2=clim$CO2[, 1:(nYears*365)],
+                                  yassoRun = 1,
+                                  p0currClim = P0currclim,
+                                  fT0AvgCurrClim = fT0,
+                                  mortMod = mortMod, TminTmax = TminTmax, 
+                                  disturbanceON = disturbanceON)
+    }
+
   } else {
-    initPrebas <- InitMultiSite(nYearsMS = rep(nYears,nSites),
+    if(rcps=="fireClim"){
+      print("include fire risk calculation")
+      initPrebas <- InitMultiSite(nYearsMS = rep(nYears,nSites),
                                 siteInfo=siteInfo,
                                 siteInfoDist = sid,
                                 latitude = lat,#data.sample$lat,
@@ -1359,6 +1449,10 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
                                 ftTapioPar = ftTapioParX,
                                 tTapioPar = tTapioParX,
                                 ingrowth = ingrowth,
+                                popden = pop_dens,
+                                lightnings = lightnings,
+                                a_nd = a_nd,
+                                FDIout = T,
                                 multiInitVar = as.array(initVar),
                                 PAR = clim$PAR[, 1:(nYears*365)],
                                 TAir=clim$TAir[, 1:(nYears*365)],
@@ -1368,6 +1462,29 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
                                 yassoRun = 1,
                                 mortMod = mortMod, TminTmax = TminTmax, 
                                 disturbanceON = disturbanceON)
+    } else {
+      initPrebas <- InitMultiSite(nYearsMS = rep(nYears,nSites),
+                                  siteInfo=siteInfo,
+                                  siteInfoDist = sid,
+                                  latitude = lat,#data.sample$lat,
+                                  pCROBAS = pCrobasX,
+                                  defaultThin=defaultThin,
+                                  ClCut = ClCuts, 
+                                  areas =areas,
+                                  energyCut = energyCut, 
+                                  ftTapioPar = ftTapioParX,
+                                  tTapioPar = tTapioParX,
+                                  ingrowth = ingrowth,
+                                  multiInitVar = as.array(initVar),
+                                  PAR = clim$PAR[, 1:(nYears*365)],
+                                  TAir=clim$TAir[, 1:(nYears*365)],
+                                  VPD=clim$VPD[, 1:(nYears*365)],
+                                  Precip=clim$Precip[, 1:(nYears*365)],
+                                  CO2=clim$CO2[, 1:(nYears*365)],
+                                  yassoRun = 1,
+                                  mortMod = mortMod, TminTmax = TminTmax, 
+                                  disturbanceON = disturbanceON)
+    }
   }  
   
   if(harv == "NoHarv" & !rcps%in%c("CurrClim_fmis")){
