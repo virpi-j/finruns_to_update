@@ -299,7 +299,7 @@ if(!FIGsOnly){
         bamax <- max(data.all$ba)
         dataS <- data.all
         dataCorr <- function(ii){
-          if(ii%%1e4==0) print(paste(ii,"/",nrow(dataS)))
+          if(ii%%1e5==0) print(paste(ii,"/",nrow(dataS)))
           dataSout<- array(c(min(bamax*1.1,correction_f(dataS$ba[ii],1)),
                        correction_f(dataS$decid[ii],2),
                        correction_f(dataS$pine[ii],3),
