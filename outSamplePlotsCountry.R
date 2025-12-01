@@ -814,7 +814,7 @@ if(!FIGsOnly){
     }
     if(!exists("climFIG")) climFIG <-F
     if(climFIG | save_fmi_data | !fmi_from_allas){
-      if(ECMmod==1) load(file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/RegionRuns/InitVals/Ninfo_station",r_no,".rdata"))
+      if(ECMmod==1 & nSegs==20000) load(file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/RegionRuns/InitVals/Ninfo_station",r_no,".rdata"))
       print("Run runModel")
       out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
                       harvScen="Base", harvInten="Base", procDrPeat=T, 

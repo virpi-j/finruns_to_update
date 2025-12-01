@@ -1073,14 +1073,23 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
   siteInfo[,3] <- data.sample[,fert]
   if(soilGridData == 1){
     print("Soil data from database")
-    soilgrd <- read_csv("~/Soils/grd5_soil_fin.csv", show_col_types = F)
     soildpth <- read.csv2("~/Soils/soilDepth.csv")
-    soilInfo <- function(j){
-      nj <- which.min((data.sample$lon[j]-soilgrd$longitude)^2+(data.sample$lat[j]-soilgrd$latitude)^2)
-      return(nj)
-    }
+    soilgrd <- read_csv2("~/Soils/soil_variables_saxton.csv", show_col_types = F)
+    #soilgrd <- read_csv("~/Soils/grd5_soil_fin.csv", show_col_types = F)
+    #soilInfo <- function(j){
+    #  nj <- which.min((data.sample$lon[j]-soilgrd$longitude)^2+(data.sample$lat[j]-soilgrd$latitude)^2)
+    #  return(nj)
+    #}
     bb <- c(min(data.sample$lon)*.99,max(data.sample$lon)*1.01,
             min(data.sample$lat)*.99, max(data.sample$lat)*1.01)
+    soilgrd <- soilgrd[which(soilgrd$x>=bb[1] & soilgrd$x<=bb[2],
+                               soilgrd$y>=bb[3] & soilgrd$y<=bb[4]),]
+    gc()
+    soilInfo <- function(j){
+      nj <- which.min((data.sample$lon[j]-soilgrd$x)^2+
+                        (data.sample$lat[j]-soilgrd$y)^2)
+      return(nj)
+    }
     soildpth <- soildpth[which(soildpth$x>=bb[1] & soildpth$x<=bb[2],
                          soildpth$y>=bb[3] & soildpth$y<=bb[4]),]
     gc()
@@ -1091,14 +1100,18 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
     }
     njs <- apply(array(1:nrow(data.sample),c(nrow(data.sample),1)),1,soilInfo)
     njdepths <- apply(array(1:nrow(data.sample),c(nrow(data.sample),1)),1,soildepthInfo)
-    siteout <- cbind(soil_depth=soildpth[njdepths,"soil_depth"],soilgrd[njs,c("FC","WP")])
+    #siteout <- cbind(soil_depth=soildpth[njdepths,"soil_depth"],soilgrd[njs,c("FC","WP")])
+    siteout <- cbind(soil_depth=soildpth[njdepths,"soil_depth"],soilgrd[njs,c("FC","PWP")])
+    siteout$soil_depth[which(siteout$soil_depth==20)] <- 10
+    siteout$soil_depth[which(siteout$soil_depth==30)] <- 25
+    siteout$soil_depth[which(siteout$soil_depth==40)] <- 35
     siteout$soil_depth[which(siteout$soil_depth==50)] <- 43
     siteout$soil_depth[which(siteout$soil_depth==60)] <- 50
     siteout$soil_depth <- siteout$soil_depth*10
-    siteout$FC <- siteout$FC/1000
-    siteout$WP <- siteout$WP/1000
-    siteInfo[,c(10:12)] <- cbind(siteout$soil_depth,
-                                   siteout$FC,siteout$WP)
+    #siteout$FC <- siteout$FC/1000
+    #siteout$WP <- siteout$WP/1000
+    siteInfo[,c(10:12)] <- array(unlist(siteout),c(nSitesRun,3)) #cbind(siteout$soil_depth,
+   #                                siteout$FC,siteout$WP)
     #print(head(siteInfo[,c(10:12)]))
     print(paste("soil siteInfo NAs?:",any(is.na(siteInfo[,c(10:12)]))))
     if(any(is.na(siteInfo[,c(10:12)]))){
