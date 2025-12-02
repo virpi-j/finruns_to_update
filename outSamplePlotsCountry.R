@@ -274,200 +274,209 @@ if(!FIGsOnly){
       set.seed(1)
       dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F)]
     } else if(samplaus==1){
-      par(mfrow=c(1,1))
-      ## correction of data.all
-      if(TRUE){
-        data.all$decid <- data.all$birch+data.all$decid
-        data.all$birch <- 0
-        dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F),]
-        #dataS$decid <- dataS$birch + dataS$decid
-        #dataS$birch <- 0
-        gc()
-        print("region specific qq-correction of initial state data, start...")
-        #load("~/finruns_to_update/quantile_data_2021.rdata")
-        load(paste0("~/finruns_to_update/quantile_data_2021_landclass12_",
-                    r_no,"_",regionNames_fi[r_no],".rdata"))
-        if(max(data.all$ba)>max(qMSNFI[[1]]$x)) qMSNFI[[1]] <- rbind(qMSNFI[[1]],data.table(ecdf=1,x=max(data.all$ba)*1.05))
-        if(max(data.all$decid)>max(qMSNFI[[2]]$x)) qMSNFI[[2]] <- rbind(qMSNFI[[2]],data.table(ecdf=1,x=max(data.all$decid)*1.05))
-        if(max(data.all$pine)>max(qMSNFI[[3]]$x)) qMSNFI[[3]] <- rbind(qMSNFI[[3]],data.table(ecdf=1,x=max(data.all$pine)*1.05))
-        if(max(data.all$spruce)>max(qMSNFI[[4]]$x)) qMSNFI[[4]] <- rbind(qMSNFI[[4]],data.table(ecdf=1,x=max(data.all$spruce)*1.05))
-        if(max(data.all$age)>max(qMSNFI[[6]]$x)) qMSNFI[[6]] <- rbind(qMSNFI[[6]],data.table(ecdf=1,x=max(data.all$age)*1.05))
-        if((max(data.all$h)/10)>max(qMSNFI[[7]]$x)) qMSNFI[[7]] <- rbind(qMSNFI[[7]],data.table(ecdf=1,x=max(data.all$h/10)*1.05))
-        if(max(data.all$dbh)>max(qMSNFI[[8]]$x)) qMSNFI[[8]] <- rbind(qMSNFI[[8]],data.table(ecdf=1,x=max(data.all$dbh)*1.05))
-        source("~/finruns_to_update/correction_function.R")
-        ii <- 1
-        bamax <- max(data.all$ba)
-        dataS <- data.all
-        dataCorr <- function(ii){
-          if(ii%%1e5==0) print(paste(ii,"/",nrow(dataS)))
-          dataSout<- array(c(min(bamax*1.1,correction_f(dataS$ba[ii],1)),
-                       correction_f(dataS$decid[ii],2),
-                       correction_f(dataS$pine[ii],3),
-                       correction_f(dataS$spruce[ii],4),
-                       correction_f(dataS$age[ii],6),
-                       correction_f(dataS$h[ii]/10,7)*10,
-                       correction_f(dataS$dbh[ii],8)),c(1,7))
-          return(dataSout)
-        }
-        dataS <- apply(array(1:nrow(data.all),c(nrow(data.all),1)),1:2,dataCorr)
-        print("done.")
-        dataS <- data.table(t(dataS[,,1]))
-        colnames(dataS) <- c("ba","decid","pine","spruce","age","h","dbh")
-        dataS[which(dataS$age==0),c("ba","decid","pine","spruce","age","h","dbh")]<-0
-        dataS[which(dataS$h==0),c("ba","decid","pine","spruce","age","h","dbh")]<-0
-        if(FIGS){
-          par(mfrow=c(3,2))
-          ni <- sample(1:nrow(data.all),1000,replace = F)
-          ni2 <- sample(1:nrow(dataS),1000,replace = F)
-          plot(data.all$ba[ni],data.all$age[ni],pch=19,cex=0.2,
-               ylim=c(0,max(c(data.all$age[ni],dataS$age))),
-               xlim=c(0,max(c(data.all$ba[ni],dataS$ba))),
-               main=paste0(regionNames_fi[r_no],": black MSNFI, red MSNFIcorr"))
-          points(dataS$ba[ni2],dataS$age[ni2],col="red",pch=19,cex=0.2)
-          plot(data.all$ba[ni],data.all$pine[ni],pch=19,cex=0.2,
-               ylim=c(0,max(c(data.all$pine[ni],dataS$pine))),
-               xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
-          points(dataS$ba[ni2],dataS$pine[ni2],col="red",pch=19,cex=0.2)
-          plot(data.all$ba[ni],data.all$spruce[ni],pch=,cex=0.219,
-               ylim=c(0,max(c(data.all$spruce[ni],dataS$spruce))),
-               xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
-          points(dataS$ba[ni2],dataS$spruce[ni2],col="red",pch=19,cex=0.2)
-          plot(data.all$ba[ni],data.all$decid[ni],pch=19,cex=0.2,
-               ylim=c(0,max(c(data.all$decid[ni],dataS$decid))),
-               xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
-          points(dataS$ba[ni2],dataS$decid[ni2],col="red",pch=19,cex=0.2)
-          plot(data.all$ba[ni],data.all$dbh[ni],pch=19,cex=0.2,
-               ylim=c(0,max(c(data.all$dbh[ni],dataS$dbh))),
-               xlim=c(0,max(c(data.all$ba[ni],dataS$ba))),
-               main=paste0(regionNames_fi[r_no],": black MSNFI, red MSNFIcorr"))
-          points(dataS$ba[ni2],dataS$dbh[ni2],col="red",pch=19,cex=0.2)
-          plot(data.all$h[ni],data.all$dbh[ni],pch=19,cex=0.2,
-               ylim=c(0,max(c(data.all$dbh[ni],dataS$dbh))),
-               xlim=c(0,max(c(data.all$h[ni],dataS$h))))
-          points(dataS$h[ni2],dataS$dbh[ni2],col="red",pch=19,cex=0.2)
-        }
-        data.all[,c("ba","decid","pine","spruce","age","h","dbh")] <- dataS
-        rm("dataS")
-        gc()
-      }
-      
-      ##
-      data.all$age <- round(data.all$age)
-      sampleArea <- nSegs*median(data.all$area)*1.3
-      sample_weight <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
-      sample_weight_lc1 <- sample_weight/sum(sample_weight)
-      #ikaid <- array(0,c(nrow(data.all),1))
-      ages <- round(data.all$age)
-      agelimits <- c(0,20,40,60,80,100,120,140,1e4)
-      
-      agelimitsii <- 0:max(150,max(data.all$age))
-      agelimits[length(agelimits)] <- agelimitsii[length(agelimitsii)]
-      pagelimitsii <- pagedata <- pagedata_lc1 <- pagesample <- pagesample_lc1 <- array(0,c(length(agelimitsii),1))
-      pwages <- cumsum(sample_weight_lc1)
-      n_lc1 <- which(data.all$landclass==1)
-      n_lc2 <- which(data.all$landclass==2)
-      ages <- ages[n_lc1]
-      totArea_lc1 <- sum(data.all$area[n_lc1])
-      ii <- 1
-      for(ii in 1:length(agelimitsii)){
-        if(agelimitsii[ii]%in%agelimits){
-          iiprev <- which(agelimits==agelimitsii[ii])
-          ageprev <- agelimitsii[ii]
-          pagelimitsii[ii] <- pwages[iiprev]
-        } else {
-          pagelimitsii[ii] <- pwages[iiprev] + 
-            (pwages[iiprev+1]-pwages[iiprev])/
-            (agelimits[iiprev+1]-(ageprev))*(agelimitsii[ii]-(ageprev))
-        }
-        pagedata_lc1[ii] <- sum(data.all$area[n_lc1[which(data.all$age[n_lc1]<=agelimitsii[ii])]])/totArea_lc1
-        pagedata[ii] <- sum(data.all$area[which(data.all$age<=agelimitsii[ii])])/totArea
-      }
-      par(mfrow=c(1,1))
-      plot(agelimitsii, pagelimitsii, type="l", xlab="age", ylab="cumsum(area) quantiles")
-      points(agelimits, pwages, pch=19)
-      lines(agelimitsii,pagedata, col="red")
-      lines(agelimitsii,pagedata_lc1, col="brown")
-      
-      ii <- 1
-      nirandom <- NULL
-      areashares <- array(0,c(length(agelimitsii),1))
-      pareashares <- c(pagelimitsii[1],pagelimitsii[-1]-pagelimitsii[-length(pagelimitsii)])
-      pareashares2 <- pareashares/sum(pareashares)*sampleArea
-      #    pareashares2 <- pareashares/sum(pareashares)*totArea*nSegs/nrow(data.all)
-      for(ii in 1:length(agelimitsii)){
-        agei <- agelimitsii[ii]
-        ni <- which(ages==agei)
-        #print(paste("age",agei,":",length(ni)))
-        if(length(ni)==0){
-          ni <- which(abs(ages-ages[which.min((ages-agei)^2)[1]])<=4)
-        }
-        while(areashares[ii]<=1*pareashares2[ii]){
-          nii <- ni[sample(1:length(ni),1)]
-          nirandom <- c(nirandom,nii)
-          areashares[ii] <- areashares[ii]+data.all$area[n_lc1[nii]]
-        }
-        if(FALSE){
-          while(areashares[ii]<=pagelimitsii[ii]){
-            nirandom <- c(nirandom,ni[sample(1:length(ni),1)])
-            areashares[ii] <- sum(data.all$area[n_lc1[nirandom]])/sampleArea
-            #areashares[ii] <- areashares[ii]+data.all$area[n_lc1[nii]]
-          }}
-      }
-      nirandom <- n_lc1[nirandom]
-      ii<-1
-      for(ii in 1:length(agelimitsii)){
-        pagesample_lc1[ii] <- sum(data.all$area[nirandom[
-          which(data.all$age[nirandom]<=agelimitsii[ii])]])/sum(data.all$area[nirandom])
-      }
-      
-      # add landclass 2 segments
-      nLC2 <- round(length(n_lc2)/nrow(data.all)*length(nirandom))
-      nirandom <- c(nirandom,n_lc2[sample(1:length(n_lc2),nLC2,replace = T)])
-      set.seed(1)
-      print(paste("Sampled segments",length(nirandom),"versus nSegs =",nSegs))
-      if(length(nirandom)>nSegs){ 
-        nirandom <- nirandom[sample(1:length(nirandom),nSegs,replace=F)]
-      } else {
-        nirandom <- nirandom[sample(1:length(nirandom),nSegs,replace=T)]
-      }
-      dataS <- data.all[nirandom,]
-      for(ii in 1:length(agelimitsii)){
-        pagesample[ii] <- sum(dataS$area[which(dataS$age<=agelimitsii[ii])])/sum(dataS$area)
-      }
-      lines(agelimitsii, pagesample_lc1, col="pink",lwd=2)
-      lines(agelimitsii, pagesample, col="green")
-      legend(x = "topleft", box.col = "black", 
-             lty = c(NA,1,1,1,1,1),
-             pch = c(19,NA,NA,NA,NA,NA),
-             lwd = c(1,1,1,1,1,2),
-             col = c("black","black","red","brown","green","pink"),
-             #bg ="yellow", box.lwd = 2 , #title="EQUATIONS",  
-             legend=c("VMIstats_lc1","VMIstats lin.line_lc1", "MVMI",
-                      "MVMI_lc1","sample","sample_lc1"))  
-      
-      if(FALSE){
-        for(ij in 1:length(agelimits)){
-          if(ij == 1){ ikaid[which(ages==agelimits[1])] <- ij
-          } else if(ij==length(agelimits)){
-            ikaid[which(ages>(agelimits[ij-1]+1))] <- ij
-          } else {
-            ikaid[which(ages>(agelimits[ij-1]+10) & ages<=agelimits[ij])]<-ij  
+      if(newSample){
+        par(mfrow=c(1,1))
+        ## correction of data.all
+        if(TRUE){
+          data.all$decid <- data.all$birch+data.all$decid
+          data.all$birch <- 0
+          dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F),]
+          #dataS$decid <- dataS$birch + dataS$decid
+          #dataS$birch <- 0
+          gc()
+          print("region specific qq-correction of initial state data, start...")
+          #load("~/finruns_to_update/quantile_data_2021.rdata")
+          load(paste0("~/finruns_to_update/quantile_data_2021_landclass12_",
+                      r_no,"_",regionNames_fi[r_no],".rdata"))
+          if(max(data.all$ba)>max(qMSNFI[[1]]$x)) qMSNFI[[1]] <- rbind(qMSNFI[[1]],data.table(ecdf=1,x=max(data.all$ba)*1.05))
+          if(max(data.all$decid)>max(qMSNFI[[2]]$x)) qMSNFI[[2]] <- rbind(qMSNFI[[2]],data.table(ecdf=1,x=max(data.all$decid)*1.05))
+          if(max(data.all$pine)>max(qMSNFI[[3]]$x)) qMSNFI[[3]] <- rbind(qMSNFI[[3]],data.table(ecdf=1,x=max(data.all$pine)*1.05))
+          if(max(data.all$spruce)>max(qMSNFI[[4]]$x)) qMSNFI[[4]] <- rbind(qMSNFI[[4]],data.table(ecdf=1,x=max(data.all$spruce)*1.05))
+          if(max(data.all$age)>max(qMSNFI[[6]]$x)) qMSNFI[[6]] <- rbind(qMSNFI[[6]],data.table(ecdf=1,x=max(data.all$age)*1.05))
+          if((max(data.all$h)/10)>max(qMSNFI[[7]]$x)) qMSNFI[[7]] <- rbind(qMSNFI[[7]],data.table(ecdf=1,x=max(data.all$h/10)*1.05))
+          if(max(data.all$dbh)>max(qMSNFI[[8]]$x)) qMSNFI[[8]] <- rbind(qMSNFI[[8]],data.table(ecdf=1,x=max(data.all$dbh)*1.05))
+          source("~/finruns_to_update/correction_function.R")
+          ii <- 1
+          bamax <- max(data.all$ba)
+          dataS <- data.all
+          dataCorr <- function(ii){
+            if(ii%%1e5==0) print(paste(ii,"/",nrow(dataS)))
+            dataSout<- array(c(min(bamax*1.1,correction_f(dataS$ba[ii],1)),
+                               correction_f(dataS$decid[ii],2),
+                               correction_f(dataS$pine[ii],3),
+                               correction_f(dataS$spruce[ii],4),
+                               correction_f(dataS$age[ii],6),
+                               correction_f(dataS$h[ii]/10,7)*10,
+                               correction_f(dataS$dbh[ii],8)),c(1,7))
+            return(dataSout)
           }
+          dataS <- apply(array(1:nrow(data.all),c(nrow(data.all),1)),1:2,dataCorr)
+          print("done.")
+          dataS <- data.table(t(dataS[,,1]))
+          colnames(dataS) <- c("ba","decid","pine","spruce","age","h","dbh")
+          dataS[which(dataS$age==0),c("ba","decid","pine","spruce","age","h","dbh")]<-0
+          dataS[which(dataS$h==0),c("ba","decid","pine","spruce","age","h","dbh")]<-0
+          if(FIGS){
+            par(mfrow=c(3,2))
+            ni <- sample(1:nrow(data.all),1000,replace = F)
+            ni2 <- sample(1:nrow(dataS),1000,replace = F)
+            plot(data.all$ba[ni],data.all$age[ni],pch=19,cex=0.2,
+                 ylim=c(0,max(c(data.all$age[ni],dataS$age))),
+                 xlim=c(0,max(c(data.all$ba[ni],dataS$ba))),
+                 main=paste0(regionNames_fi[r_no],": black MSNFI, red MSNFIcorr"))
+            points(dataS$ba[ni2],dataS$age[ni2],col="red",pch=19,cex=0.2)
+            plot(data.all$ba[ni],data.all$pine[ni],pch=19,cex=0.2,
+                 ylim=c(0,max(c(data.all$pine[ni],dataS$pine))),
+                 xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
+            points(dataS$ba[ni2],dataS$pine[ni2],col="red",pch=19,cex=0.2)
+            plot(data.all$ba[ni],data.all$spruce[ni],pch=,cex=0.219,
+                 ylim=c(0,max(c(data.all$spruce[ni],dataS$spruce))),
+                 xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
+            points(dataS$ba[ni2],dataS$spruce[ni2],col="red",pch=19,cex=0.2)
+            plot(data.all$ba[ni],data.all$decid[ni],pch=19,cex=0.2,
+                 ylim=c(0,max(c(data.all$decid[ni],dataS$decid))),
+                 xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
+            points(dataS$ba[ni2],dataS$decid[ni2],col="red",pch=19,cex=0.2)
+            plot(data.all$ba[ni],data.all$dbh[ni],pch=19,cex=0.2,
+                 ylim=c(0,max(c(data.all$dbh[ni],dataS$dbh))),
+                 xlim=c(0,max(c(data.all$ba[ni],dataS$ba))),
+                 main=paste0(regionNames_fi[r_no],": black MSNFI, red MSNFIcorr"))
+            points(dataS$ba[ni2],dataS$dbh[ni2],col="red",pch=19,cex=0.2)
+            plot(data.all$h[ni],data.all$dbh[ni],pch=19,cex=0.2,
+                 ylim=c(0,max(c(data.all$dbh[ni],dataS$dbh))),
+                 xlim=c(0,max(c(data.all$h[ni],dataS$h))))
+            points(dataS$h[ni2],dataS$dbh[ni2],col="red",pch=19,cex=0.2)
+          }
+          data.all[,c("ba","decid","pine","spruce","age","h","dbh")] <- dataS
+          rm("dataS")
+          gc()
         }
-        ikaid[which(data.all$landclass==2)] <- 0
-        ikaid <- ikaid + 1
         
-        w2 <- areasLandClass2015/sum(areasLandClass2015)
-        sample_weight <- c(w2[2],sample_weight_lc1*w2[1]) # prob for all landclass 2, probs for landclass 1 by age
+        ##
+        data.all$age <- round(data.all$age)
+        sampleArea <- nSegs*median(data.all$area)*1.3
+        sample_weight <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
+        sample_weight_lc1 <- sample_weight/sum(sample_weight)
+        #ikaid <- array(0,c(nrow(data.all),1))
+        ages <- round(data.all$age)
+        agelimits <- c(0,20,40,60,80,100,120,140,1e4)
         
+        agelimitsii <- 0:max(150,max(data.all$age))
+        agelimits[length(agelimits)] <- agelimitsii[length(agelimitsii)]
+        pagelimitsii <- pagedata <- pagedata_lc1 <- pagesample <- pagesample_lc1 <- array(0,c(length(agelimitsii),1))
+        pwages <- cumsum(sample_weight_lc1)
+        n_lc1 <- which(data.all$landclass==1)
+        n_lc2 <- which(data.all$landclass==2)
+        ages <- ages[n_lc1]
+        totArea_lc1 <- sum(data.all$area[n_lc1])
+        ii <- 1
+        for(ii in 1:length(agelimitsii)){
+          if(agelimitsii[ii]%in%agelimits){
+            iiprev <- which(agelimits==agelimitsii[ii])
+            ageprev <- agelimitsii[ii]
+            pagelimitsii[ii] <- pwages[iiprev]
+          } else {
+            pagelimitsii[ii] <- pwages[iiprev] + 
+              (pwages[iiprev+1]-pwages[iiprev])/
+              (agelimits[iiprev+1]-(ageprev))*(agelimitsii[ii]-(ageprev))
+          }
+          pagedata_lc1[ii] <- sum(data.all$area[n_lc1[which(data.all$age[n_lc1]<=agelimitsii[ii])]])/totArea_lc1
+          pagedata[ii] <- sum(data.all$area[which(data.all$age<=agelimitsii[ii])])/totArea
+        }
+        par(mfrow=c(1,1))
+        plot(agelimitsii, pagelimitsii, type="l", xlab="age", ylab="cumsum(area) quantiles")
+        points(agelimits, pwages, pch=19)
+        lines(agelimitsii,pagedata, col="red")
+        lines(agelimitsii,pagedata_lc1, col="brown")
+        
+        ii <- 1
         nirandom <- NULL
-        for(id in 1:length(unique(ikaid))){
-          ni <- which(ikaid==id)
-          ni <- ni[sample(1:length(ni),nSegs,replace = T)]
-          ni <- ni[which(cumsum(data.all$area[ni])<= sample_weight[id]*sampleArea)]
-          nirandom <- c(nirandom,ni)
+        areashares <- array(0,c(length(agelimitsii),1))
+        pareashares <- c(pagelimitsii[1],pagelimitsii[-1]-pagelimitsii[-length(pagelimitsii)])
+        pareashares2 <- pareashares/sum(pareashares)*sampleArea
+        #    pareashares2 <- pareashares/sum(pareashares)*totArea*nSegs/nrow(data.all)
+        for(ii in 1:length(agelimitsii)){
+          agei <- agelimitsii[ii]
+          ni <- which(ages==agei)
+          #print(paste("age",agei,":",length(ni)))
+          if(length(ni)==0){
+            ni <- which(abs(ages-ages[which.min((ages-agei)^2)[1]])<=4)
+          }
+          while(areashares[ii]<=1*pareashares2[ii]){
+            nii <- ni[sample(1:length(ni),1)]
+            nirandom <- c(nirandom,nii)
+            areashares[ii] <- areashares[ii]+data.all$area[n_lc1[nii]]
+          }
+          if(FALSE){
+            while(areashares[ii]<=pagelimitsii[ii]){
+              nirandom <- c(nirandom,ni[sample(1:length(ni),1)])
+              areashares[ii] <- sum(data.all$area[n_lc1[nirandom]])/sampleArea
+              #areashares[ii] <- areashares[ii]+data.all$area[n_lc1[nii]]
+            }}
         }
-        dataS <- data.all[nirandom[sample(1:length(nirandom),nSegs,replace=F)],]
+        nirandom <- n_lc1[nirandom]
+        ii<-1
+        for(ii in 1:length(agelimitsii)){
+          pagesample_lc1[ii] <- sum(data.all$area[nirandom[
+            which(data.all$age[nirandom]<=agelimitsii[ii])]])/sum(data.all$area[nirandom])
+        }
+        
+        # add landclass 2 segments
+        nLC2 <- round(length(n_lc2)/nrow(data.all)*length(nirandom))
+        nirandom <- c(nirandom,n_lc2[sample(1:length(n_lc2),nLC2,replace = T)])
+        set.seed(1)
+        print(paste("Sampled segments",length(nirandom),"versus nSegs =",nSegs))
+        if(length(nirandom)>nSegs){ 
+          nirandom <- nirandom[sample(1:length(nirandom),nSegs,replace=F)]
+        } else {
+          nirandom <- nirandom[sample(1:length(nirandom),nSegs,replace=T)]
+        }
+        dataS <- data.all[nirandom,]
+        for(ii in 1:length(agelimitsii)){
+          pagesample[ii] <- sum(dataS$area[which(dataS$age<=agelimitsii[ii])])/sum(dataS$area)
+        }
+        lines(agelimitsii, pagesample_lc1, col="pink",lwd=2)
+        lines(agelimitsii, pagesample, col="green")
+        legend(x = "topleft", box.col = "black", 
+               lty = c(NA,1,1,1,1,1),
+               pch = c(19,NA,NA,NA,NA,NA),
+               lwd = c(1,1,1,1,1,2),
+               col = c("black","black","red","brown","green","pink"),
+               #bg ="yellow", box.lwd = 2 , #title="EQUATIONS",  
+               legend=c("VMIstats_lc1","VMIstats lin.line_lc1", "MVMI",
+                        "MVMI_lc1","sample","sample_lc1"))  
+        
+        if(FALSE){
+          for(ij in 1:length(agelimits)){
+            if(ij == 1){ ikaid[which(ages==agelimits[1])] <- ij
+            } else if(ij==length(agelimits)){
+              ikaid[which(ages>(agelimits[ij-1]+1))] <- ij
+            } else {
+              ikaid[which(ages>(agelimits[ij-1]+10) & ages<=agelimits[ij])]<-ij  
+            }
+          }
+          ikaid[which(data.all$landclass==2)] <- 0
+          ikaid <- ikaid + 1
+          
+          w2 <- areasLandClass2015/sum(areasLandClass2015)
+          sample_weight <- c(w2[2],sample_weight_lc1*w2[1]) # prob for all landclass 2, probs for landclass 1 by age
+          
+          nirandom <- NULL
+          for(id in 1:length(unique(ikaid))){
+            ni <- which(ikaid==id)
+            ni <- ni[sample(1:length(ni),nSegs,replace = T)]
+            ni <- ni[which(cumsum(data.all$area[ni])<= sample_weight[id]*sampleArea)]
+            nirandom <- c(nirandom,ni)
+          }
+          dataS <- data.all[nirandom[sample(1:length(nirandom),nSegs,replace=F)],]
+        }
+        print("save sample")
+        save(dataS,file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/RegionRuns/dataS_",
+                               r_no,"_",nSegs,".rdata"))
+      } else {
+        print("Load old sample data")
+        load(file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/RegionRuns/dataS_",
+                               r_no,"_",nSegs,".rdata"))
       }
     } else {
       data.all$decid <- data.all$birch+data.all$decid
@@ -734,6 +743,9 @@ if(!FIGsOnly){
       #rm("data.all")
       gc()
     }
+    print("Scale sample wider")
+    if(samplaus==3) dataS[,c("ba","decid","pine","spruce","age","h","dbh")]<-1.1*dataS[,c("ba","decid","pine","spruce","age","h","dbh")]
+    if(samplaus==1) dataS[,c("ba","decid","pine","spruce","h","dbh")]<-1.1*dataS[,c("ba","decid","pine","spruce","h","dbh")]
     
     print(paste("NAs in init state?", any(is.na(dataS))))
    # rcps <- "CurrClim"

@@ -1110,7 +1110,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
     siteout$soil_depth <- siteout$soil_depth*10
     #siteout$FC <- siteout$FC/1000
     #siteout$WP <- siteout$WP/1000
-    siteInfo[,c(10:12)] <- array(unlist(siteout),c(nSitesRun,3)) #cbind(siteout$soil_depth,
+    siteInfo[,c(10:12)] <- array(unlist(siteout),c(nrow(data.sample),3)) #cbind(siteout$soil_depth,
    #                                siteout$FC,siteout$WP)
     #print(head(siteInfo[,c(10:12)]))
     print(paste("soil siteInfo NAs?:",any(is.na(siteInfo[,c(10:12)]))))
