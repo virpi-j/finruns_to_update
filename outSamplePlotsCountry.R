@@ -743,9 +743,10 @@ if(!FIGsOnly){
       #rm("data.all")
       gc()
     }
+    
     print("Scale sample wider")
-    if(samplaus==3) dataS[,c("ba","decid","pine","spruce","age","h","dbh")]<-1.1*dataS[,c("ba","decid","pine","spruce","age","h","dbh")]
-    if(samplaus==1) dataS[,c("ba","decid","pine","spruce","h","dbh")]<-1.1*dataS[,c("ba","decid","pine","spruce","h","dbh")]
+    if(samplaus==3) dataS[,c("ba","decid","pine","spruce","age","h","dbh")]<-scalesample*dataS[,c("ba","decid","pine","spruce","age","h","dbh")]
+    if(samplaus==1) dataS[,c("ba","decid","pine","spruce","h","dbh")]<-scalesample*dataS[,c("ba","decid","pine","spruce","h","dbh")]
     
     print(paste("NAs in init state?", any(is.na(dataS))))
    # rcps <- "CurrClim"
