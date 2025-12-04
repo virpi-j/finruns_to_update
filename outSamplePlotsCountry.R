@@ -827,7 +827,7 @@ if(!FIGsOnly){
     }
     if(!exists("climFIG")) climFIG <-F
     if(climFIG | save_fmi_data | !fmi_from_allas){
-      if(ECMmod==1 & nSegs==20000) load(file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/RegionRuns/InitVals/Ninfo_station",r_no,".rdata"))
+      if(ECMmod==1 & nSegs==10000) load(file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/RegionRuns/InitVals/Ninfo_station",r_no,".rdata"))
       print("Run runModel")
       out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
                       harvScen="Base", harvInten="Base", procDrPeat=T, 
@@ -1327,8 +1327,8 @@ if(!FIGsOnly){
           }
         }
         
-        # fertility histograms
-        xi <- 1:10
+        # soil depth
+        xi <- sort(unique(out$region$siteInfo[,"soildepth"]))
         ah <- array(0,c(length(sortVarnams),length(xi)))
         ii <- 1
         ik <- 1
@@ -1338,14 +1338,34 @@ if(!FIGsOnly){
           if(ik==3) ni <- n_lc3
           Ah <- sum(dataS$area[ni])
           for(ii in 1:length(xi)){
-            ah[ik,ii] <- sum(dataS$area[ni[which(dataS$fert[ni]==ii)]])
+            ah[ik,ii] <- sum(dataS$area[ni[which(out$region$siteInfo[ni,"soildepth"]==xi[ii])]])
           }
           ah[ik,] <- round(ah[ik,]/Ah,4)*100
         } 
         barplot(ah, names.arg = xi, beside=T, col=c("blue","green"),
-                main="fertility in sample",ylab="% of area", xlab="fert",
+                main="fertility in sample",ylab="% of area", xlab="soil_depth",
                 legend.text=c(sortVarnams))
         
+        if(FALSE){
+          # fertility histograms
+          xi <- 1:10
+          ah <- array(0,c(length(sortVarnams),length(xi)))
+          ii <- 1
+          ik <- 1
+          for(ik in 1:length(sortVarnams)){
+            if(ik==1) ni <- n_lc1
+            if(ik==2) ni <- n_lc2
+            if(ik==3) ni <- n_lc3
+            Ah <- sum(dataS$area[ni])
+            for(ii in 1:length(xi)){
+              ah[ik,ii] <- sum(dataS$area[ni[which(dataS$fert[ni]==ii)]])
+            }
+            ah[ik,] <- round(ah[ik,]/Ah,4)*100
+          } 
+          barplot(ah, names.arg = xi, beside=T, col=c("blue","green"),
+                  main="fertility in sample",ylab="% of area", xlab="fert",
+                  legend.text=c(sortVarnams))
+        }
         if(FALSE){
           # Wtot
           ij <- which(colnames(outresults)=="Wtot")
@@ -1505,6 +1525,7 @@ if(!FIGsOnly){
           
         }
       }
+      
     }
     
     #
