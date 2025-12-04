@@ -1346,7 +1346,7 @@ if(!FIGsOnly){
                 main="fertility in sample",ylab="% of area", xlab="soil_depth",
                 legend.text=c(sortVarnams))
         
-        if(FALSE){
+        if(TRUE){
           # fertility histograms
           xi <- 1:10
           ah <- array(0,c(length(sortVarnams),length(xi)))
@@ -1412,6 +1412,7 @@ if(!FIGsOnly){
                col=c("black",colorsi[1:length(sortVarnams)]))
         
         
+        if(FALSE){
         # Wharvested
         ij <- which(colnames(outresults)=="Wharvested")
         CO2eq_C <- 44/12 
@@ -1431,7 +1432,7 @@ if(!FIGsOnly){
             lines(timei, tmp,col=colorsi[ik])
           }
         }
-        
+        }
         # NEE
         ij <- which(colnames(outresults)=="NEE")
         tmp <- unlist(outresults[,..ij])*CO2eq_C
