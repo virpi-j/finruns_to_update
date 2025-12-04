@@ -1343,7 +1343,7 @@ if(!FIGsOnly){
           ah[ik,] <- round(ah[ik,]/Ah,4)*100
         } 
         barplot(ah, names.arg = xi, beside=T, col=c("blue","green"),
-                main="fertility in sample",ylab="% of area", xlab="soil_depth",
+                main="soil depth in sample",ylab="% of area", xlab="soil_depth",
                 legend.text=c(sortVarnams))
         
         if(TRUE){

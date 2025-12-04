@@ -1102,11 +1102,11 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
     njdepths <- apply(array(1:nrow(data.sample),c(nrow(data.sample),1)),1,soildepthInfo)
     #siteout <- cbind(soil_depth=soildpth[njdepths,"soil_depth"],soilgrd[njs,c("FC","WP")])
     siteout <- cbind(soil_depth=soildpth[njdepths,"soil_depth"],soilgrd[njs,c("FC","PWP")])
-    siteout$soil_depth[which(siteout$soil_depth==20)] <- 20
-    siteout$soil_depth[which(siteout$soil_depth==30)] <- 25
-    siteout$soil_depth[which(siteout$soil_depth==40)] <- 35
-    siteout$soil_depth[which(siteout$soil_depth==50)] <- 43
-    siteout$soil_depth[which(siteout$soil_depth==60)] <- 50
+    siteout$soil_depth[which(siteout$soil_depth==20)] <- 20 #10
+    siteout$soil_depth[which(siteout$soil_depth==30)] <- 30 #25
+    siteout$soil_depth[which(siteout$soil_depth==40)] <- 40 #35
+    siteout$soil_depth[which(siteout$soil_depth==50)] <- 45 #45
+    siteout$soil_depth[which(siteout$soil_depth==60)] <- 50 #50
     siteout$soil_depth <- siteout$soil_depth*10
     #siteout$FC <- siteout$FC/1000
     #siteout$WP <- siteout$WP/1000
