@@ -1412,10 +1412,10 @@ if(!FIGsOnly){
                col=c("black",colorsi[1:length(sortVarnams)]))
         
         
+        CO2eq_C <- 44/12 
         if(FALSE){
         # Wharvested
         ij <- which(colnames(outresults)=="Wharvested")
-        CO2eq_C <- 44/12 
         tmp <- unlist(outresults[,..ij])*CO2eq_C
         ij2 <- c(ij,match(paste0("Wharvested_",sortVarnams),colnames(outresults)))
         ymax <- max(outresults[,..ij2])*CO2eq_C
