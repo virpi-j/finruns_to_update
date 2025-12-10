@@ -166,6 +166,7 @@ if(!FIGsOnly){
     if(!exists("thinFactX")) thinFactX <- 0.25
     #  print(paste("CompHarv =", compHarvX))
     source("~/finruns_to_update/settings.R")
+    noPrebasLoading <- T # After the first installation, don't load prebas again
     
     areasLandClass2015 <- as.numeric(landclass2015[which(landclass2015[,1]==rname_fi),2:3])
     areasLandClass2021 <- as.numeric(landclass2021[which(landclass2021[,1]==rname_fi),2:3])

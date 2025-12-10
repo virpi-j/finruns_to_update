@@ -24,7 +24,7 @@ require(sm)
 # ###choose PREBAS version
 if(!noPrebasLoading){
 print("Install Prebas")
-install_github("ForModLabUHel/Rprebasso", ref=vPREBAS, force = F)
+install_github("ForModLabUHel/Rprebasso", ref=vPREBAS, force = T)
 print(paste("PREBAS version",vPREBAS))
 }
 require(Rprebasso)
