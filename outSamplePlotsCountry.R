@@ -828,23 +828,36 @@ if(!FIGsOnly){
     }
     if(!exists("climFIG")) climFIG <-F
     if(climFIG | save_fmi_data | !fmi_from_allas){
-      if(ECMmod==1 & nSegs==10000) load(file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/RegionRuns/InitVals/Ninfo_station",r_no,".rdata"))
+      #if(ECMmod==1 & nSegs==10000) load(file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/RegionRuns/InitVals/Ninfo_station",r_no,".rdata"))
       print("Run runModel")
       out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
                       harvScen="Base", harvInten="Base", procDrPeat=T, 
-                      ECMmod = ECMmod,
+                      ECMmod = 0, initilizeSoil = T,
                       P0currclim = P0currclim,
                       fT0 = fT0,
                       soilGridData = soilGridData,
                       thinFactX= thinFactX, landClassUnman = landClassUnman,
                       compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
                       forceSaveInitSoil=F, sampleX = dataS, HcMod_Init = HcMod_Init)
-
-      #NansRun <- any(is.na(out$region$multiOut[,,"NEP/SMI[layer_1]",,1]))
-      #print(paste("Any NaNs in NEP?", NansRun))
+      if(ECMmod==1){
+        print("estimate P0CurrClim")
+        P0currclim <- (out$region$P0y[,nYears,1])
+        fT0 <- (fTfun(out$region$weatherYasso[,nYears,1],
+                              out$region$weatherYasso[,nYears,2],
+                              out$region$weatherYasso[,nYears,3]))
+        
+        out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
+                        harvScen="Base", harvInten="Base", procDrPeat=T, 
+                        ECMmod = 1,initilizeSoil=F,
+                        P0currclim = P0currclim,
+                        fT0 = fT0,
+                        soilGridData = soilGridData,
+                        thinFactX= thinFactX, landClassUnman = landClassUnman,
+                        compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
+                        forceSaveInitSoil=F, sampleX = dataS, HcMod_Init = HcMod_Init)
+      }
       NEP_yasso1 <- apply(out$region$multiOut[,,"NEP/SMI[layer_1]",,1],1:2,sum)
-      #if(NansRun) NEP_yasso1 <- NEP_yasso1[which(!is.na(rowSums(NEP_yasso1))),]     
-      
+      # COmpare climate variables with new FMI weather data
       clim1 <- out$clim
       timei1 <- (1:dim(out$region$multiOut)[2])+2015
       #plot(timei, NEP_yasso,ylim=c(0,250),type="l",main="Currclim",ylab="NEPmin")
@@ -860,9 +873,12 @@ if(!FIGsOnly){
                       harvScen=harvScen, harvInten=HarvInten, procDrPeat=T, 
                       thinFactX= thinFactX, landClassUnman = landClassUnman,
                       ECMmod = ECMmod,
+                      P0currclim = P0currclim,
+                      fT0 = fT0,
                       soilGridData = soilGridData,
                       compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
-                      forceSaveInitSoil=F, sampleX = dataS, HcMod_Init = HcMod_Init)
+                      forceSaveInitSoil=F, sampleX = dataS, 
+                      HcMod_Init = HcMod_Init)
       out_currclim_fmi <- out
       clim2 <-out$clim
       

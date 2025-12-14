@@ -206,104 +206,112 @@ colnames(bigregiondrain) = c('Area','1990-2013')
 rem = merge(rem, bigregiondrain)
 
 
-OldData <- T # F = Updated harvest statistics 
+OldData <- F # F = Updated harvest statistics 
 print(paste("Use old harvest data =",OldData))
+
 if(regSets=="maakunta" & !OldData){
-  pathToHarvStats <- "/scratch/project_2000994/PREBASruns/PREBAStesting/RegionRuns/harvest.xlsx"
-  #pathToHarvStats_old <- "/scratch/project_2000994/PREBASruns/metadata/maakunta/harvest.xlsx"
-  roundWoodTab <- data.table(read_excel(
-    path = pathToHarvStats,
-    sheet="roundWood"))
-  roundWood <- as.numeric(c(unlist(roundWoodTab[id==r_no,3:11]),
-                            rep(unlist(roundWoodTab[id==r_no,12]),1),
-                            rep(unlist(roundWoodTab[id==r_no,13]),10),
-                            rep(unlist(roundWoodTab[id==r_no,14]),10),
-                            rep(unlist(roundWoodTab[id==r_no,15]),10),
-                            rep(unlist(roundWoodTab[id==r_no,16]),10)
-  ))
-  energyWoodFromRoundWoodTab <- data.table(read_excel(
-    path = pathToHarvStats,
-    sheet="energyWoodRoundWood"))
-  energyWoodFromRoundWood <- as.numeric(c(unlist(energyWoodFromRoundWoodTab[id==r_no,3:11]),
-                                          rep(unlist(energyWoodFromRoundWoodTab[id==r_no,12]),1),
-                                          rep(unlist(energyWoodFromRoundWoodTab[id==r_no,13]),10),
-                                          rep(unlist(energyWoodFromRoundWoodTab[id==r_no,14]),10),
-                                          rep(unlist(energyWoodFromRoundWoodTab[id==r_no,15]),10),
-                                          rep(unlist(energyWoodFromRoundWoodTab[id==r_no,16]),10)
-  ))
-  energyWoodTab <- data.table(read_excel(
-    path = pathToHarvStats,
-    sheet="energyWood"))
-  energyWood <- as.numeric(c(unlist(energyWoodTab[id==r_no,3:11]),
-                             rep(unlist(energyWoodTab[id==r_no,12]),1),
-                             rep(unlist(energyWoodTab[id==r_no,13]),10),
-                             rep(unlist(energyWoodTab[id==r_no,14]),10),
-                             rep(unlist(energyWoodTab[id==r_no,15]),10),
-                             rep(unlist(energyWoodTab[id==r_no,16]),10)
-  ))
+  print("Use new harvest statistics.")
+  ids <- 2+1:(2024-2015+1)
+  idsn1 <- max(ids)+1
+  idsn2 <- max(ids)+2
+  idsn3 <- max(ids)+3
+
+  dataTab <- data.table(read_excel(
+    path = "/scratch/project_2000994/PREBASruns/metadata/maakunta/drain_assortments_2015-2024.xlsx",
+    sheet="logs+pulp",range = "A1:P21"))
+  tmp <- as.numeric(c(unlist(dataTab[id==r_no,..ids]),
+                         rep(unlist(dataTab[id==r_no,..idsn1]),10),
+                         rep(unlist(dataTab[id==r_no,..idsn2]),10),
+                         rep(unlist(dataTab[id==r_no,..idsn3]),5)))
+  if(tmp[1]==0) tmp[1] <- tmp[2]
+  roundWood <- tmp
+
+  # Energywood from roundwood
+  dataTab <- data.table(read_excel(
+    path = "/scratch/project_2000994/PREBASruns/metadata/maakunta/drain_assortments_2015-2024.xlsx",
+    sheet="Roundwood energy",range = "A1:P21"))
+  tmp <- as.numeric(c(unlist(dataTab[id==r_no,..ids]),
+                      rep(unlist(dataTab[id==r_no,..idsn1]),10),
+                      rep(unlist(dataTab[id==r_no,..idsn2]),10),
+                      rep(unlist(dataTab[id==r_no,..idsn3]),5)))
+  if(tmp[1]==0) tmp[1] <- tmp[2]
+  energyWoodFromRoundWood <- tmp
   
+  # energywood -> Check this!
+  dataTab <- data.table(read_excel(
+    path = "/scratch/project_2000994/PREBASruns/metadata/maakunta/drain_assortments_2015-2024.xlsx",
+    sheet="energy non roundwood",range = "A1:P21"))
+  tmp <- as.numeric(c(unlist(dataTab[id==r_no,..ids]),
+                      rep(unlist(dataTab[id==r_no,..idsn1]),10),
+                      rep(unlist(dataTab[id==r_no,..idsn2]),10),
+                      rep(unlist(dataTab[id==r_no,..idsn3]),5)))
+  if(tmp[1]==0) tmp[1] <- tmp[2]
+  energyWood <- tmp
+
   ####!!!!!!!!!!!to be checked!!!!!!!
   ####energy wood from statistics includes pulp, sawn and energyWood from roundWood
   roundWood <- energyWoodFromRoundWood + roundWood
-  ######!!!!#####
-  
-  clcutArTab <- data.table(read_excel(
-    path = pathToHarvStats,
-    sheet="clearcutAreas"))
-  clcutAr <- as.numeric(c(unlist(clcutArTab[id==r_no,3:11]),
-                          rep(unlist(clcutArTab[id==r_no,12]),1),
-                          rep(unlist(clcutArTab[id==r_no,13]),10),
-                          rep(unlist(clcutArTab[id==r_no,14]),10),
-                          rep(unlist(clcutArTab[id==r_no,15]),10),
-                          rep(unlist(clcutArTab[id==r_no,16]),10)
-  ))
-  clcutAr <- clcutAr * clcutArFact
+
   HarvLimMaak <- cbind(roundWood,energyWood)
   
-  thinArTab <- data.table(read_excel(
-    path = pathToHarvStats,
-    sheet="thinningAreas"))
-  thinAr <- as.numeric(c(unlist(thinArTab[id==r_no,3:11]),
-                         rep(unlist(thinArTab[id==r_no,12]),1),
-                         rep(unlist(thinArTab[id==r_no,13]),10),
-                         rep(unlist(thinArTab[id==r_no,14]),10),
-                         rep(unlist(thinArTab[id==r_no,15]),10),
-                         rep(unlist(thinArTab[id==r_no,16]),10)
-  ))
-  noClcutArTab <- data.table(read_excel(
-    path = pathToHarvStats,
-    sheet="NoClearCutArea"))
-  noClcutAr <- as.numeric(c(unlist(noClcutArTab[id==r_no,3:11]),
-                            rep(unlist(noClcutArTab[id==r_no,12]),1),
-                            rep(unlist(noClcutArTab[id==r_no,13]),10),
-                            rep(unlist(noClcutArTab[id==r_no,14]),10),
-                            rep(unlist(noClcutArTab[id==r_no,15]),10),
-                            rep(unlist(noClcutArTab[id==r_no,16]),10)
-  ))
+  ###### Clearclut #####
+  dataTab <- data.table(read_excel(
+    path = "/scratch/project_2000994/PREBASruns/metadata/maakunta/harvest_types_ha_2015-2024.xlsx",
+    sheet="Clearcut",range = "A1:P21"))
+  tmp <- as.numeric(c(unlist(dataTab[id==r_no,..ids]),
+                      rep(unlist(dataTab[id==r_no,..idsn1]),10),
+                      rep(unlist(dataTab[id==r_no,..idsn2]),10),
+                      rep(unlist(dataTab[id==r_no,..idsn3]),5)))
+  if(tmp[1]==0) tmp[1] <- tmp[2]
+  clcutAr <- tmp
+  clcutAr <- clcutAr * clcutArFact
   
-  firstThinAreaTab <- data.table(read_excel(
-    path = pathToHarvStats,
-    sheet="firstThinArea"))
-  firstThinAr <- as.numeric(c(unlist(firstThinAreaTab[id==r_no,3:11]),
-                              rep(unlist(firstThinAreaTab[id==r_no,12]),1),
-                              rep(unlist(firstThinAreaTab[id==r_no,13]),10),
-                              rep(unlist(firstThinAreaTab[id==r_no,14]),10),
-                              rep(unlist(firstThinAreaTab[id==r_no,15]),10),
-                              rep(unlist(firstThinAreaTab[id==r_no,16]),10)
-  ))
+  # thinning
+  dataTab <- data.table(read_excel(
+    path = "/scratch/project_2000994/PREBASruns/metadata/maakunta/harvest_types_ha_2015-2024.xlsx",
+    sheet="All thinning",range = "A1:P21"))
+  tmp <- as.numeric(c(unlist(dataTab[id==r_no,..ids]),
+                      rep(unlist(dataTab[id==r_no,..idsn1]),10),
+                      rep(unlist(dataTab[id==r_no,..idsn2]),10),
+                      rep(unlist(dataTab[id==r_no,..idsn3]),5)))
+  if(tmp[1]==0) tmp[1] <- tmp[2]
+  thinAr <-tmp
   
-  tendingAreaTab <- data.table(read_excel(
-    path = pathToHarvStats,
-    sheet="tendingArea"))
-  tendingAr <- as.numeric(c(unlist(tendingAreaTab[id==r_no,3:11]),
-                            rep(unlist(tendingAreaTab[id==r_no,12]),1),
-                            rep(unlist(tendingAreaTab[id==r_no,13]),10),
-                            rep(unlist(tendingAreaTab[id==r_no,14]),10),
-                            rep(unlist(tendingAreaTab[id==r_no,15]),10),
-                            rep(unlist(tendingAreaTab[id==r_no,16]),10)
-  ))
+  # no clearcut area
+  dataTab <- data.table(read_excel(
+    path = "/scratch/project_2000994/PREBASruns/metadata/maakunta/harvest_types_ha_2015-2024.xlsx",
+    sheet="NoClearCutArea",range = "A1:P21"))
+  tmp <- as.numeric(c(unlist(dataTab[id==r_no,..ids]),
+                      rep(unlist(dataTab[id==r_no,..idsn1]),10),
+                      rep(unlist(dataTab[id==r_no,..idsn2]),10),
+                      rep(unlist(dataTab[id==r_no,..idsn3]),5)))
+  if(tmp[1]==0) tmp[1] <- tmp[2]
+  noClcutAr <- tmp
+  
+  # first thinning
+  dataTab <- data.table(read_excel(
+    path = "/scratch/project_2000994/PREBASruns/metadata/maakunta/harvest_types_ha_2015-2024.xlsx",
+    sheet="First thinning",range = "A1:P21"))
+  tmp <- as.numeric(c(unlist(dataTab[id==r_no,..ids]),
+                      rep(unlist(dataTab[id==r_no,..idsn1]),10),
+                      rep(unlist(dataTab[id==r_no,..idsn2]),10),
+                      rep(unlist(dataTab[id==r_no,..idsn3]),5)))
+  if(tmp[1]==0) tmp[1] <- tmp[2]
+  firstThinAr <- tmp
+  
+  # tending
+  dataTab <- data.table(read_excel(
+    path = "/scratch/project_2000994/PREBASruns/metadata/maakunta/harvest_types_ha_2015-2024.xlsx",
+    sheet="Tending",range = "A1:P21"))
+  tmp <- as.numeric(c(unlist(dataTab[id==r_no,..ids]),
+                      rep(unlist(dataTab[id==r_no,..idsn1]),10),
+                      rep(unlist(dataTab[id==r_no,..idsn2]),10),
+                      rep(unlist(dataTab[id==r_no,..idsn3]),5)))
+  if(tmp[1]==0) tmp[1] <- tmp[2]
+  tendingAr <- tmp
+  ## stats -> needed?
   stats <- data.table(read_excel(
-    path = pathToHarvStats,
+    path = "/scratch/project_2000994/PREBASruns/metadata/maakunta/harvest.xlsx",
     sheet="stats",col_types=c("text","numeric","numeric","text",rep("numeric",40)),na="NA"))
   ####converts data to model output units
   cFact <- 1e6 ####M m3 -> m3
@@ -313,7 +321,7 @@ if(regSets=="maakunta" & !OldData){
   cFact <- 1e3 #### orginal units kha -> ha
   stats[,names(stats)[38:44]:= .SD*cFact,.SDcols=38:44] ####converts areas
   
-} 
+}
 if(regSets=="maakunta" & OldData){
   roundWoodTab <- data.table(read_excel(
     path = "/scratch/project_2000994/PREBASruns/metadata/maakunta/harvest.xlsx",
