@@ -41,7 +41,7 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
   print(paste("ECMmod = ",ECMmod))
   ###flag for soil initialization
   if(is.null(initSoilCreStart)){
-    initilizeSoil=T
+    #initilizeSoil=T
     initSoilC <- NULL
   }else{
     initilizeSoil=F

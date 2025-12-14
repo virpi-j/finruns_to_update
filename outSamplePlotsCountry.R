@@ -848,7 +848,8 @@ if(!FIGsOnly){
         
         out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
                         harvScen="Base", harvInten="Base", procDrPeat=T, 
-                        ECMmod = 1,initilizeSoil=F,
+                        ECMmod = 1,
+                        initilizeSoil=F,
                         P0currclim = P0currclim,
                         fT0 = fT0,
                         soilGridData = soilGridData,
