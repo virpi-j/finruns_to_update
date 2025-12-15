@@ -767,6 +767,11 @@ if(!FIGsOnly){
       for(ri in 1:nSegs){
         str[ri] <- sample(1:5,1,prob = probs[ri,])
       }
+      a <- hist(dataS$fert,1:11-.5,plot=F)
+      b <- hist(str,a$breaks,plot=F)
+      barplot(rbind(a$counts,b$counts),beside=T, names.arg=a$mids,
+              main=paste("region",r_no,"black=original, gray=updated"),
+              xlab="fertility")
       dataS[,fert:=str]
     }
       
