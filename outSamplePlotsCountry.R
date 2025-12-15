@@ -745,6 +745,31 @@ if(!FIGsOnly){
       gc()
     }
     
+    # new fert/sitetypes
+    if(fertUpdt){
+    ###load the fittet probit models to estimate the Site fertility class
+      load(url("https://raw.githubusercontent.com/ForModLabUHel/satRuns/master/data/step.probit.rdata"))
+      dataSample <- data.table(st=dataS$fert,
+                               H=dataS$h,
+                               D=dataS$dbh,
+                               BAtot=dataS$ba,
+                               BApPer=dataS$pine)
+      modX <- step.probit[["all"]]
+      ###run model -> returns the probability for each site type so you can sample using that probability
+      ###model inputs:
+      # st = site type
+      # H = average height
+      # D = average dbh
+      #BAtot = total basal area
+      #BApPer = % of pine basal area
+      probs <- predict(modX,type='p',dataSample)
+      str <- matrix(0,nSegs,1)
+      for(ri in 1:nSegs){
+        str[ri] <- sample(1:5,1,prob = probs[ri,])
+      }
+      dataS[,fert:=str]
+    }
+      
     print("Scale sample wider")
     if(samplaus==3) dataS[,c("ba","decid","pine","spruce","age","h","dbh")]<-scalesample*dataS[,c("ba","decid","pine","spruce","age","h","dbh")]
     if(samplaus==1) dataS[,c("ba","decid","pine","spruce","h","dbh")]<-scalesample*dataS[,c("ba","decid","pine","spruce","h","dbh")]
