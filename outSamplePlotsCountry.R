@@ -264,7 +264,7 @@ if(!FIGsOnly){
       data.all <- data.all[which(data.all$peatID!=2),]
       rm(list=c("finPeats","peatIDs"))
       #print(unique(data.all$fert[which(data.all$landclass>1)]))
-      data.all$fert[which(data.all$landclass>1)] <- 9
+      #data.all$fert[which(data.all$landclass>1)] <- 9
       #print(unique(data.all$fert[which(data.all$landclass>1)]))
       gc()
     }
@@ -773,7 +773,7 @@ if(!FIGsOnly){
               main=paste("region",r_no,"black=original, gray=updated"),
               xlab="fertility")
       dataS[,fert:=str]
-      dataS$fert[which(dataS$$landclass>1)] <- 5
+      dataS$fert[which(dataS$landclass>1)] <- 5
     }
       
     print("Scale sample wider")
