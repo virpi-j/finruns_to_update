@@ -773,6 +773,7 @@ if(!FIGsOnly){
               main=paste("region",r_no,"black=original, gray=updated"),
               xlab="fertility")
       dataS[,fert:=str]
+      dataS$fert[which(dataS$$landclass>1)] <- 5
     }
       
     print("Scale sample wider")
