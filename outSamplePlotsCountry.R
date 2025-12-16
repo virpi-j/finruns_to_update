@@ -148,7 +148,7 @@ if(!exists("soilGridData")) soilGridData <- 0
 
 #if(!toFile) rids <- rids[1:3]
 fname <- paste0("results_agesample",samplaus,
-                "_ECMmod",ECMmod,"_soilGridData",soilGridData,"_",rcps,"_HcModInit",HcMod_Init)
+                "_ECMmod",ECMmod,"_soilGridData",soilGridData,"_",rcps,"_HcModInit",HcMod_Init,"_fertupdt",fertUpdt)
 if(toFile) pdf(paste0(outDir,fname,".pdf"))
 if(!exists("FIGsOnly")) FIGsOnly <- F
 if(!FIGsOnly){
