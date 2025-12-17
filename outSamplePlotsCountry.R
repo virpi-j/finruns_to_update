@@ -868,7 +868,7 @@ if(!FIGsOnly){
                       fT0 = fT0,
                       soilGridData = soilGridData,
                       thinFactX= thinFactX, landClassUnman = landClassUnman,
-                      compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
+                      compHarvX = compHarvX, ageHarvPriorX = ageHarvPriorX,
                       forceSaveInitSoil=F, sampleX = dataS, HcMod_Init = HcMod_Init)
       if(ECMmod==1){
         print("estimate P0CurrClim")
@@ -1020,7 +1020,6 @@ if(!FIGsOnly){
     output <- out$region$multiOut
     areas <- dataS$area
     timei <- (1:dim(output)[2])+2015
-    
     ti <- 1
     ikaluokat <- array(0,c(nYears,9))
     agelimits <- c(0,20,40,60,80,100,120,140,1e4)
@@ -1575,7 +1574,6 @@ if(!FIGsOnly){
           
         }
       }
-      
     }
     
     #

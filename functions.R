@@ -249,7 +249,7 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
     }
     lightnings <- matrix(lightnings,
                          nrow = nSitesRun, ncol = length(lightnings), byrow = T)
-print(dim(lightnings))
+    print(dim(lightnings))
     rm(list=c("lightning","population_density"))
     gc()
     print("done.")
@@ -401,7 +401,8 @@ print(dim(lightnings))
   ##here mix years for weather inputs for Curr Climate
   if(rcpfile=="CurrClim"){
     set.seed(10)
-    resampleYear <- sample(1:nYears,(nYears-7))
+    #resampleYear <- sample(1:nYears,(nYears-7))
+    resampleYear <- sample(1:7,(nYears-7))
     initPrebas$ETSy[,8:nYears] <- initPrebas$ETSy[,resampleYear]
     initPrebas$P0y[,8:nYears,] <- initPrebas$P0y[,resampleYear,]
     initPrebas$weather[,8:nYears,,] <- initPrebas$weather[,resampleYear,,]
@@ -1127,8 +1128,9 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
     }
     poorlyprod <- T
     if(poorlyprod & !is.null(landClassUnman)){
-      print("set landclass 2 soil depth to 5 cm.")
-      siteInfo[which(data.sample$landclass==2),10] <- 50
+      hpoorlyprod <- 1
+      print(paste("set landclass 2 soil depth to",hpoorlyprod,"cm."))
+      siteInfo[which(data.sample$landclass==2),10] <- hpoorlyprod*10
     }
    # plot(soilgrd$x[njs],soilgrd$y[njs],pch=19, col="black")
   #  points(data.sample$x,data.sample$y, pch=20, col="red")
