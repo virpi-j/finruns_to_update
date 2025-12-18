@@ -402,7 +402,7 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
   if(rcpfile=="CurrClim"){
     set.seed(10)
     #resampleYear <- sample(1:nYears,(nYears-7))
-    resampleYear <- sample(1:7,(nYears-7))
+    resampleYear <- sample(1:7,(nYears-7),replace = T)
     initPrebas$ETSy[,8:nYears] <- initPrebas$ETSy[,resampleYear]
     initPrebas$P0y[,8:nYears,] <- initPrebas$P0y[,resampleYear,]
     initPrebas$weather[,8:nYears,,] <- initPrebas$weather[,resampleYear,,]
@@ -1104,12 +1104,22 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
     njdepths <- apply(array(1:nrow(data.sample),c(nrow(data.sample),1)),1,soildepthInfo)
     #siteout <- cbind(soil_depth=soildpth[njdepths,"soil_depth"],soilgrd[njs,c("FC","WP")])
     siteout <- cbind(soil_depth=soildpth[njdepths,"soil_depth"],soilgrd[njs,c("FC","PWP")])
-    if(FALSE){
+    stps <- 0
+    if(stps==1){
+      print("Manual soil depths for Maannos classes")
       siteout$soil_depth[which(siteout$soil_depth==25)] <- 10 #25
+      siteout$soil_depth[which(data.sample$fert>=5)] <- 10 #25
       siteout$soil_depth[which(siteout$soil_depth==30)] <- 25 #10
       siteout$soil_depth[which(siteout$soil_depth==40)] <- 30 #35
       siteout$soil_depth[which(siteout$soil_depth==45)] <- 35 #45
       siteout$soil_depth[which(siteout$soil_depth==50)] <- 43 #50
+    } else if(stps==2){
+      print("Manual soil depths for fertility classes")
+      siteout$soil_depth[which(data.sample$fert>=5)] <- 10 #25
+      siteout$soil_depth[which(data.sample$fert==4)] <- 25 #10
+      siteout$soil_depth[which(data.sample$fert==3)] <- 30 #35
+      siteout$soil_depth[which(data.sample$fert==2)] <- 35 #45
+      siteout$soil_depth[which(data.sample$fert==1)] <- 43 #50
     }
     siteout$soil_depth <- siteout$soil_depth*10
     #siteout$FC <- siteout$FC/1000
@@ -1128,7 +1138,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
     }
     poorlyprod <- T
     if(poorlyprod & !is.null(landClassUnman)){
-      hpoorlyprod <- 1
+      hpoorlyprod <- 5
       print(paste("set landclass 2 soil depth to",hpoorlyprod,"cm."))
       siteInfo[which(data.sample$landclass==2),10] <- hpoorlyprod*10
     }
@@ -1390,7 +1400,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
   print(lat[1:5])
   if(harv == "NoHarv"  & !rcps%in%c("CurrClim_fmis")) ClCuts <- -1+0*ClCuts
   #print(paste("ClCuts",ClCuts))  
-  if(ECMmod == 1){ # ECM
+  if(ECMmod > 0){ # ECM
     if(rcps=="fireClim"){
       print("include fire risk calculation")
       initPrebas <- InitMultiSite(nYearsMS = rep(nYears,nSites),
@@ -1405,7 +1415,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
                                   ftTapioPar = ftTapioParX,
                                   tTapioPar = tTapioParX,
                                   ingrowth = ingrowth,
-                                  ECMmod = 1, # ECM
+                                  ECMmod = ECMmod, # ECM
                                   alpharNcalc = TRUE, # ECM
                                   pCN_alfar = parsCN_alfar, # ECM
                                   alpharVersion = 1, # ECM
@@ -1438,7 +1448,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
                                   ftTapioPar = ftTapioParX,
                                   tTapioPar = tTapioParX,
                                   ingrowth = ingrowth,
-                                  ECMmod = 1, # ECM
+                                  ECMmod = ECMmod, # ECM
                                   alpharNcalc = TRUE, # ECM
                                   pCN_alfar = parsCN_alfar, # ECM
                                   alpharVersion = 1, # ECM

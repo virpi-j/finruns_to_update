@@ -879,7 +879,7 @@ if(!FIGsOnly){
         
         out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
                         harvScen="Base", harvInten="Base", procDrPeat=T, 
-                        ECMmod = 1,
+                        ECMmod = ECMmod,
                         initilizeSoil=F,
                         P0currclim = P0currclim,
                         fT0 = fT0,
@@ -1167,6 +1167,19 @@ if(!FIGsOnly){
             #outresultsSum <- cbind(outresultsSum, outres*sortTotAreas[ik])
             #colnames(outresultsSum)[ncol(outresultsSum)] <- paste0(variNams[ij],"_",sortVarnams[ik])
             #assign(paste0(varis[ij],"_lc",ik),outres)
+            if(sortid==1 & ik==1 & varis[ij]=="grossGrowth"){
+              stypes <- out$region$siteInfo[,"siteType"]
+              ni <- which(stypes==1)
+              gg1 <- colSums(apply(tmp[ni,,],c(1:2),sum)*areas[ni])/sum(areas[ni])
+              ni <- which(stypes==2)
+              gg2 <- colSums(apply(tmp[ni,,],c(1:2),sum)*areas[ni])/sum(areas[ni])
+              ni <- which(stypes==3)
+              gg3 <- colSums(apply(tmp[ni,,],c(1:2),sum)*areas[ni])/sum(areas[ni])
+              ni <- which(stypes==4)
+              gg4 <- colSums(apply(tmp[ni,,],c(1:2),sum)*areas[ni])/sum(areas[ni])
+              ni <- which(stypes==5)
+              gg5 <- colSums(apply(tmp[ni,,],c(1:2),sum)*areas[ni])/sum(areas[ni])
+            }
           }
         }
         if(varis[ij]%in%c("age")){ # mean
@@ -1251,6 +1264,11 @@ if(!FIGsOnly){
             lines(timei, tmp,col=colorsi[ik])
           }
         }
+        lines(timei,gg1,col="gray",lwd=0.5)
+        lines(timei,gg2,col="yellow",lwd=0.5)
+        lines(timei,gg3,col="orange",lwd=0.5)
+        lines(timei,gg4,col="brown",lwd=0.5)
+        lines(timei,gg5,col="magenta",lwd=0.5)
         legend("bottomright",c(paste0("all ",round(totArea/1000),"kha"),
                                paste0(sortVarnams," ", round(sortTotAreas/1000),"kha")),
                pch=rep(1,length(sortVarnams)+1),cex=0.7,
