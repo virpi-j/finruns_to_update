@@ -838,6 +838,7 @@ if(!FIGsOnly){
       climID_lookup_file <- paste0("climID_lookup_dataS_",r_noi,".rdata")
     }
     
+    if(!exists("soilInfo_new")) soilInfo_new <- T
     MANUALRUN <- T
     if(MANUALRUN){
       easyInit=FALSE; forceSaveInitSoil=F; cons10run = F; coeffPeat1=-240; coeffPeat2=70; coefCH4 = 0.34; coefN20_1 = 0.23; coefN20_2 = 0.077; climScen = 0; clcut=1;  funPreb = regionPrebas; ingrowth = F; initSoilCreStart=NULL; outModReStart=NULL; reStartYear=1; climdata=NULL; sampleX=dataS; disturbanceON=NA; TminTmax=NA
@@ -867,6 +868,7 @@ if(!FIGsOnly){
                       P0currclim = P0currclim,
                       fT0 = fT0,
                       soilGridData = soilGridData,
+                      soilInfo_new = soilInfo_new,
                       thinFactX= thinFactX, landClassUnman = landClassUnman,
                       compHarvX = compHarvX, ageHarvPriorX = ageHarvPriorX,
                       forceSaveInitSoil=F, sampleX = dataS, HcMod_Init = HcMod_Init)
@@ -876,7 +878,7 @@ if(!FIGsOnly){
         fT0 <- (fTfun(out$region$weatherYasso[,nYears,1],
                               out$region$weatherYasso[,nYears,2],
                               out$region$weatherYasso[,nYears,3]))
-        
+        print("Run with ECMmod.")
         out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
                         harvScen="Base", harvInten="Base", procDrPeat=T, 
                         ECMmod = ECMmod,
@@ -884,6 +886,7 @@ if(!FIGsOnly){
                         P0currclim = P0currclim,
                         fT0 = fT0,
                         soilGridData = soilGridData,
+                        soilInfo_new = soilInfo_new,
                         thinFactX= thinFactX, landClassUnman = landClassUnman,
                         compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
                         forceSaveInitSoil=F, sampleX = dataS, HcMod_Init = HcMod_Init)
@@ -1254,7 +1257,7 @@ if(!FIGsOnly){
         tmp <- unlist(outresults[,..ij])
         plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
              xlim = c(timei[1]-1,timei[length(timei)]),
-             ylim = c(0,9), ylab = "grossgrowth, m3/ha",lwd=3)
+             ylim = c(0,10), ylab = "grossgrowth, m3/ha",lwd=3)
         points(c(2015,2021),ggstats,pch=19,col="red")
         colorsi <- c("blue","green","pink")
         for(ik in 1:length(sortVarnams)){

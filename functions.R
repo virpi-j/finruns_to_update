@@ -19,6 +19,7 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
                      initSoilCreStart=NULL,thinFactX = 0.25,
                      ageHarvPriorX = 0,
                      soilGridData = 0, # 1 soil properties from data
+                     soilInfo_new = T, # Use Virpi's soil info data as default
                      ECMmod = 0, # ECMmod off by default
                      outModReStart=NULL,reStartYear=1,climdata=NULL,
                      sampleX=NULL,P0currclim=NA, fT0=NA, 
@@ -207,9 +208,12 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
     colnames(clim$PAR)<-1:ncol(clim$PAR)    
     
     print("Run with Tmin Tmax values.")
-    TminTmax2 <- array(0,c(length(climIDs),nrow(clim2),2))
-    TminTmax2[,,1] <- t(array(TminTmax$Tmin,c(nrow(clim2),length(climIDs))))
-    TminTmax2[,,2] <- t(array(TminTmax$Tmax,c(nrow(clim2),length(climIDs))))
+    #TminTmax2 <- array(0,c(length(climIDs),nrow(clim2),2))
+    #TminTmax2[,,1] <- t(array(TminTmax$Tmin,c(nrow(clim2),length(climIDs))))
+    #TminTmax2[,,2] <- t(array(TminTmax$Tmax,c(nrow(clim2),length(climIDs))))
+    TminTmax2 <- array(0,c(length(climIDs),nYears*365,2))
+    TminTmax2[,,1] <- t(array(TminTmax$Tmin[1:(nYears*365)],c(nYears*365,length(climIDs))))
+    TminTmax2[,,2] <- t(array(TminTmax$Tmax[1:(nYears*365)],c(nYears*365,length(climIDs))))
     TminTmax <- TminTmax2
     rm(list=c("clim2","TminTmax2"))
     gc()
@@ -249,7 +253,10 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
     }
     lightnings <- matrix(lightnings,
                          nrow = nSitesRun, ncol = length(lightnings), byrow = T)
-    print(dim(lightnings))
+    #print(dim(lightnings))
+    #lightnings = matrix(0.01,nSites,nDays)
+    #popden = matrix(36,nSites,nDays)
+    a_nd = rep(a_nd,nSitesRun)
     rm(list=c("lightning","population_density"))
     gc()
     print("done.")
@@ -333,7 +340,7 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
   }  
   Region = nfiareas[ID==r_no, Region]
   gc()
-  
+  HcFactorX<-HcFactor; harv<-harvScen
   print(paste("Ingrowth =",ingrowth))
   print("Disturbances")
   print(disturbanceON)
@@ -342,6 +349,7 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
                                          nYears, 
                                          ECMmod = ECMmod,
                                          soilGridData = soilGridData,
+                                         soilInfo_new = soilInfo_new,
                                          harv=harvScen,
                                          rcps = rcpfile,
                                          HcFactorX=HcFactor, 
@@ -1049,6 +1057,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
                                      harv,
                                      ECMmod = 0,
                                      soilGridData = 0,
+                                     soilInfo_new = soilInfo_new, # Use Virpi's soil info as default
                                      startingYear=0, domSPrun=0,# ClCut=1,
                                      outModReStart=NULL, initSoilC=NULL,
                                      reStartYear=1,
@@ -1064,7 +1073,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
                                      TminTmax=NA, 
                                      disturbanceON = NA,
                                      HcMod_in=0 ####hCmodel (0 = uses the default prebas model, 1 = uses the fHc_fol funcion)
-                                     ){
+){
   nSites <- nrow(data.sample)
   areas <- data.sample$area
   print(paste("HcFactor =",HcFactorX))
@@ -1073,27 +1082,38 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
   siteInfo[,1] <- data.sample$segID
   siteInfo[,2] <- as.numeric(data.sample[,id])
   siteInfo[,3] <- data.sample[,fert]
+  #siteInfo[,8] <- as.numeric(data.sample[,landclass])
   if(soilGridData == 1){
     print("Soil data from database")
     soildpth <- read.csv2("~/Soils/soilDepth.csv")
-    soilgrd <- read_csv2("~/Soils/soil_variables_saxton.csv", show_col_types = F)
-    #soilgrd <- read_csv("~/Soils/grd5_soil_fin.csv", show_col_types = F)
-    #soilInfo <- function(j){
-    #  nj <- which.min((data.sample$lon[j]-soilgrd$longitude)^2+(data.sample$lat[j]-soilgrd$latitude)^2)
-    #  return(nj)
-    #}
-    bb <- c(min(data.sample$lon)*.99,max(data.sample$lon)*1.01,
-            min(data.sample$lat)*.99, max(data.sample$lat)*1.01)
-    soilgrd <- soilgrd[which(soilgrd$x>=bb[1] & soilgrd$x<=bb[2],
+    #soilInfo_new <- T # T = Virpi's estimates from soil grid data, F = estimates from the other project
+    if(soilInfo_new){
+      print("Use soilgrid db based soil info (Virpi's estimates)")
+      soilgrd <- read_csv2("~/Soils/soil_variables_saxton.csv", show_col_types = F)
+      soilInfo <- function(j){
+        nj <- which.min((data.sample$lon[j]-soilgrd$x)^2+
+                          (data.sample$lat[j]-soilgrd$y)^2)
+        return(nj)
+      }
+      bb <- c(min(data.sample$lon)*.99,max(data.sample$lon)*1.01,
+              min(data.sample$lat)*.99, max(data.sample$lat)*1.01)
+      soilgrd <- soilgrd[which(soilgrd$x>=bb[1] & soilgrd$x<=bb[2],
                                soilgrd$y>=bb[3] & soilgrd$y<=bb[4]),]
-    gc()
-    soilInfo <- function(j){
-      nj <- which.min((data.sample$lon[j]-soilgrd$x)^2+
-                        (data.sample$lat[j]-soilgrd$y)^2)
-      return(nj)
+    } else {
+      print("Use soil info from another project")
+      soilgrd <- read_csv("~/Soils/grd5_soil_fin.csv", show_col_types = F)
+      soilInfo <- function(j){
+        nj <- which.min((data.sample$lon[j]-soilgrd$longitude)^2+(data.sample$lat[j]-soilgrd$latitude)^2)
+        return(nj)
+      }
+      bb <- c(min(data.sample$lon)*.99,max(data.sample$lon)*1.01,
+              min(data.sample$lat)*.99, max(data.sample$lat)*1.01)
+      soilgrd <- soilgrd[which(soilgrd$longitude>=bb[1] & soilgrd$longitude<=bb[2],
+                               soilgrd$latitude>=bb[3] & soilgrd$latitude<=bb[4]),]
     }
+    gc()
     soildpth <- soildpth[which(soildpth$x>=bb[1] & soildpth$x<=bb[2],
-                         soildpth$y>=bb[3] & soildpth$y<=bb[4]),]
+                               soildpth$y>=bb[3] & soildpth$y<=bb[4]),]
     gc()
     soildepthInfo <- function(j){
       nj <- which.min((data.sample$lon[j]-soildpth$x)^2+
@@ -1102,8 +1122,13 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
     }
     njs <- apply(array(1:nrow(data.sample),c(nrow(data.sample),1)),1,soilInfo)
     njdepths <- apply(array(1:nrow(data.sample),c(nrow(data.sample),1)),1,soildepthInfo)
-    #siteout <- cbind(soil_depth=soildpth[njdepths,"soil_depth"],soilgrd[njs,c("FC","WP")])
-    siteout <- cbind(soil_depth=soildpth[njdepths,"soil_depth"],soilgrd[njs,c("FC","PWP")])
+    if(soilInfo_new){
+      siteout <- cbind(soil_depth=soildpth[njdepths,"soil_depth"],soilgrd[njs,c("FC","PWP")])
+    } else {
+      siteout <- cbind(soil_depth=soildpth[njdepths,"soil_depth"],soilgrd[njs,c("FC","WP")])
+      siteout$FC <- siteout$FC/1000
+      siteout$WP <- siteout$WP/1000
+    }
     stps <- 0
     if(stps==1){
       print("Manual soil depths for Maannos classes")
@@ -1115,18 +1140,20 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
       siteout$soil_depth[which(siteout$soil_depth==50)] <- 43 #50
     } else if(stps==2){
       print("Manual soil depths for fertility classes")
-      siteout$soil_depth[which(data.sample$fert>=5)] <- 10 #25
-      siteout$soil_depth[which(data.sample$fert==4)] <- 25 #10
-      siteout$soil_depth[which(data.sample$fert==3)] <- 30 #35
-      siteout$soil_depth[which(data.sample$fert==2)] <- 35 #45
-      siteout$soil_depth[which(data.sample$fert==1)] <- 43 #50
+      siteout[which(data.sample$fert>=5),] <- c(10,0.14,0.04) #25
+      siteout[which(data.sample$fert==4),] <- c(25,0.14,0.04) #25
+      siteout[which(data.sample$fert==3),] <- c(30,0.24,0.08) #25
+      siteout[which(data.sample$fert==2),] <- c(40,0.28,0.08) #25
+      siteout[which(data.sample$fert>=5),] <- c(50,0.34,0.11) #25
+      #siteout$soil_depth[which(data.sample$fert==4)] <- 25 #10
+      #siteout$soil_depth[which(data.sample$fert==3)] <- 30 #35
+      #siteout$soil_depth[which(data.sample$fert==2)] <- 35 #45
+      #siteout$soil_depth[which(data.sample$fert==1)] <- 43 #50
     }
     siteout$soil_depth <- siteout$soil_depth*10
-    #siteout$FC <- siteout$FC/1000
-    #siteout$WP <- siteout$WP/1000
+    print(colMeans(siteout))
+    print(c(413,0.45,0.118))
     siteInfo[,c(10:12)] <- array(unlist(siteout),c(nrow(data.sample),3)) #cbind(siteout$soil_depth,
-   #                                siteout$FC,siteout$WP)
-    #print(head(siteInfo[,c(10:12)]))
     print(paste("soil siteInfo NAs?:",any(is.na(siteInfo[,c(10:12)]))))
     if(any(is.na(siteInfo[,c(10:12)]))){
       nas <- which(is.na(rowSums(siteInfo[,c(10:12)])))
@@ -1142,18 +1169,35 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
       print(paste("set landclass 2 soil depth to",hpoorlyprod,"cm."))
       siteInfo[which(data.sample$landclass==2),10] <- hpoorlyprod*10
     }
-   # plot(soilgrd$x[njs],soilgrd$y[njs],pch=19, col="black")
-  #  points(data.sample$x,data.sample$y, pch=20, col="red")
-  #  plot(siteout$soil_depth,siteout$FC)
-  #  plot(siteout$soil_depth,siteout$WP)
+    # plot(soilgrd$x[njs],soilgrd$y[njs],pch=19, col="black")
+    #  points(data.sample$x,data.sample$y, pch=20, col="red")
+    #  plot(siteout$soil_depth,siteout$FC)
+    #  plot(siteout$soil_depth,siteout$WP)
     #`FC`: Field capacity [mm]
     #`WP`: Wilting point [mm]
     #`AWC`: Available water capacity [mm]
     #`soil_depth`: Depth to bedrock [cm]
     rm(list=c("njdepths","soilgrd","siteout","njs","soildpth"))
     gc()
-  
-  }
+    
+  } else if(soilGridData == 2){
+    print("Soil data for sitetypes")
+    print("Manual soil depths for fertility classes")
+    ni <- which(data.sample$fert>=5)
+    siteInfo[ni,10:12] <- matrix(c(100,0.14,0.04),nrow=length(ni),nco=3,byrow = T) #25
+    ni <- which(data.sample$fert==4)
+    siteInfo[ni,10:12] <- matrix(c(250,0.14,0.04),nrow=length(ni),nco=3,byrow = T)
+    ni <- which(data.sample$fert==3)
+    siteInfo[ni,10:12] <- matrix(c(350,0.24,0.08),nrow=length(ni),nco=3,byrow = T)
+    ni <- which(data.sample$fert==2)
+    siteInfo[ni,10:12] <- matrix(c(450,0.28,0.08),nrow=length(ni),nco=3,byrow = T)
+    ni <- which(data.sample$fert==1)
+    siteInfo[ni,10:12] <- matrix(c(500,0.34,0.11),nrow=length(ni),nco=3,byrow = T)
+    print("SiteInfo for soils")
+    print(colMeans(siteInfo[,10:12]))
+    #data <- cbind(siteout,fert=data.sample$fert)
+    #ggplot(data, aes(x=fert, y=WP))+geom_point(data,mapping=aes(x=fert,y=WP))
+  } 
   ####### Wind disturbance module from Jonathan
   sid <- NA
   if("wind"%in%disturbanceON & climScen>=0){# & !rcps%in%c("CurrClim","CurrClim_fmi")){
@@ -1425,12 +1469,12 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
                                   a_nd = a_nd,
                                   FDIout = 1,
                                   NIout = TRUE,
+                                  yassoRun=1,
                                   PAR = clim$PAR[, 1:(nYears*365)],
                                   TAir=clim$TAir[, 1:(nYears*365)],
                                   VPD=clim$VPD[, 1:(nYears*365)],
                                   Precip=clim$Precip[, 1:(nYears*365)],
                                   CO2=clim$CO2[, 1:(nYears*365)],
-                                  yassoRun = 1,
                                   p0currClim = P0currclim,
                                   fT0AvgCurrClim = fT0,
                                   mortMod = mortMod, TminTmax = TminTmax, 
@@ -1492,7 +1536,8 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
                                 Precip=clim$Precip[, 1:(nYears*365)],
                                 CO2=clim$CO2[, 1:(nYears*365)],
                                 yassoRun = 1,
-                                mortMod = mortMod, TminTmax = TminTmax, 
+                                mortMod = mortMod, 
+                                TminTmax = TminTmax, 
                                 disturbanceON = disturbanceON)
     } else {
       initPrebas <- InitMultiSite(nYearsMS = rep(nYears,nSites),
@@ -1514,7 +1559,8 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
                                   Precip=clim$Precip[, 1:(nYears*365)],
                                   CO2=clim$CO2[, 1:(nYears*365)],
                                   yassoRun = 1,
-                                  mortMod = mortMod, TminTmax = TminTmax, 
+                                  mortMod = mortMod, 
+                                  TminTmax = TminTmax, 
                                   disturbanceON = disturbanceON)
     }
   }  
