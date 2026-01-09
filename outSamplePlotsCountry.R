@@ -1172,16 +1172,14 @@ if(!FIGsOnly){
             #assign(paste0(varis[ij],"_lc",ik),outres)
             if(sortid==1 & ik==1 & varis[ij]=="grossGrowth"){
               stypes <- out$region$siteInfo[,"siteType"]
-              ni <- which(stypes==1)
-              gg1 <- colSums(apply(tmp[ni,,],c(1:2),sum)*areas[ni])/sum(areas[ni])
-              ni <- which(stypes==2)
-              gg2 <- colSums(apply(tmp[ni,,],c(1:2),sum)*areas[ni])/sum(areas[ni])
-              ni <- which(stypes==3)
-              gg3 <- colSums(apply(tmp[ni,,],c(1:2),sum)*areas[ni])/sum(areas[ni])
-              ni <- which(stypes==4)
-              gg4 <- colSums(apply(tmp[ni,,],c(1:2),sum)*areas[ni])/sum(areas[ni])
-              ni <- which(stypes==5)
-              gg5 <- colSums(apply(tmp[ni,,],c(1:2),sum)*areas[ni])/sum(areas[ni])
+              for(stp in 1:5){
+                ni <- which(stypes==stp)
+                if(length(ni)>1){
+                  gg0 <- colSums(apply(tmp[ni,,],c(1:2),sum)*areas[ni])/sum(areas[ni])
+                } else { gg0 <- rowSums(apply(tmp[ni,,],c(1:2),sum))}
+                assign(paste0("gg",stp), gg0)
+                rm("gg0")
+              }
             }
           }
         }
