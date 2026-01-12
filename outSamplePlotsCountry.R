@@ -96,10 +96,10 @@ ikaluokat2015 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.x
                             sheet = "ikaluokat_metsamaa", range = "B3:L25")
 ikaluokat2021 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.xlsx",  
                             sheet = "ikaluokat_metsamaa", range = "B26:L47")
-#lajiV2015 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.xlsx",  
-#                            sheet = "lajitilavuudet", range = "B3:H25")
-#lajiV2021 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.xlsx",  
-#                        sheet = "lajitilavuudet", range = "B26:H47")
+lajiV2015 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.xlsx",  
+                            sheet = "tilavuus", range = "B3:H25")
+lajiV2021 <- read_excel(path = "/users/vjunttil/finruns_to_update/VMIstats.xlsx",  
+                        sheet = "tilavuus", range = "B26:H47")
 
 # minDharvX = 999
 setwd("/scratch/project_2000994/PREBASruns/PREBAStesting/")
@@ -873,6 +873,14 @@ if(!FIGsOnly){
                       compHarvX = compHarvX, ageHarvPriorX = ageHarvPriorX,
                       forceSaveInitSoil=F, sampleX = dataS, HcMod_Init = HcMod_Init)
       if(ECMmod==1){
+        nlc1 <- which(dataS$landclass==1)
+        ba_scaling <- T
+        if(ba_scaling){
+          c <- 1.1*(Vstats[1]/(sum(apply(out$region$multiOut[nlc1,1,"V",,1],1,sum)*dataS$area[nlc1])/sum(dataS$area[nlc1])))^(1/3)
+          dataS[,ba:=ba*c^2]
+          dataS[,dbh:=dbh*c]
+          dataS[,h:=h*c]
+        }
         print("estimate P0CurrClim")
         P0currclim <- (out$region$P0y[,nYears,1])
         fT0 <- (fTfun(out$region$weatherYasso[,nYears,1],
