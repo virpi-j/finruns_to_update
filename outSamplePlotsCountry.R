@@ -876,10 +876,11 @@ if(!FIGsOnly){
         nlc1 <- which(dataS$landclass==1)
         ba_scaling <- T
         if(ba_scaling){
-          c <- 1.1*(Vstats[1]/(sum(apply(out$region$multiOut[nlc1,1,"V",,1],1,sum)*dataS$area[nlc1])/sum(dataS$area[nlc1])))^(1/3)
+          c <- 1*(Vstats[1]/(sum(apply(out$region$multiOut[nlc1,1,"V",,1],1,sum)*dataS$area[nlc1])/sum(dataS$area[nlc1])))^(1/3)
           dataS[,ba:=ba*c^2]
           dataS[,dbh:=dbh*c]
           dataS[,h:=h*c]
+          #dataS[,age:=age*c]
         }
         print("estimate P0CurrClim")
         P0currclim <- (out$region$P0y[,nYears,1])
