@@ -775,13 +775,8 @@ if(!FIGsOnly){
       dataS[,fert:=str]
       dataS$fert[which(dataS$landclass>1)] <- 5
     }
-      
-    #print("Scale sample wider")
-    #if(samplaus==3) dataS[,c("ba","decid","pine","spruce","age","h","dbh")]<-scalesample*dataS[,c("ba","decid","pine","spruce","age","h","dbh")]
-    #if(samplaus==1) dataS[,c("ba","decid","pine","spruce","h","dbh")]<-scalesample*dataS[,c("ba","decid","pine","spruce","h","dbh")]
     
     print(paste("NAs in init state?", any(is.na(dataS))))
-   # rcps <- "CurrClim"
     print(paste("fmi_from_allas =",fmi_from_allas))
     # fmi data from allas
     if(fmi_from_allas & save_fmi_data){
@@ -875,11 +870,12 @@ if(!FIGsOnly){
       if(ECMmod==1){
         nlc1 <- which(dataS$landclass==1)
         if(ba_scaling){
-          c <- scalesample*(Vstats[1]/(sum(apply(out$region$multiOut[nlc1,1,"V",,1],1,sum)*dataS$area[nlc1])/sum(dataS$area[nlc1])))^(1/3)
-          dataS[,ba:=ba*c^2]
-          dataS[,dbh:=dbh*c]
-          dataS[,h:=h*c]
-          if(samplaus!=1) dataS[,age:=age*c]
+          cS <- scalesample*(Vstats[1]/(sum(apply(out$region$multiOut[nlc1,1,"V",,1],1,sum)*dataS$area[nlc1])/sum(dataS$area[nlc1])))^(1/3)
+          print(paste("Scaling coefficient",cS))
+          dataS[,ba:=ba*cS^2]
+          dataS[,dbh:=dbh*cS]
+          dataS[,h:=h*cS]
+          if(samplaus!=1) dataS[,age:=age*cS]
         }
         print("estimate P0CurrClim")
         P0currclim <- (out$region$P0y[,nYears,1])
