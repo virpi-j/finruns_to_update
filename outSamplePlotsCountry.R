@@ -776,9 +776,9 @@ if(!FIGsOnly){
       dataS$fert[which(dataS$landclass>1)] <- 5
     }
       
-    print("Scale sample wider")
-    if(samplaus==3) dataS[,c("ba","decid","pine","spruce","age","h","dbh")]<-scalesample*dataS[,c("ba","decid","pine","spruce","age","h","dbh")]
-    if(samplaus==1) dataS[,c("ba","decid","pine","spruce","h","dbh")]<-scalesample*dataS[,c("ba","decid","pine","spruce","h","dbh")]
+    #print("Scale sample wider")
+    #if(samplaus==3) dataS[,c("ba","decid","pine","spruce","age","h","dbh")]<-scalesample*dataS[,c("ba","decid","pine","spruce","age","h","dbh")]
+    #if(samplaus==1) dataS[,c("ba","decid","pine","spruce","h","dbh")]<-scalesample*dataS[,c("ba","decid","pine","spruce","h","dbh")]
     
     print(paste("NAs in init state?", any(is.na(dataS))))
    # rcps <- "CurrClim"
@@ -874,13 +874,12 @@ if(!FIGsOnly){
                       forceSaveInitSoil=F, sampleX = dataS, HcMod_Init = HcMod_Init)
       if(ECMmod==1){
         nlc1 <- which(dataS$landclass==1)
-        ba_scaling <- T
         if(ba_scaling){
-          c <- 1*(Vstats[1]/(sum(apply(out$region$multiOut[nlc1,1,"V",,1],1,sum)*dataS$area[nlc1])/sum(dataS$area[nlc1])))^(1/3)
+          c <- scalesample*(Vstats[1]/(sum(apply(out$region$multiOut[nlc1,1,"V",,1],1,sum)*dataS$area[nlc1])/sum(dataS$area[nlc1])))^(1/3)
           dataS[,ba:=ba*c^2]
           dataS[,dbh:=dbh*c]
           dataS[,h:=h*c]
-          #dataS[,age:=age*c]
+          if(samplaus!=1) dataS[,age:=age*c]
         }
         print("estimate P0CurrClim")
         P0currclim <- (out$region$P0y[,nYears,1])
