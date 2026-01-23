@@ -842,6 +842,7 @@ if(!FIGsOnly){
     }
     P0currclim=NA 
     fT0=NA
+    scale_cc_area <- 1
     startingYear <- 2015
     endingYear <- 2050
     nYears <- endingYear-startingYear
@@ -872,10 +873,15 @@ if(!FIGsOnly){
         if(ba_scaling){
           cS <- scalesample*(Vstats[1]/(sum(apply(out$region$multiOut[nlc1,1,"V",,1],1,sum)*dataS$area[nlc1])/sum(dataS$area[nlc1])))^(1/3)
           print(paste("Scaling coefficient",cS))
+          cS <- cS*(1+(dataS$lat-61)*.01)
+          print(range(cS))
           dataS[,ba:=ba*cS^2]
           dataS[,dbh:=dbh*cS]
           dataS[,h:=h*cS]
           if(samplaus!=1) dataS[,age:=age*cS]
+          ages <- apply(out$region$multiOut[,1,"age",,1],1,mean)
+          scale_cc_area <- 1.5*(clcutAr[1]*sum(dataS$area)/totArea)/sum((dataS$area)[which(ages<1)])
+          print(paste("Scale cc area",scale_cc_area))
         }
         print("estimate P0CurrClim")
         P0currclim <- (out$region$P0y[,nYears,1])
