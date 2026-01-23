@@ -842,7 +842,7 @@ if(!FIGsOnly){
     }
     P0currclim=NA 
     fT0=NA
-    scale_cc_area <- 1
+    scale_cc_area <- mean(ageclassstats[,1]/(clcutAr[c(1,2021-2016)]/totArea))
     startingYear <- 2015
     endingYear <- 2050
     nYears <- endingYear-startingYear
@@ -880,7 +880,11 @@ if(!FIGsOnly){
           dataS[,h:=h*cS]
           if(samplaus!=1) dataS[,age:=age*cS]
           ages <- apply(out$region$multiOut[,1,"age",,1],1,mean)
-          scale_cc_area <- 1.5*(clcutAr[1]*sum(dataS$area)/totArea)/sum((dataS$area)[which(ages<1)])
+          ar1 <- sum(dataS$area[which(ages<1)])/sum(dataS$area[which(dataS$landclass==1)])
+          ages <- apply(out$region$multiOut[,2021-2015,"age",,1],1,mean)
+          ar2 <- sum(dataS$area[which(ages<1)])/sum(dataS$area[which(dataS$landclass==1)])
+
+          scale_cc_area <- 5*scale_cc_area*mean(ageclassstats[,1]/c(ar1,ar2))
           print(paste("Scale cc area",scale_cc_area))
         }
         print("estimate P0CurrClim")
@@ -1070,7 +1074,12 @@ if(!FIGsOnly){
                         classes = rep(datagroups, 2))
     a2 <- geom_point(data = data2, 
                      mapping = aes(x = time, y = shares, colour = classes))
-    print(a1+a2)
+    data3 <- data.frame(time=2016:2050,
+                        shares = 1-clcutAr/totArea,#sum(data.all$area[data.all$landclass==1]), 
+                        classes = rep(datagroups[1], 35))
+    a3 <- geom_point(data = data3, 
+                     mapping = aes(x = time, y = shares, colour = "gray"))
+    print(a1+a3+a2)
     #totArea <- sum(data.all$area)
     #areaRegion <- totArea <- sum(data.all$area,na.rm=T)
     sortVar <- c("landclass","peatID","cons")
