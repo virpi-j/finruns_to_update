@@ -54,25 +54,36 @@ NetSinks_per_ha_2025 <- NetSinks_per_ha_2025[,-c(2,3)]
 NetSinks_2025_min_org <- read_excel(path = "/users/vjunttil/finruns_to_update/LUKE_maak_nettonielu_kokeellinen.xlsx",  
                                     sheet = "nettonielu_2025_min_org", range = "A3:L98")
 NetSinks_2025_min_org <- NetSinks_2025_min_org[,-c(3)]
-NetSinks_2025_org <- NetSinks_2025_min <- NetSinks_2025
+Netsinks_tree_min <- Netsinks_tree_org <- Netsinks_soil_min <- Netsinks_soilC_org <- 
+  Netsinks_soilN2OCH4_org <-NetSinks_2025_org <- NetSinks_2025_min <- NetSinks_2025
 ri <- 1
-for(ri in 1:nrow(NetSinks_2025)){
+for(ri in 1:nrow(NetSinks_2025)){ # sum of puusto + maaperä
   nri <- which(NetSinks_2025_min_org[,1]==as.character(NetSinks_2025[ri,1]))
   NetSinks_2025_min[ri,-1] <- t(as.numeric(unlist(colSums(NetSinks_2025_min_org[c(nri,nri+2),-c(1:2)]))))
   NetSinks_2025_org[ri,-1] <- t(as.numeric(unlist(colSums(NetSinks_2025_min_org[c(nri+1,nri+3:4),-c(1:2)]))))
+  Netsinks_tree_min[ri,-1] <- t(as.numeric(unlist(colSums(NetSinks_2025_min_org[nri,-c(1:2)]))))
+  Netsinks_tree_org[ri,-1] <- t(as.numeric(unlist(colSums(NetSinks_2025_min_org[nri+1,-c(1:2)]))))
+  Netsinks_soil_min[ri,-1] <- t(as.numeric(unlist(colSums(NetSinks_2025_min_org[nri+2,-c(1:2)]))))
+  Netsinks_soilC_org[ri,-1] <- t(as.numeric(unlist(colSums(NetSinks_2025_min_org[nri+3,-c(1:2)]))))
+  Netsinks_soilN2OCH4_org[ri,-1] <- t(as.numeric(unlist(colSums(NetSinks_2025_min_org[nri+4,-c(1:2)]))))
 }
 
 NetSinks_per_ha_2025_min_org <- read_excel(path = "/users/vjunttil/finruns_to_update/LUKE_maak_nettonielu_kokeellinen.xlsx",  
                                     sheet = "nettonielu_per_ha_2025_min_org", range = "A3:L98")
 NetSinks_per_ha_2025_min_org <- NetSinks_per_ha_2025_min_org[,-c(3)]
-NetSinks_per_ha_2025_org <- NetSinks_per_ha_2025_min <- NetSinks_per_ha_2025
+Netsinks_per_ha_tree_min <- Netsinks_per_ha_tree_org <- Netsinks_per_ha_soil_min <- Netsinks_per_ha_soilC_org <- 
+  Netsinks_per_ha_soilN2OCH4_org <- NetSinks_per_ha_2025_org <- NetSinks_per_ha_2025_min <- NetSinks_per_ha_2025
 ri <- 1
 for(ri in 1:nrow(NetSinks_2025)){
   nri <- which(NetSinks_per_ha_2025_min_org[,1]==as.character(NetSinks_per_ha_2025[ri,1]))
   NetSinks_per_ha_2025_min[ri,-1] <- t(as.numeric(unlist(colSums(NetSinks_per_ha_2025_min_org[c(nri,nri+2),-c(1:2)]))))
   NetSinks_per_ha_2025_org[ri,-1] <- t(as.numeric(unlist(colSums(NetSinks_per_ha_2025_min_org[c(nri+1,nri+3:4),-c(1:2)]))))
+  Netsinks_per_ha_tree_min[ri,-1] <- t(as.numeric(unlist(colSums(NetSinks_per_ha_2025_min_org[nri,-c(1:2)]))))
+  Netsinks_per_ha_tree_org[ri,-1] <- t(as.numeric(unlist(colSums(NetSinks_per_ha_2025_min_org[nri+1,-c(1:2)]))))
+  Netsinks_per_ha_soil_min[ri,-1] <- t(as.numeric(unlist(colSums(NetSinks_per_ha_2025_min_org[nri+2,-c(1:2)]))))
+  Netsinks_per_ha_soilC_org[ri,-1] <- t(as.numeric(unlist(colSums(NetSinks_per_ha_2025_min_org[nri+3,-c(1:2)]))))
+  Netsinks_per_ha_soilN2OCH4_org[ri,-1] <- t(as.numeric(unlist(colSums(NetSinks_per_ha_2025_min_org[nri+4,-c(1:2)]))))
 }
-
 
 
 ##
@@ -1026,14 +1037,14 @@ if(!FIGsOnly){
 
     NEP_yasso <- out$region$multiOut[,,"NEP/SMI[layer_1]",,1]
     NansRun <- any(is.na(NEP_yasso))
-    #print(paste("Any NaNs in NEP?", NansRun))
+    print(paste("Any NaNs in NEP?", NansRun))
     niNa <- NA
     if(NansRun){
       niNa <- which(is.na(rowSums(apply(NEP_yasso,1:2,sum))))
-    #  NEP_yasso <- NEP_yasso[-niNa,,]
+      #  NEP_yasso <- NEP_yasso[-niNa,,]
     }   
+    # This function is found in GitHub: Rprebasso/R/utilStaff.r
     out$region <- peat_regression_model_multiSite(out$region,which(dataS$peatID==1)) 
-    
     output <- out$region$multiOut
     areas <- dataS$area
     timei <- (1:dim(output)[2])+2015
@@ -1080,6 +1091,134 @@ if(!FIGsOnly){
     a3 <- geom_point(data = data3, 
                      mapping = aes(x = time, y = shares, colour = "gray"))
     print(a1+a3+a2)
+    
+    if(TRUE){
+      treeW <- apply(output[,,c(24,25,31:33),,1],1:2,sum)
+      gvW <- out$region$GVout[,,4]
+      soilC <- out$region$soilCtot      
+      bioW <- treeW+gvW
+      #npp <- apply(output[,,"npp",,1],1:2,sum)
+      #gpp <- apply(output[,,"GPPTot/1000",,1],1:2,sum)
+      Rh <- apply(output[,,"Rh/SBBpob[layer_1]",,1],1:2,sum)
+      nep <- apply(output[,,"NEP/SMI[layer_1]",,1],1:2,sum)
+      #litters <- apply(output[,,26:29,,1],1:2,sum)
+      #wharv <- apply(output[,,"WroundWood",,1],1:2,sum) + 
+      #  apply(out$region$multiEnergyWood[,,,"biomass"],1:2,sum)
+      r_nod <- which(NetSinks_per_ha_2025_min[,1]==regionNames_fi[r_no]) # Find right row in the tables
+      peatIDs <- 0
+      peatNms <- c("min","org")
+      for(peatIDs in 0:1){
+        par(mfrow=c(3,2))
+        n1 <- which(dataS$peatID==peatIDs)
+        print(paste("tree CO2eq",peatNms[peatIDs]))
+        # C change kgC/ha*CtoCO2/1e9 -> MtCO2eq = 1e6*1000kg*ha
+        print("tree sum simulations")
+        xstree <- -colSums((bioW[n1,-1]-bioW[n1,-ncol(treeW)])*areas[n1])[2017:2023-2015]/sum(areas[n1])*sum(data.all$area[which(data.all$peatID==peatIDs)])*44/12/1e9
+        print(round(xstree,2))
+        print("tree sum data")
+        if(peatIDs==0) xdtree <- as.numeric(Netsinks_tree_min[r_nod,-(1:2)])
+        if(peatIDs==1) xdtree <- as.numeric(Netsinks_tree_org[r_nod,-(1:2)])
+        print(xdtree)
+        ylims <- c(min(c(xdtree,xstree)),max(c(xdtree,xstree)))
+        plot(2016:2023,xdtree,ylim=ylims,col="red",main=paste("tree sink sum",peatNms[peatIDs+1]),
+             ylab="MtCO2eq",xlab="year")
+        lines(2017:2023,xstree,col="blue")
+        lines(c(2016,2023),c(0,0),col="black")
+        # C change kgC/ha*CtoCO2/1e3 -> tCO2eq/ha = 1000kg*ha
+        print("tree ave simulations")
+        xstree <- -(colSums((bioW[n1,-1]-bioW[n1,-ncol(treeW)])*areas[n1])/sum(areas[n1]))[2017:2023-2015]*44/12/1000
+        print(round(xstree,2))
+        print("tree ave data")
+        if(peatIDs==0) xdtree <- as.numeric(Netsinks_per_ha_tree_min[r_nod,-(1:2)])
+        if(peatIDs==1) xdtree <- as.numeric(Netsinks_per_ha_tree_org[r_nod,-(1:2)])
+        print(xdtree)        
+        ylims <- c(min(c(xdtree,xstree)),max(c(xdtree,xstree)))
+        plot(2016:2023,xdtree,ylim=ylims,type="l",col="red",main=paste("tree sink ave",peatNms[peatIDs+1]),
+             ylab="tCO2eq/ha",xlab="year")
+        lines(2017:2023,xstree,col="blue")
+        lines(c(2016,2023),c(0,0),col="black")
+        
+        print(paste("soil CO2eq",peatNms[peatIDs]))
+        n1 <- setdiff(n1,n1[which(is.na(soilC[n1,1]))])
+        if(peatIDs==0){
+          # gC/m2*CtoCo2*10*ha -> MtCO2eq = 1e6*1000kg*ha
+          #xssoil <- colSums(10*Rh[n1,2016:2023-2015]*areas[n1])/sum(areas[n1])*sum(data.all$area[which(data.all$peatID==peatIDs)])*44/12/1e9
+          print("soilC sum simulations")
+          xssoil <- (colSums((soilC[n1,-1]-soilC[n1,-ncol(treeW)])*areas[n1])[2017:2023-2015]/sum(areas[n1])*sum(data.all$area[which(data.all$peatID==peatIDs)])*44/12/1e9)
+          print(-round(xssoil,2))
+          print("soilC sum data")
+          xdsoil <- as.numeric(Netsinks_soil_min[r_nod,-(1:2)])
+          print(xdsoil)
+          ylims <- c(min(c(xdsoil,xssoil)),max(c(xdsoil,xssoil)))
+          plot(2016:2023,xdsoil,ylim=ylims,col="red",main=paste("soil sink sum",peatNms[peatIDs+1]),
+               ylab="MCO2eq",xlab="year")
+          lines(2017:2023,xssoil,col="blue")
+          lines(c(2016,2023),c(0,0),col="black")
+          
+          #print(round(colSums(10*Rh[n1,2016:2023-2015]*areas[n1])/sum(areas[n1])*44/12/1e3,2))
+          print("soilC ave simulations")
+          xssoil <- -(colSums((soilC[n1,-1]-soilC[n1,-ncol(treeW)])*areas[n1])[2017:2023-2015]/sum(areas[n1])*44/12/1e3)
+          print(round(xssoil,2))
+          print("soilC ave data")
+          xdsoil <- as.numeric(Netsinks_per_ha_soil_min[r_nod,-(1:2)]) 
+          print(xdsoil)
+          ylims <- c(min(c(xdsoil,xssoil)),max(c(xdsoil,xssoil)))
+          plot(2016:2023,xdsoil,ylim=ylims,col="red",main=paste("soil sink ave",peatNms[peatIDs+1]),
+               ylab="tCO2eq/ha",xlab="year")
+          lines(2017:2023,xssoil,col="blue")
+          lines(c(2016,2023),c(0,0),col="black")
+          
+        } else if(peatIDs==1){
+          # gC/m2*CtoCo2*10*ha -> MtCO2eq = 1e6*1000kg*ha
+          print("soilC sum simulations")
+          xssoil <- colSums(10*Rh[n1,2016:2023-2015]*areas[n1])/sum(areas[n1])*sum(data.all$area[which(data.all$peatID==peatIDs)])*44/12/1e9
+          print(xssoil)
+          #print(-round((colSums((soilC[n1,-1]-soilC[n1,-ncol(treeW)])*areas[n1])[2017:2023-2015]/sum(areas[n1])*sum(data.all$area[which(data.all$peatID==peatIDs)])*44/12/1e9),2))
+          print("soilC sum data")
+          xdsoil <- as.numeric(Netsinks_soilC_org[r_nod,-(1:2)])
+          print(xdsoil)
+          ylims <- c(min(c(xdsoil,xssoil)),max(c(xdsoil,xssoil)))
+          plot(2016:2023,xdsoil,ylim=ylims,col="red",main=paste("soil sink C sum",peatNms[peatIDs+1]),
+               ylab="MCO2eq",xlab="year")
+          lines(2016:2023,xssoil,col="blue")
+          lines(c(2016,2023),c(0,0),col="black")
+          
+          # gC/m2*CtoCo2*10/1000 -> tCO2eq/ha = 1000kgCO2eq/ha
+          print("soilC ave simulations")
+          xssoil <- colSums(10*Rh[n1,2016:2023-2015]*areas[n1])/sum(areas[n1])*44/12/1e3
+          print(xssoil)
+          print("soilC sum data")
+          xdsoil <- as.numeric(Netsinks_per_ha_soilC_org[r_nod,-(1:2)])
+          print(xdsoil)
+          ylims <- c(min(c(xdsoil,xssoil)),max(c(xdsoil,xssoil)))
+          plot(2016:2023,xdsoil,ylim=ylims,col="red",main=paste("soil sink C ave",peatNms[peatIDs+1]),
+               ylab="tCO2eq/ha",xlab="year")
+          lines(2016:2023,xssoil,col="blue")
+          lines(c(2016,2023),c(0,0),col="black")
+          
+          N2O_CH4 <- 25*out$region$CH4emisDrPeat_kgyear + 298*out$region$N2OemisDrPeat_kgyear
+          xssoil <- sum(N2O_CH4[n1]*areas[n1])/sum(areas[n1])*sum(data.all$area[which(data.all$peatID==peatIDs)])/1e9
+          xdsoil <- as.numeric(Netsinks_soilN2OCH4_org[r_nod,-(1:2)])
+          ylims <- c(0,1.1*max(c(xdsoil,xssoil)))
+          plot(2016:2023,xdsoil,ylim=ylims,col="red",main=paste("soil sink N2O CH4 sum",peatNms[peatIDs+1]),
+               ylab="MtCO2eq",xlab="year")
+          lines(c(2016,2023),xssoil*c(1,1),col="blue")
+          lines(c(2016,2023),c(0,0),col="black")
+          
+          xssoil <- sum(N2O_CH4[n1]*areas[n1])/sum(areas[n1])/1000
+          xdsoil <- as.numeric(Netsinks_per_ha_soilN2OCH4_org[r_nod,-(1:2)])
+          ylims <- c(0,1.1*max(c(xdsoil,xssoil)))
+          plot(2016:2023,xdsoil,ylim=ylims,col="red",main=paste("soil sink N2O CH4 ave",peatNms[peatIDs+1]),
+               ylab="tCO2eq/ha",xlab="year")
+          lines(c(2016,2023),xssoil*c(1,1),col="blue")
+          lines(c(2016,2023),c(0,0),col="black")
+          
+        }
+        
+        #print(colSums((soilC[n1,-1]-soilC[n1,-ncol(treeW)])*areas[n1])/sum(areas[n1])*44/12/1000)
+        #print(colSums(Rh[n1,1:15]*areas[n1])/sum(areas[n1])*44/12/1000)
+      }
+    }
     #totArea <- sum(data.all$area)
     #areaRegion <- totArea <- sum(data.all$area,na.rm=T)
     sortVar <- c("landclass","peatID","cons")
@@ -1123,10 +1262,10 @@ if(!FIGsOnly){
       #if(sortid==3) areas3 <- areas[n_lc3]
       varis <- c("wf_STKG","NEP_yasso","V","age","Wtot","BA","grossGrowth","NEP/SMI[layer_1]",
                  "Wharvested","Vharvested","VroundWood","Venergywood",
-                 "Vmort","CH4em","N2Oem")
+                 "Vmort","CH4em","N2Oem","GPP")
       variNams <- c("wf_STKG","NEP_yasso","V","age","Wtot","BA","grossGrowth","NEP",
                     "Wharvested","Vharvested","VroundWood","Venergywood",
-                    "Vmort","CH4em","N2Oem")
+                    "Vmort","CH4em","N2Oem","GPP")
       #  outresults <- outresultsSum <- data.table()
       ij <- 1
       for(ij in 1:length(varis)){
@@ -1144,6 +1283,8 @@ if(!FIGsOnly){
           tmp <- out$region$CH4emisDrPeat_kgyear
         }  else if(varis[ij]=="N2Oem"){
           tmp <- out$region$N2OemisDrPeat_kgyear
+        }  else if(varis[ij]=="GPP"){
+          tmp <- output[,,"GPPTot/1000",1,1]
         } else {
           ijid <- which(varNames==varis[ij])
           if(length(ijid)==0){
@@ -1152,12 +1293,14 @@ if(!FIGsOnly){
           }
           tmp <- output[,,ijid,,1]
         }
-        if(varis[ij]%in%c("wf_STKG","NEP_yasso","V","Wtot","BA","grossGrowth","NEP/SMI[layer_1]","Wharvested","Vharvested","VroundWood","Venergywood","Vmort","CH4em","N2Oem")){ # sums
+        if(varis[ij]%in%c("wf_STKG","NEP_yasso","V","Wtot","BA","grossGrowth","NEP/SMI[layer_1]","Wharvested","Vharvested","VroundWood","Venergywood","Vmort","CH4em","N2Oem","GPP")){ # sums
           if(varis[ij]%in%c("CH4em","N2Oem")){
             outres <- sum(tmp*areas)/sum(areas)
           } else {
             if(varis[ij]%in%c("NEP_yasso","NEP/SMI[layer_1]") & ! is.na(niNa)[1]){
               outres <- colSums(apply(tmp[-niNa,,],1:2,sum)*areas[-niNa])/sum(areas[-niNa])
+            } else if(varis[ij]=="GPP"){
+              outres <- colSums(tmp*areas)/sum(areas)
             } else {
               outres <- colSums(apply(tmp,1:2,sum)*areas)/sum(areas)
             }
@@ -1180,6 +1323,8 @@ if(!FIGsOnly){
               if(varis[ij]%in%c("NEP_yasso","NEP/SMI[layer_1]") & !is.na(niNa)[1]){
                 ni <- setdiff(ni,niNa)
                 outres <- colSums(apply(tmp[ni,,],1:2,sum)*areas[ni])/sum(areas[ni])
+              } else if(varis[ij]=="GPP"){
+                outres <- colSums(tmp[ni,]*areas[ni])/sum(areas[ni])
               } else {
                 outres <- colSums(apply(tmp[ni,,],1:2,sum)*areas[ni])/sum(areas[ni])
               }
@@ -1258,7 +1403,7 @@ if(!FIGsOnly){
         ik2 <- which(colnames(outresults)==paste0("CH4em_",sortVarnams[ik]))
         ik3 <- which(colnames(outresults)==paste0("N2Oem_",sortVarnams[ik]))
         outresults <- cbind(outresults,44/12*(outresults[,..ik0]+outresults[,..ik1])+
-                              298*outresults[,..ik2] + 25*outresults[,..ik3])
+                              298*outresults[,..ik3] + 25*outresults[,..ik2])
         colnames(outresults)[ncol(outresults)] <- paste0("NBE_",sortVarnams[ik])
         ikj <- which(colnames(outresults)==paste0("NBE_",sortVarnams[ik]))
         outresults <- cbind(outresults, outresults[,..ikj]*sortTotAreas[ik])
@@ -1356,22 +1501,43 @@ if(!FIGsOnly){
           }
         }
         
-        # wf_STKG
-        ij <- which(colnames(outresults)=="wf_STKG")
+        # GPP
+        ij <- which(colnames(outresults)=="GPP")
         tmp <- unlist(outresults[,..ij])
-        ij2 <- c(ij,match(paste0("wf_STKG_",sortVarnams),colnames(outresults)))
+        ij2 <- c(ij,match(paste0("GPP_",sortVarnams),colnames(outresults)))
         ymax <- max(outresults[,..ij2])
         ymin <- min(outresults[,..ij2])
         plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
              xlim = c(timei[1]-1,timei[length(timei)]),
-             ylab = "Foliage biomass, kgC/ha", ylim = c(0,ymax),
+             ylab = "GPP, kgC/m2", ylim = c(0,ymax),
              lwd=3)
         colorsi <- c("blue","green","pink")
         for(ik in 1:length(sortVarnams)){
-          ijk <- which(paste0("wf_STKG_",sortVarnams[ik])==colnames(outresults))
+          ijk <- which(paste0("GPP_",sortVarnams[ik])==colnames(outresults))
           tmp <- unlist(outresults[,..ijk])
           if(length(tmp)>1){
             lines(timei, tmp,col=colorsi[ik])
+          }
+        }
+        
+        if(FALSE){
+          # wf_STKG
+          ij <- which(colnames(outresults)=="wf_STKG")
+          tmp <- unlist(outresults[,..ij])
+          ij2 <- c(ij,match(paste0("wf_STKG_",sortVarnams),colnames(outresults)))
+          ymax <- max(outresults[,..ij2])
+          ymin <- min(outresults[,..ij2])
+          plot(timei, tmp, type="l",main=paste("Region",r_no,rname), 
+               xlim = c(timei[1]-1,timei[length(timei)]),
+               ylab = "Foliage biomass, kgC/ha", ylim = c(0,ymax),
+               lwd=3)
+          colorsi <- c("blue","green","pink")
+          for(ik in 1:length(sortVarnams)){
+            ijk <- which(paste0("wf_STKG_",sortVarnams[ik])==colnames(outresults))
+            tmp <- unlist(outresults[,..ijk])
+            if(length(tmp)>1){
+              lines(timei, tmp,col=colorsi[ik])
+            }
           }
         }
         

@@ -198,7 +198,7 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
     
     clim2 <- cbind(clim[,-1])
     nr <- length(climIDs)
-    clim <- list(PAR = t(replicate(nr,clim2$PAR)),
+    clim <- list(PAR = t(replicate(nr,clim2$PAR))*100,
                  TAir = t(replicate(nr,clim2$Tair)),
                  VPD = t(replicate(nr,clim2$VPD)),
                  Precip = t(replicate(nr,clim2$precip)),
@@ -367,7 +367,6 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
                                          HcMod_in=HcMod_Init)
   print("... done.")
   
-
   opsna <- which(is.na(initPrebas$multiInitVar))
   initPrebas$multiInitVar[opsna] <- 0.
   
@@ -487,7 +486,7 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
   #if(!is.na(cutArX)){
   print("calculating clearcutting areas")
 
-  clcutArX <- clcutAr * sum(areas)/totArea
+  clcutArX <- clcutAr * sum(areas)/totArea*scale_cc_area ####
   if(length(clcutArX)<nYears) clcutArX<-c(clcutArX,clcutArX[rep(length(clcutArX),nYears-length(clcutArX))])
   clcutArX <- cbind(clcutArX[1:nYears],0.)
   
@@ -508,7 +507,7 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
   #cutArX <- cutArX * 0.5
   ###run PREBAS
   #if(!initilizeSoil){
-    if(!initilizeSoil | !(harvScen =="Base" & harvInten == "Base") | rcps!="CurrClim"){
+  if(!initilizeSoil | !(harvScen =="Base" & harvInten == "Base") | rcps!="CurrClim"){
       if(!IRS){
         load(paste0("initSoilCunc/forCent",r_no,"/initSoilC.rdata"))
       } else {
@@ -1054,7 +1053,7 @@ sample_data.f = function(sampleX, nSample) {
 
 
 create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears, 
-                                     harv,
+                                     harv, 
                                      ECMmod = 0,
                                      soilGridData = 0,
                                      soilInfo_new = soilInfo_new, # Use Virpi's soil info as default
@@ -1077,6 +1076,12 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
   nSites <- nrow(data.sample)
   areas <- data.sample$area
   print(paste("HcFactor =",HcFactorX))
+  
+  poorlyprod <- T
+  if(poorlyprod & !is.null(landClassUnman)){
+    print(paste("set landclass 2 fert to 5"))
+    data.sample$fert[which(data.sample$landclass==2)] <- 9
+  }
   
   siteInfo <- matrix(c(NA,NA,NA,160,0,0,20,3,3,413,0.45,0.118),nSites,12,byrow = T)
   siteInfo[,1] <- data.sample$segID
@@ -1124,20 +1129,45 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
     njdepths <- apply(array(1:nrow(data.sample),c(nrow(data.sample),1)),1,soildepthInfo)
     if(soilInfo_new){
       siteout <- cbind(soil_depth=soildpth[njdepths,"soil_depth"],soilgrd[njs,c("FC","PWP")])
+      colnames(siteout)[3] <- "WP"
     } else {
       siteout <- cbind(soil_depth=soildpth[njdepths,"soil_depth"],soilgrd[njs,c("FC","WP")])
       siteout$FC <- siteout$FC/1000
       siteout$WP <- siteout$WP/1000
     }
-    stps <- 0
+    print("FC range")
+    print(range(siteout$FC))
+    print("WP range")
+    print(range(siteout$WP))
+    stps <- 1
+    #if(stps == 2 & r_no %in% c(8,17,19)) stps <- 12
     if(stps==1){
+      #sdepth <- c(10,20,25,30,40,50)
+      sdepth <- c(5,10,25,35,45,50)
+      if(r_no %in% c(16,19)) {
+        sdepth <- sdepth/2
+        siteout$FC <- siteout$FC/2
+        siteout$WP <- siteout$WP/2
+      }
+      if(r_no %in% c(8)) {
+        sdepth <- sdepth/3
+        siteout$FC <- siteout$FC/3
+        siteout$WP <- siteout$WP/3
+      }
+      print("Soil depths:")
+      print(unique(siteout$soil_depth))
       print("Manual soil depths for Maannos classes")
-      siteout$soil_depth[which(siteout$soil_depth==25)] <- 10 #25
-      siteout$soil_depth[which(data.sample$fert>=5)] <- 10 #25
-      siteout$soil_depth[which(siteout$soil_depth==30)] <- 25 #10
-      siteout$soil_depth[which(siteout$soil_depth==40)] <- 30 #35
-      siteout$soil_depth[which(siteout$soil_depth==45)] <- 35 #45
-      siteout$soil_depth[which(siteout$soil_depth==50)] <- 43 #50
+      siteout$soil_depth[which(siteout$soil_depth==10)] <- sdepth[1] #25
+      siteout$soil_depth[which(siteout$soil_depth==25)] <- sdepth[2] #10
+      siteout$soil_depth[which(siteout$soil_depth==30)] <- sdepth[3] #35
+      siteout$soil_depth[which(siteout$soil_depth==40)] <- sdepth[4] #45
+      siteout$soil_depth[which(siteout$soil_depth==45)] <- sdepth[5] #50
+      siteout$soil_depth[which(siteout$soil_depth==50)] <- sdepth[6] #50
+      siteout$soil_depth[which(data.sample$fert>5)] <- 1 #25
+      siteout$FC[which(data.sample$fert>5)] <- 0.04 #siteout$FC[which(data.sample$fert>=5)]/10
+      siteout$WP[which(data.sample$fert>5)] <- 0.01 #siteout$WP[which(data.sample$fert>=5)]/10  
+      print("Soil depths:")
+      print(unique(siteout$soil_depth))
     } else if(stps==2){
       print("Manual soil depths for fertility classes")
       siteout[which(data.sample$fert>=5),] <- c(10,0.14,0.04) #25
@@ -1149,11 +1179,29 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
       #siteout$soil_depth[which(data.sample$fert==3)] <- 30 #35
       #siteout$soil_depth[which(data.sample$fert==2)] <- 35 #45
       #siteout$soil_depth[which(data.sample$fert==1)] <- 43 #50
+    } else if(stps==12){
+      print("Manual soil depths for Maannos classes")
+      siteout$soil_depth[which(siteout$soil_depth==25)] <- 10 #25
+      siteout$soil_depth[which(data.sample$fert>=5)] <- 10 #25
+      siteout$soil_depth[which(siteout$soil_depth==30)] <- 20 #10
+      siteout$soil_depth[which(siteout$soil_depth==40)] <- 30 #35
+      siteout$soil_depth[which(siteout$soil_depth==45)] <- 10 #45
+      siteout$soil_depth[which(siteout$soil_depth==50)] <- 43 #50
+      print("Manual soil depths for fertility classes")
+      siteout[which(data.sample$fert>=5),2:3] <- c(0.14,0.04) #25
+      siteout[which(data.sample$fert==4),2:3] <- c(0.14,0.04) #25
+      siteout[which(data.sample$fert==3),2:3] <- c(0.24,0.08) #25
+      siteout[which(data.sample$fert==2),2:3] <- c(0.28,0.08) #25
+      siteout[which(data.sample$fert>=5),2:3] <- c(0.34,0.11) #25
     }
     siteout$soil_depth <- siteout$soil_depth*10
     print(colMeans(siteout))
     print(c(413,0.45,0.118))
-    siteInfo[,c(10:12)] <- array(unlist(siteout),c(nrow(data.sample),3)) #cbind(siteout$soil_depth,
+    #if(stps==1){
+    #  siteInfo[,c(10)] <- array(unlist(siteout),c(nrow(data.sample),3))[,1] #cbind(siteout$soil_depth,
+    #} else {
+      siteInfo[,c(10:12)] <- array(unlist(siteout),c(nrow(data.sample),3)) #cbind(siteout$soil_depth,
+    #}
     print(paste("soil siteInfo NAs?:",any(is.na(siteInfo[,c(10:12)]))))
     if(any(is.na(siteInfo[,c(10:12)]))){
       nas <- which(is.na(rowSums(siteInfo[,c(10:12)])))
@@ -1162,12 +1210,6 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
       rm("nas")
       gc()
       print(paste("soil siteInfo NAs?:",any(is.na(siteInfo[,c(10:12)]))))
-    }
-    poorlyprod <- T
-    if(poorlyprod & !is.null(landClassUnman)){
-      hpoorlyprod <- 5
-      print(paste("set landclass 2 soil depth to",hpoorlyprod,"cm."))
-      siteInfo[which(data.sample$landclass==2),10] <- hpoorlyprod*10
     }
     # plot(soilgrd$x[njs],soilgrd$y[njs],pch=19, col="black")
     #  points(data.sample$x,data.sample$y, pch=20, col="red")
@@ -1181,23 +1223,139 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
     gc()
     
   } else if(soilGridData == 2){
-    print("Soil data for sitetypes")
+    poorlyprod <- T
+    if(poorlyprod & !is.null(landClassUnman)){
+      print(paste("set landclass 2 site type to 9"))
+      data.sample$fert[which(data.sample$landclass==2)] <- 9
+    }
+    
+    print("Soil data for sitetypes from literature")
     print("Manual soil depths for fertility classes")
-    ni <- which(data.sample$fert>=5)
-    siteInfo[ni,10:12] <- matrix(c(100,0.14,0.04),nrow=length(ni),nco=3,byrow = T) #25
-    ni <- which(data.sample$fert==4)
-    siteInfo[ni,10:12] <- matrix(c(250,0.14,0.04),nrow=length(ni),nco=3,byrow = T)
-    ni <- which(data.sample$fert==3)
-    siteInfo[ni,10:12] <- matrix(c(350,0.24,0.08),nrow=length(ni),nco=3,byrow = T)
-    ni <- which(data.sample$fert==2)
-    siteInfo[ni,10:12] <- matrix(c(450,0.28,0.08),nrow=length(ni),nco=3,byrow = T)
-    ni <- which(data.sample$fert==1)
-    siteInfo[ni,10:12] <- matrix(c(500,0.34,0.11),nrow=length(ni),nco=3,byrow = T)
+    soilProps <- array(0,dim=c(6,2),dimnames = list(paste0("fert",1:6),
+                                                    c("FC","PW")))
+    #soildepths <- c(400,300,150,100,50,50)
+    soildepths <- c(400,300,200,100,50,50)
+    soilProps[,1] <- c(0.34,0.28,0.24,0.14,0.10,0.01) 
+    soilProps[,2] <- c(0.11,0.08,0.08,0.04,0.03,0.01)
+    
+    if(TRUE){ # scale according to north regions
+      if(r_no%in%c(1,11)){
+        soildepths <- soildepths*.75
+        soilProps <- soilProps*.75
+      }
+      if(r_no%in%c(16,19)){
+        soildepths <- soildepths*.55
+        soilProps <- soilProps*.55
+      }
+      if(r_no%in%c(8)){
+        if(ageHarvPriorX>0) ageHarvPriorX<-140
+        soildepths <- soildepths/2.5
+        soilProps <- soilProps/2.5
+      }
+    }
+    print("Manual soil FC and PW for fertility classes")
+    for(ik in 1:6){
+      ni <- which(data.sample$fert==ik)
+      if(ik==6) ni <- which(data.sample$fert>=ik)
+      Ni <- length(ni)
+      siteInfo[ni,10] <- soildepths[ik]
+      siteInfo[ni,11:12] <- matrix(soilProps[ik,],nrow=Ni, ncol=2,byrow = T) 
+    }
+    if(FALSE){ # scale according to latitude?
+      cSS <- (1+(60-as.numeric(data.sample$lat))*.07)
+      print(range(cSS))
+      siteInfo[,10] <- siteInfo[,10]*cSS
+      siteInfo[,11] <- siteInfo[,11]*cSS
+      siteInfo[,12] <- siteInfo[,12]*cSS
+    }
+    #siteInfo[,10:12] <- siteout
     print("SiteInfo for soils")
     print(colMeans(siteInfo[,10:12]))
+    #print(round(head(siteInfo),2))
     #data <- cbind(siteout,fert=data.sample$fert)
     #ggplot(data, aes(x=fert, y=WP))+geom_point(data,mapping=aes(x=fert,y=WP))
-  } 
+  } else if(soilGridData == 3){
+    print("Soil data from sitetypes and depths from Maannos")
+    soildpth <- read.csv2("~/Soils/soilDepth.csv")
+    bb <- c(min(data.sample$lon)*.99,max(data.sample$lon)*1.01,
+            min(data.sample$lat)*.99, max(data.sample$lat)*1.01)
+    soildpth <- soildpth[which(soildpth$x>=bb[1] & soildpth$x<=bb[2],
+                               soildpth$y>=bb[3] & soildpth$y<=bb[4]),]
+    gc()
+    soildepthInfo <- function(j){
+      nj <- which.min((data.sample$lon[j]-soildpth$x)^2+
+                        (data.sample$lat[j]-soildpth$y)^2)
+      return(nj)
+    }
+    njdepths <- apply(array(1:nrow(data.sample),c(nrow(data.sample),1)),1,soildepthInfo)
+    
+    siteout <- cbind(soil_depth=soildpth[njdepths,"soil_depth"],FC=data.sample$fert, PW=data.sample$fert)
+    stps <- 1
+    print("Manual soil depths for Maannos classes")
+    siteout[which(siteout[,1]==25),2] <- 10 #25
+    siteout[which(siteout[,1]==30),1] <- 20 #10
+    siteout[which(siteout[,1]==40),1] <- 25 #35
+    siteout[which(siteout[,1]==45),1] <- 35 #45
+    siteout[which(siteout[,1]==50),1] <- 45 #50
+    siteout[which(data.sample$fert>=5),1] <- 5
+    
+    if(r_no %in% c(8,17,19)) stps <- 2
+    if(stps==1){
+      soilProps <- array(0,dim=c(5,2),dimnames = list(paste0("fert",1:5),c("FC","PW")))
+      soilProps[,1] <- c(0.34,0.28,0.24,0.14,0.10) 
+      soilProps[,2] <- c(0.11,0.08,0.08,0.04,0.03)
+      print("Manual soil FC and PW for fertility classes")
+      for(ik in 1:5){
+        ni <- which(data.sample$fert==ik)
+        if(ik==5) ni <- which(data.sample$fert>=ik)
+        Ni <- length(ni)
+        siteout[ni,2:3] <- matrix(soilProps[ik,],nrow=Ni, ncol=2,byrow = T) 
+      }
+    } else if(stps==2){
+      print("Manual soil depths for Maannos classes")
+      siteout[which(siteout[,1]==25),1] <- 10 #25
+      siteout[which(data.sample$fert>=5),1] <- 10 #25
+      siteout[which(siteout[,1]==30),1] <- 20 #10
+      siteout[which(siteout[,1]==40),1] <- 30 #35
+      siteout[which(siteout[,1]==45),1] <- 10 #45
+      siteout[which(siteout[,1]==50),1] <- 43 #50
+      print("Manual soil FC and PW for fertility classes")
+      soilProps <- array(0,dim=c(5,2),dimnames = list(paste0("fert",1:5),c("FC","PW")))
+      soilProps[,1] <- c(0.34,0.28,0.24,0.14,0.10) 
+      soilProps[,2] <- c(0.11,0.08,0.08,0.04,0.03)
+      print("Manual soil FC and PW for fertility classes")
+      for(ik in 1:5){
+        ni <- which(data.sample$fert==ik)
+        if(ik==5) ni <- which(data.sample$fert>=ik)
+        Ni <- length(ni)
+        siteout[ni,2:3] <- matrix(soilProps[ik,],nrow=Ni, ncol=2,byrow = T) 
+      }
+    }
+    siteout[,1] <- siteout[,1]*10
+    print(colMeans(siteout))
+    print(c(413,0.45,0.118))
+    siteInfo[,c(10:12)] <- siteout
+    print(paste("soil siteInfo NAs?:",any(is.na(siteInfo[,c(10:12)]))))
+    if(any(is.na(siteInfo[,c(10:12)]))){
+      nas <- which(is.na(rowSums(siteInfo[,c(10:12)])))
+      siteInfo[nas,c(10:12)] <- t(array(colMeans(siteInfo[,c(10:12)],na.rm = T),
+                                        c(3,length(nas))))
+      rm("nas")
+      gc()
+      print(paste("soil siteInfo NAs?:",any(is.na(siteInfo[,c(10:12)]))))
+    }
+    # plot(soilgrd$x[njs],soilgrd$y[njs],pch=19, col="black")
+    #  points(data.sample$x,data.sample$y, pch=20, col="red")
+    #  plot(siteout$soil_depth,siteout$FC)
+    #  plot(siteout$soil_depth,siteout$WP)
+    #`FC`: Field capacity [mm]
+    #`WP`: Wilting point [mm]
+    #`AWC`: Available water capacity [mm]
+    #`soil_depth`: Depth to bedrock [cm]
+    rm(list=c("njdepths","siteout","soildpth"))
+    gc()
+    
+  }
   ####### Wind disturbance module from Jonathan
   sid <- NA
   if("wind"%in%disturbanceON & climScen>=0){# & !rcps%in%c("CurrClim","CurrClim_fmi")){
@@ -1448,7 +1606,7 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
     if(rcps=="fireClim"){
       print("include fire risk calculation")
       initPrebas <- InitMultiSite(nYearsMS = rep(nYears,nSites),
-                                  siteInfo=siteInfo,
+                                  siteInfo=siteInfo, r_no = r_no,
                                   siteInfoDist = sid,
                                   latitude = lat,#data.sample$lat,
                                   pCROBAS = pCrobasX,
