@@ -1088,6 +1088,11 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
   siteInfo[,2] <- as.numeric(data.sample[,id])
   siteInfo[,3] <- data.sample[,fert]
   #siteInfo[,8] <- as.numeric(data.sample[,landclass])
+  if(poorlyprod & soilGridData == 0){
+    siteInfo[which(data.sample$fert>=5),10] <- 5
+    siteInfo[which(data.sample$fert>=5),11] <- 0.1
+    siteInfo[which(data.sample$fert>=5),12] <- 0.1
+  }
   if(soilGridData == 1){
     print("Soil data from database")
     soildpth <- read.csv2("~/Soils/soilDepth.csv")
@@ -1223,12 +1228,6 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
     gc()
     
   } else if(soilGridData == 2){
-    poorlyprod <- T
-    if(poorlyprod & !is.null(landClassUnman)){
-      print(paste("set landclass 2 site type to 9"))
-      data.sample$fert[which(data.sample$landclass==2)] <- 9
-    }
-    
     print("Soil data for sitetypes from literature")
     print("Manual soil depths for fertility classes")
     soilProps <- array(0,dim=c(6,2),dimnames = list(paste0("fert",1:6),

@@ -1133,7 +1133,7 @@ if(!FIGsOnly){
         if(peatIDs==1) xdtree <- as.numeric(Netsinks_per_ha_tree_org[r_nod,-(1:2)])
         print(xdtree)        
         ylims <- c(min(c(xdtree,xstree)),max(c(xdtree,xstree)))
-        plot(2016:2023,xdtree,ylim=ylims,type="l",col="red",main=paste("tree sink ave",peatNms[peatIDs+1]),
+        plot(2016:2023,xdtree,ylim=ylims,col="red",main=paste("tree sink ave",peatNms[peatIDs+1]),
              ylab="tCO2eq/ha",xlab="year")
         lines(2017:2023,xstree,col="blue")
         lines(c(2016,2023),c(0,0),col="black")
