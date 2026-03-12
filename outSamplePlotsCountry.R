@@ -135,13 +135,13 @@ g_to_kg <- 1000
 ha_to_m2 <- 100^2
 nYears <- 35
 
-manualRun <- T
+manualRun <- F
 if(manualRun){
   RCP=0
   harvScen <- "Base"
   harvInten <- "Base"
   easyInit=FALSE; forceSaveInitSoil=F; cons10run = F
-  procDrPeat=T; coeffPeat1=-240; coeffPeat2=70
+  procDrPeat=1; coeffPeat1=-240; coeffPeat2=70
   coefCH4 = 0.34; coefN20_1 = 0.23; coefN20_2 = 0.077#g m-2 y-1
   funPreb = "regionPrebas"
   initSoilCreStart=NULL; outModReStart=NULL; reStartYear=1
@@ -845,11 +845,11 @@ if(!FIGsOnly){
     }
     
     if(!exists("soilInfo_new")) soilInfo_new <- T
-    MANUALRUN <- T
+    MANUALRUN <- F
     if(MANUALRUN){
       easyInit=FALSE; forceSaveInitSoil=F; cons10run = F; coeffPeat1=-240; coeffPeat2=70; coefCH4 = 0.34; coefN20_1 = 0.23; coefN20_2 = 0.077; climScen = 0; clcut=1;  funPreb = regionPrebas; ingrowth = F; initSoilCreStart=NULL; outModReStart=NULL; reStartYear=1; climdata=NULL; sampleX=dataS; disturbanceON=NA; TminTmax=NA
       deltaID <- 1; outType <- "TestRun"; harvScen="Base"; harvInten="Base"; climScen=0  
-      procDrPeat=T; forceSaveInitSoil=F; sampleX = dataS  
+      procDrPeat=1; forceSaveInitSoil=F; sampleX = dataS  
     }
     P0currclim=NA 
     fT0=NA
@@ -870,10 +870,10 @@ if(!FIGsOnly){
       #if(ECMmod==1 & nSegs==10000) load(file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/RegionRuns/InitVals/Ninfo_station",r_no,".rdata"))
       print("Run runModel")
       out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
-                      harvScen="Base", harvInten="Base", procDrPeat=T, 
+                      harvScen="Base", harvInten="Base", procDrPeat=procDrPeat, 
                       ECMmod = 0, initilizeSoil = T,
                       P0currclim = P0currclim,
-                      fT0 = fT0,
+                      fT0 = fT0, scale_cc_area = scale_cc_area,
                       soilGridData = soilGridData,
                       soilInfo_new = soilInfo_new,
                       thinFactX= thinFactX, landClassUnman = landClassUnman,
@@ -905,9 +905,10 @@ if(!FIGsOnly){
                               out$region$weatherYasso[,nYears,3]))
         print("Run with ECMmod.")
         out <- runModel(1,sampleID=1, outType = "testRun", rcps = "CurrClim", climScen = 0,#RCP=0,
-                        harvScen="Base", harvInten="Base", procDrPeat=T, 
+                        harvScen="Base", harvInten="Base", procDrPeat=procDrPeat, 
                         ECMmod = ECMmod,
-                        initilizeSoil=F,
+                        initilizeSoil=F, 
+                        scale_cc_area = scale_cc_area,
                         P0currclim = P0currclim,
                         fT0 = fT0,
                         soilGridData = soilGridData,
@@ -923,32 +924,73 @@ if(!FIGsOnly){
       #plot(timei, NEP_yasso,ylim=c(0,250),type="l",main="Currclim",ylab="NEPmin")
       out_currclim <- out
     }    
+
+    if(TRUE){
+      agei <- apply(out$region$multiOut[,,"age",,1],1:2,mean)
+      ggi <- apply(out$region$multiOut[,,"grossGrowth",,1],1:2,sum)
+      ferti <- out$region$multiOut[,1,"sitetype",1,1]
+      ferti[ferti>5] <- 5
+      ii <-1
+      ti <- 1
+      par(mfrow=c(3,3))
+      for(ii in 1:9){
+        ni <- which(ferti==ii)
+        if(length(ni)>0)
+        plot(agei[ni,ti],ggi[ni,ti+1],main=paste("r_no",r_no,"fert",ii,"time",ti),xlab="age",ylab="grossgrowth")
+      }
+      par(mfrow=c(3,3))
+      ti <- nYears-1
+      for(ii in 1:9){
+        ni <- which(ferti==ii)
+        if(length(ni)>0)
+          plot(agei[ni,ti],ggi[ni,ti+1],main=paste("r_no","fert",ii,"time",ti),xlab="age",ylab="grossgrowth")
+      }
+    }
     print(paste("Sample area:",sum(dataS$area)))
     if(HarvScen!="Base" | fmi_from_allas){
-      workdir <- paste0(getwd(),"/")  
-      startingYear <- 2015
-      endingYear <- 2024
-      nYears <- endingYear-startingYear
-      out <- runModel(1,sampleID=1, outType = "testRun", rcps = rcps, climScen = 0,#RCP=0,
-                      harvScen=harvScen, harvInten=HarvInten, procDrPeat=T, 
-                      thinFactX= thinFactX, landClassUnman = landClassUnman,
-                      ECMmod = ECMmod,
-                      P0currclim = P0currclim,
-                      fT0 = fT0,
-                      soilGridData = soilGridData,
-                      compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
-                      forceSaveInitSoil=F, sampleX = dataS, 
-                      HcMod_Init = HcMod_Init)
-      out_currclim_fmi <- out
-      clim2 <-out$clim
-      
+      if(climScen==0){
+        workdir <- paste0(getwd(),"/")  
+        startingYear <- 2015
+        endingYear <- 2024
+        nYears <- endingYear-startingYear
+        out <- runModel(1,sampleID=1, outType = "testRun", rcps = rcps, climScen = 0,#RCP=0,
+                        harvScen=harvScen, harvInten=HarvInten, procDrPeat=procDrPeat, 
+                        thinFactX= thinFactX, landClassUnman = landClassUnman,
+                        ECMmod = ECMmod, scale_cc_area = scale_cc_area,
+                        P0currclim = P0currclim,
+                        fT0 = fT0,
+                        soilGridData = soilGridData,
+                        compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
+                        forceSaveInitSoil=F, sampleX = dataS, 
+                        HcMod_Init = HcMod_Init)
+        out_currclim_fmi <- out
+        clim2 <-out$clim
+      } else {
+        workdir <- paste0(getwd(),"/")  
+        startingYear <- 2015
+        endingYear <- 2100
+        nYears <- endingYear-startingYear
+        out <- runModel(1,sampleID=1, outType = "testRun", rcps = rcps, 
+                        climScen = climScen,#RCP=0,
+                        harvScen=HarvScen, harvInten=HarvInten, procDrPeat=procDrPeat, 
+                        thinFactX= thinFactX, landClassUnman = landClassUnman,
+                        ECMmod = ECMmod, scale_cc_area = scale_cc_area,
+                        P0currclim = P0currclim,
+                        fT0 = fT0,
+                        soilGridData = soilGridData,
+                        compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
+                        forceSaveInitSoil=F, sampleX = dataS, 
+                        HcMod_Init = HcMod_Init)
+        out_currclim_fmi <- out
+        clim2 <-out$clim
+      }
       #NansRun <- any(is.na(out$region$multiOut[,,"NEP/SMI[layer_1]",,1]))
       #print(paste("Any NaNs in NEP?", NansRun))
       NEP_yasso <- apply(out$region$multiOut[,,"NEP/SMI[layer_1]",,1],1:2,sum)
       #if(NansRun) NEP_yasso <- NEP_yasso[which(!is.na(rowSums(NEP_yasso))),]     
 
       timei2 <- (1:dim(out$region$multiOut)[2])+2015
-      if(climFIG | (TRUE & (save_fmi_data | !fmi_from_allas))){
+      if(climFIG & (TRUE & (save_fmi_data | !fmi_from_allas))){
         par(mfrow=c(3,2))
         plotID <- 101
         id_currclim_1 <- which(clim1$id==dataS$CurrClimID[plotID])
@@ -1044,7 +1086,9 @@ if(!FIGsOnly){
       #  NEP_yasso <- NEP_yasso[-niNa,,]
     }   
     # This function is found in GitHub: Rprebasso/R/utilStaff.r
-    out$region <- peat_regression_model_multiSite(out$region,which(dataS$peatID==1)) 
+    if(procDrPeat==2){
+      out$region <- peat_regression_model_multiSite(out$region,which(dataS$peatID==1)) 
+    }
     output <- out$region$multiOut
     areas <- dataS$area
     timei <- (1:dim(output)[2])+2015
@@ -1268,6 +1312,7 @@ if(!FIGsOnly){
                     "Vmort","CH4em","N2Oem","GPP")
       #  outresults <- outresultsSum <- data.table()
       ij <- 1
+      
       for(ij in 1:length(varis)){
         if(varis[ij]=="Wtot"){ 
           tmp <- apply(output[,,c(24,25,31,32,33),,1],c(1,2,4),sum)
@@ -1656,7 +1701,7 @@ if(!FIGsOnly){
             lines(timei, tmp,col=colorsi[ik])
           }
         }
-        points(timei[1:nYears],rowSums(HarvLimMaak[1:nYears,])/totArea*1000,col="red")
+        if(HarvScen!="NoHarv") points(timei[1:nYears],rowSums(HarvLimMaak[1:nYears,])/totArea*1000,col="red")
         legend("bottomright",c(paste0("all ",round(totArea/1000),"kha"),
                                paste0(sortVarnams," ", round(sortTotAreas/1000),"kha")),
                pch=rep(1,length(sortVarnams)+1),cex=0.7,

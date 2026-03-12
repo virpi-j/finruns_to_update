@@ -6,10 +6,11 @@
 ## ---------------------------------------------------------------------
 runModel <- function(deltaID =1, sampleID, outType="dTabs",
                      initilizeSoil=T, 
+                     scale_cc_area = 1,
                      rcps = "CurrClim",IRS = F,
                      harvScen,harvInten,easyInit=FALSE,
                      forceSaveInitSoil=F, cons10run = F,
-                     BioIndCalc=F, HSIruns=F, procDrPeat=F,
+                     BioIndCalc=F, HSIruns=F, procDrPeat=0,
                      coeffPeat1=-240,coeffPeat2=70,
                      coefCH4 = 0.34,#g m-2 y-1
                      coefN20_1 = 0.23,coefN20_2 = 0.077,#g m-2 y-1
@@ -699,7 +700,7 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
   
   
   #####process drained Peat
-  if(procDrPeat){
+  if(procDrPeat>0){
     siteDrPeat1 <- which(sampleX$peatID==1 & region$siteInfo[,3]<4)
     siteDrPeat2 <- which(sampleX$peatID==1 & region$siteInfo[,3]>=4)
     #    siteDrPeat1 <- which(sampleX$pseudoptyp==400 & region$siteInfo[,3]<4)
@@ -716,7 +717,7 @@ runModel <- function(deltaID =1, sampleID, outType="dTabs",
     region$N2OemisDrPeat_kgyear[siteDrPeat1] <- coefN20_1 
     region$N2OemisDrPeat_kgyear[siteDrPeat2] <- coefN20_2 
 
-    if(FALSE){
+    if(procDrPeat==1){
       region$multiOut[siteDrPeat1,,46,,1] = 0.
       region$multiOut[siteDrPeat1,,46,,1] = region$multiOut[siteDrPeat1,,18,,1] - 
         region$multiOut[siteDrPeat1,,26,,1]/10 - region$multiOut[siteDrPeat1,,27,,1]/10 - 
@@ -1697,6 +1698,13 @@ create_prebas_input_tmp.f = function(r_no, clim, data.sample, nYears,
                                 TminTmax = TminTmax, 
                                 disturbanceON = disturbanceON)
     } else {
+      savingsInit <- F
+      if(savingsInit){
+        save(nYears,nSites,siteInfo,sid,lat,pCrobasX,defaultThin,
+                      ClCuts,areas,energyCut,ftTapioParX,tTapioParX,ingrowth,
+                      initVar, clim,mortMod,TminTmax,disturbanceON,
+             file =  "/scratch/project_2000994/PREBASruns/PREBAStesting/inits.rdata")
+      }
       initPrebas <- InitMultiSite(nYearsMS = rep(nYears,nSites),
                                   siteInfo=siteInfo,
                                   siteInfoDist = sid,
