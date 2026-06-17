@@ -4,6 +4,8 @@
 # https://a3s.fi/2000994-virpi-BioClima/quantile_data_2021.rdata
 
 
+
+
 correction_f <- function(xi,ij,ecdfx=qMSNFI[[ij]],ecdfz=qFC[[ij]],
                          vari = names(qMSNFI)[ij],FIG=F){
   if(!is.na(xi)){
@@ -47,7 +49,7 @@ correction_f <- function(xi,ij,ecdfx=qMSNFI[[ij]],ecdfz=qFC[[ij]],
     #      print(paste(xi,ij,n0,n1))
     y0 <- ecdfx2[n0]
     y1 <- ecdfx2[n1]
-    if(n0==1){ yz <- y0
+    if(n0==1){ yz <- y0   
     } else if(n1==length(ecdfx2)){#nout){
       yz <- y1
     } else {

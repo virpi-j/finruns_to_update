@@ -274,17 +274,334 @@ if(!FIGsOnly){
       data.all$peatID[which(data.all$peatID==700)]<-2
       data.all <- data.all[which(data.all$peatID!=2),]
       rm(list=c("finPeats","peatIDs"))
-      #print(unique(data.all$fert[which(data.all$landclass>1)]))
-      #data.all$fert[which(data.all$landclass>1)] <- 9
-      #print(unique(data.all$fert[which(data.all$landclass>1)]))
       gc()
     }
     areaRegion <- totArea <- sum(data.all$area,na.rm=T)
-    
-  
+
     if(samplaus==0){
       set.seed(1)
       dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F)]
+    } else if(samplaus==-1){
+      if(newSample){
+        par(mfrow=c(1,1))
+        ## correction of data.all
+        if(TRUE){
+          data.all$decid <- data.all$birch+data.all$decid
+          data.all$birch <- 0
+          gc()
+          print("region specific qq-correction of initial state data, start...")
+          #load("~/finruns_to_update/quantile_data_2021.rdata")
+          load("~/finruns_to_update/eCDF_from_NFI.rdata")
+          #age_pdf_by_reg"         "age_pdf_by_reg_sp"      "ba_pdf_by_reg"         
+          # "ba_pdf_by_reg_sp"       "d_pdf_by_reg"           "d_pdf_by_reg_sp"       
+          # "h_pdf_by_reg"           "h_pdf_by_reg_sp"        "siteType_pdf_by_reg"   
+          # "siteType_pdf_by_reg_sp"
+          rnoID <- as.character(r_no)
+          if(r_no<10) rnoID <- paste0("0",r_no)
+          
+          eCDF_ba <- data.table(ba_pdf_by_reg[which(ba_pdf_by_reg$county_id==rnoID),2:3])
+          #eCDF_ba$varx_seq <- eCDF_ba$varx_seq*10
+          colnames(eCDF_ba) <- c("ecdf","x")
+          eCDF_age <- data.table(age_pdf_by_reg[which(age_pdf_by_reg$county_id==rnoID),2:3])
+          colnames(eCDF_age) <- c("ecdf","x")
+          eCDF_h <- data.table(h_pdf_by_reg[which(h_pdf_by_reg$county_id==rnoID),2:3])
+          eCDF_h$varx_seq <- eCDF_h$varx_seq*100
+          colnames(eCDF_h) <- c("ecdf","x")
+          eCDF_dbh <- data.table(d_pdf_by_reg[which(d_pdf_by_reg$county_id==rnoID),2:3])
+          colnames(eCDF_dbh) <- c("ecdf","x")
+          eCDF_decid <- data.table(ba_pdf_by_reg_sp[which(ba_pdf_by_reg_sp$county_id==rnoID &
+                                                            ba_pdf_by_reg_sp$species==3),
+                                                    3:4])
+          colnames(eCDF_decid) <- c("ecdf","x")
+          eCDF_pine <- data.table(ba_pdf_by_reg_sp[which(ba_pdf_by_reg_sp$county_id==rnoID &
+                                                            ba_pdf_by_reg_sp$species==1),
+                                                    3:4])
+          colnames(eCDF_pine) <- c("ecdf","x")
+          eCDF_spruce <- data.table(ba_pdf_by_reg_sp[which(ba_pdf_by_reg_sp$county_id==rnoID &
+                                                            ba_pdf_by_reg_sp$species==2),
+                                                    3:4])
+          colnames(eCDF_spruce) <- c("ecdf","x")
+          
+          load(paste0("~/finruns_to_update/quantile_data_2021_landclass12_",
+                      r_no,"_",regionNames_fi[r_no],".rdata"))
+          # MSNFI-funktioissa Vspec -> baspec
+          if(TRUE){
+            bas <- data.all$ba
+            vsum <- rowSums(data.all[,c("pine","spruce","decid")])
+            data.all[,pine := pine/vsum*bas] 
+            data.all[,spruce := spruce/vsum*bas] 
+            data.all[,decid := decid/vsum*bas] 
+            data.all[which(vsum==0),c("pine","decid","spruce")] <- 0
+            totA <- sum(data.all$area)
+            ex <- sort(unique(round(data.all$ba)))
+            ex <- c(ex,max(ex)*1.01)
+            eMSNFI <- ex*0
+            for(exi in 1:length(ex)){
+              eMSNFI[exi] <- length(which(data.all$ba<=ex[exi]))/nrow(data.all)
+              #eMSNFI[exi] <- sum(data.all$area[which(data.all$ba<=ex[exi])])/totA
+            }
+            qMSNFI[[1]] <- data.table(ecdf=eMSNFI,x=ex)
+            ex <- sort(unique(round(data.all$decid)))
+            ex <- c(ex,max(ex)*1.01)
+            eMSNFI <- ex*0
+            for(exi in 1:length(ex)){
+              eMSNFI[exi] <- length(which(data.all$decid<=ex[exi]))/nrow(data.all)
+              #eMSNFI[exi] <- sum(data.all$area[which(data.all$decid<=ex[exi])])/totA
+            }
+            qMSNFI[[2]] <- data.table(ecdf=eMSNFI,x=ex)
+            ex <- sort(unique(round(data.all$pine)))
+            ex <- c(ex,max(ex)*1.01)
+            eMSNFI <- ex*0
+            for(exi in 1:length(ex)){
+              eMSNFI[exi] <- length(which(data.all$pine<=ex[exi]))/nrow(data.all)
+              #eMSNFI[exi] <- sum(data.all$area[which(data.all$pine<=ex[exi])])/totA
+            }
+            qMSNFI[[3]] <- data.table(ecdf=eMSNFI,x=ex)
+            ex <- sort(unique(round(data.all$spruce)))
+            ex <- c(ex,max(ex)*1.01)
+            eMSNFI <- ex*0
+            for(exi in 1:length(ex)){
+              eMSNFI[exi] <- length(which(data.all$spruce<=ex[exi]))/nrow(data.all)
+              #eMSNFI[exi] <- sum(data.all$area[which(data.all$spruce<=ex[exi])])/totA
+            }
+            qMSNFI[[4]] <- data.table(ecdf=eMSNFI,x=ex)
+            ex <- sort(unique(round(data.all$age)))
+            ex <- c(ex,max(ex)*1.01)
+            eMSNFI <- ex*0
+            for(exi in 1:length(ex)){
+              eMSNFI[exi] <- length(which(data.all$age<=ex[exi]))/nrow(data.all)
+              #eMSNFI[exi] <- sum(data.all$area[which(data.all$age<=ex[exi])])/totA
+            }
+            qMSNFI[[6]] <- data.table(ecdf=eMSNFI,x=ex)
+            ex <- sort(unique(round(data.all$h)))
+            ex <- c(ex,max(ex)*1.01)
+            eMSNFI <- ex*0
+            for(exi in 1:length(ex)){
+              eMSNFI[exi] <- length(which(data.all$h<=ex[exi]))/nrow(data.all)
+              #eMSNFI[exi] <- sum(data.all$area[which(data.all$h<=ex[exi])])/totA
+            }
+            qMSNFI[[7]] <- data.table(ecdf=eMSNFI,x=ex)
+            ex <- sort(unique(round(data.all$dbh)))
+            ex <- c(ex,max(ex)*1.01)
+            eMSNFI <- ex*0
+            for(exi in 1:length(ex)){
+              eMSNFI[exi] <- length(which(data.all$dbh<=ex[exi]))/nrow(data.all)
+              #eMSNFI[exi] <- sum(data.all$area[which(data.all$dbh<=ex[exi])])/totA
+            }
+            qMSNFI[[8]] <- data.table(ecdf=eMSNFI,x=ex)
+          }
+          #dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F),]
+          
+          if(max(data.all$ba)>max(eCDF_ba$x)) eCDF_ba <- rbind(eCDF_ba,data.table(ecdf=1,x=max(data.all$ba)*1.05))
+          if(max(data.all$decid)>max(eCDF_decid$x)) eCDF_decid <- rbind(eCDF_decid,data.table(ecdf=1,x=max(data.all$ba)*1.05))
+          if(max(data.all$pine)>max(eCDF_pine$x)) eCDF_pine <- rbind(eCDF_pine,data.table(ecdf=1,x=max(data.all$ba)*1.05))
+          if(max(data.all$spruce)>max(eCDF_spruce$x)) eCDF_spruce <- rbind(eCDF_spruce,data.table(ecdf=1,x=max(data.all$ba)*1.05))
+          if(max(data.all$age)>max(eCDF_age$x)) eCDF_age <- rbind(eCDF_age,data.table(ecdf=1,x=max(data.all$ba)*1.05))
+          if(max(data.all$h)>max(eCDF_h$x)) eCDF_h <- rbind(eCDF_h,data.table(ecdf=1,x=max(data.all$ba)*1.05))
+          if(max(data.all$dbh)>max(eCDF_dbh$x)) eCDF_dbh <- rbind(eCDF_dbh,data.table(ecdf=1,x=max(data.all$ba)*1.05))
+          
+          qFC <- list(eCDF_ba, eCDF_decid, eCDF_pine, eCDF_spruce, qMSNFI$fert, eCDF_age,
+                             eCDF_h, eCDF_dbh)
+          names(qFC) <- c("BA" ,     "Vdecid" , "Vpine",   "Vspruce","fert","age",     "height",  "dbh")
+          source("~/finruns_to_update/correction_function.R")
+          
+          if(FIGS){
+            ii <- 2 
+            par(mfrow=c(4,2))
+            correction_f(dataS$ba[ii],1,ecdfx = qMSNFI[[1]], ecdfz = qFC[[1]], FIG = T)
+            correction_f(dataS$decid[ii],2,FIG = T)
+            correction_f(dataS$pine[ii],3,FIG = T)
+            correction_f(dataS$spruce[ii],4,,FIG = T)
+            correction_f(dataS$age[ii],6,FIG = T)
+            correction_f(dataS$h[ii],7,FIG = T)
+            correction_f(dataS$dbh[ii],8,FIG = T)
+          }
+          ii <- 1
+          bamax <- max(data.all$ba)
+          dataS <- data.all
+          dataCorr <- function(ii){
+            if(ii%%1e5==0) print(paste(ii,"/",nrow(dataS)))
+            dataSout<- array(c(min(bamax*1.1,correction_f(dataS$ba[ii],1)),
+                               correction_f(dataS$decid[ii],2),
+                               correction_f(dataS$pine[ii],3),
+                               correction_f(dataS$spruce[ii],4),
+                               correction_f(dataS$age[ii],6),
+                               correction_f(dataS$h[ii],7),
+                               correction_f(dataS$dbh[ii],8)),c(1,7))
+            #if(ii%%1e5==0) print(dataSout)
+            return(dataSout)
+          }
+          dataS <- apply(array(1:nrow(data.all),c(nrow(data.all),1)),1:2,dataCorr)
+          print("done.")
+          dataS <- data.table(t(dataS[,,1]))
+          colnames(dataS) <- c("ba","decid","pine","spruce","age","h","dbh")
+          dataS[, ba:=pine+spruce+decid]
+          dataS[which(dataS$age==0),c("ba","decid","pine","spruce","age","h","dbh")]<-0
+          dataS[which(dataS$h==0),c("ba","decid","pine","spruce","age","h","dbh")]<-0
+          if(FIGS){
+            par(mfrow=c(3,2))
+            ni <- sample(1:nrow(data.all),1000,replace = F)
+            ni2 <- sample(1:nrow(dataS),1000,replace = F)
+            plot(data.all$ba[ni],data.all$age[ni],pch=19,cex=0.2,
+                 ylim=c(0,max(c(data.all$age[ni],dataS$age))),
+                 xlim=c(0,max(c(data.all$ba[ni],dataS$ba))),
+                 main=paste0(regionNames_fi[r_no],": black MSNFI, red MSNFIcorr"))
+            points(dataS$ba[ni2],dataS$age[ni2],col="red",pch=19,cex=0.2)
+            plot(data.all$ba[ni],data.all$pine[ni],pch=19,cex=0.2,
+                 ylim=c(0,max(c(data.all$pine[ni],dataS$pine))),
+                 xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
+            points(dataS$ba[ni2],dataS$pine[ni2],col="red",pch=19,cex=0.2)
+            plot(data.all$ba[ni],data.all$spruce[ni],pch=,cex=0.219,
+                 ylim=c(0,max(c(data.all$spruce[ni],dataS$spruce))),
+                 xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
+            points(dataS$ba[ni2],dataS$spruce[ni2],col="red",pch=19,cex=0.2)
+            plot(data.all$ba[ni],data.all$decid[ni],pch=19,cex=0.2,
+                 ylim=c(0,max(c(data.all$decid[ni],dataS$decid))),
+                 xlim=c(0,max(c(data.all$ba[ni],dataS$ba))))
+            points(dataS$ba[ni2],dataS$decid[ni2],col="red",pch=19,cex=0.2)
+            plot(data.all$ba[ni],data.all$dbh[ni],pch=19,cex=0.2,
+                 ylim=c(0,max(c(data.all$dbh[ni],dataS$dbh))),
+                 xlim=c(0,max(c(data.all$ba[ni],dataS$ba))),
+                 main=paste0(regionNames_fi[r_no],": black MSNFI, red MSNFIcorr"))
+            points(dataS$ba[ni2],dataS$dbh[ni2],col="red",pch=19,cex=0.2)
+            plot(data.all$h[ni],data.all$dbh[ni],pch=19,cex=0.2,
+                 ylim=c(0,max(c(data.all$dbh[ni],dataS$dbh))),
+                 xlim=c(0,max(c(data.all$h[ni],dataS$h))))
+            points(dataS$h[ni2],dataS$dbh[ni2],col="red",pch=19,cex=0.2)
+          }
+          data.all[,c("ba","decid","pine","spruce","age","h","dbh")] <- dataS
+          rm("dataS")
+          gc()
+        }
+        
+        ##
+        if(FALSE){
+          data.all$age <- round(data.all$age)
+          sampleArea <- nSegs*median(data.all$area)*1.3
+          sample_weight <- as.numeric(ikaluokat2015[which(ikaluokat2015[,1]==rname_fi),2:(ncol(ikaluokat2015)-1)])
+          sample_weight_lc1 <- sample_weight/sum(sample_weight)
+          #ikaid <- array(0,c(nrow(data.all),1))
+          ages <- round(data.all$age)
+          agelimits <- c(0,20,40,60,80,100,120,140,1e4)
+          
+          agelimitsii <- 0:max(150,max(data.all$age))
+          agelimits[length(agelimits)] <- agelimitsii[length(agelimitsii)]
+          pagelimitsii <- pagedata <- pagedata_lc1 <- pagesample <- pagesample_lc1 <- array(0,c(length(agelimitsii),1))
+          pwages <- cumsum(sample_weight_lc1)
+          n_lc1 <- which(data.all$landclass==1)
+          n_lc2 <- which(data.all$landclass==2)
+          ages <- ages[n_lc1]
+          totArea_lc1 <- sum(data.all$area[n_lc1])
+          ii <- 1
+          for(ii in 1:length(agelimitsii)){
+            if(agelimitsii[ii]%in%agelimits){
+              iiprev <- which(agelimits==agelimitsii[ii])
+              ageprev <- agelimitsii[ii]
+              pagelimitsii[ii] <- pwages[iiprev]
+            } else {
+              pagelimitsii[ii] <- pwages[iiprev] + 
+                (pwages[iiprev+1]-pwages[iiprev])/
+                (agelimits[iiprev+1]-(ageprev))*(agelimitsii[ii]-(ageprev))
+            }
+            pagedata_lc1[ii] <- sum(data.all$area[n_lc1[which(data.all$age[n_lc1]<=agelimitsii[ii])]])/totArea_lc1
+            pagedata[ii] <- sum(data.all$area[which(data.all$age<=agelimitsii[ii])])/totArea
+          }
+          par(mfrow=c(1,1))
+          plot(agelimitsii, pagelimitsii, type="l", xlab="age", ylab="cumsum(area) quantiles")
+          points(agelimits, pwages, pch=19)
+          lines(agelimitsii,pagedata, col="red")
+          lines(agelimitsii,pagedata_lc1, col="brown")
+          
+          ii <- 1
+          nirandom <- NULL
+          areashares <- array(0,c(length(agelimitsii),1))
+          pareashares <- c(pagelimitsii[1],pagelimitsii[-1]-pagelimitsii[-length(pagelimitsii)])
+          pareashares2 <- pareashares/sum(pareashares)*sampleArea
+          #    pareashares2 <- pareashares/sum(pareashares)*totArea*nSegs/nrow(data.all)
+          for(ii in 1:length(agelimitsii)){
+            agei <- agelimitsii[ii]
+            ni <- which(ages==agei)
+            #print(paste("age",agei,":",length(ni)))
+            if(length(ni)==0){
+              ni <- which(abs(ages-ages[which.min((ages-agei)^2)[1]])<=4)
+            }
+            while(areashares[ii]<=1*pareashares2[ii]){
+              nii <- ni[sample(1:length(ni),1)]
+              nirandom <- c(nirandom,nii)
+              areashares[ii] <- areashares[ii]+data.all$area[n_lc1[nii]]
+            }
+            if(FALSE){
+              while(areashares[ii]<=pagelimitsii[ii]){
+                nirandom <- c(nirandom,ni[sample(1:length(ni),1)])
+                areashares[ii] <- sum(data.all$area[n_lc1[nirandom]])/sampleArea
+                #areashares[ii] <- areashares[ii]+data.all$area[n_lc1[nii]]
+              }}
+          }
+          nirandom <- n_lc1[nirandom]
+          ii<-1
+          for(ii in 1:length(agelimitsii)){
+            pagesample_lc1[ii] <- sum(data.all$area[nirandom[
+              which(data.all$age[nirandom]<=agelimitsii[ii])]])/sum(data.all$area[nirandom])
+          }
+          
+          # add landclass 2 segments
+          nLC2 <- round(length(n_lc2)/nrow(data.all)*length(nirandom))
+          nirandom <- c(nirandom,n_lc2[sample(1:length(n_lc2),nLC2,replace = T)])
+          set.seed(1)
+          print(paste("Sampled segments",length(nirandom),"versus nSegs =",nSegs))
+          if(length(nirandom)>nSegs){ 
+            nirandom <- nirandom[sample(1:length(nirandom),nSegs,replace=F)]
+          } else {
+            nirandom <- nirandom[sample(1:length(nirandom),nSegs,replace=T)]
+          }
+          dataS <- data.all[nirandom,]
+          for(ii in 1:length(agelimitsii)){
+            pagesample[ii] <- sum(dataS$area[which(dataS$age<=agelimitsii[ii])])/sum(dataS$area)
+          }
+          lines(agelimitsii, pagesample_lc1, col="pink",lwd=2)
+          lines(agelimitsii, pagesample, col="green")
+          legend(x = "topleft", box.col = "black", 
+                 lty = c(NA,1,1,1,1,1),
+                 pch = c(19,NA,NA,NA,NA,NA),
+                 lwd = c(1,1,1,1,1,2),
+                 col = c("black","black","red","brown","green","pink"),
+                 #bg ="yellow", box.lwd = 2 , #title="EQUATIONS",  
+                 legend=c("VMIstats_lc1","VMIstats lin.line_lc1", "MVMI",
+                          "MVMI_lc1","sample","sample_lc1"))  
+        }
+        if(FALSE){
+          for(ij in 1:length(agelimits)){
+            if(ij == 1){ ikaid[which(ages==agelimits[1])] <- ij
+            } else if(ij==length(agelimits)){
+              ikaid[which(ages>(agelimits[ij-1]+1))] <- ij
+            } else {
+              ikaid[which(ages>(agelimits[ij-1]+10) & ages<=agelimits[ij])]<-ij  
+            }
+          }
+          ikaid[which(data.all$landclass==2)] <- 0
+          ikaid <- ikaid + 1
+          
+          w2 <- areasLandClass2015/sum(areasLandClass2015)
+          sample_weight <- c(w2[2],sample_weight_lc1*w2[1]) # prob for all landclass 2, probs for landclass 1 by age
+          
+          nirandom <- NULL
+          for(id in 1:length(unique(ikaid))){
+            ni <- which(ikaid==id)
+            ni <- ni[sample(1:length(ni),nSegs,replace = T)]
+            ni <- ni[which(cumsum(data.all$area[ni])<= sample_weight[id]*sampleArea)]
+            nirandom <- c(nirandom,ni)
+          }
+          dataS <- data.all[nirandom[sample(1:length(nirandom),nSegs,replace=F)],]
+        }
+        dataS <- data.all[sample(1:nrow(data.all),nSegs,replace=F),]
+        print("save sample")
+        save(dataS,file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/RegionRuns/dataS_",
+                               r_no,"_",nSegs,".rdata"))
+      } else {
+        print("Load old sample data")
+        load(file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/RegionRuns/dataS_",
+                         r_no,"_",nSegs,".rdata"))
+      }
     } else if(samplaus==1){
       if(newSample){
         par(mfrow=c(1,1))
@@ -925,27 +1242,6 @@ if(!FIGsOnly){
       out_currclim <- out
     }    
 
-    if(TRUE){
-      agei <- apply(out$region$multiOut[,,"age",,1],1:2,mean)
-      ggi <- apply(out$region$multiOut[,,"grossGrowth",,1],1:2,sum)
-      ferti <- out$region$multiOut[,1,"sitetype",1,1]
-      ferti[ferti>5] <- 5
-      ii <-1
-      ti <- 1
-      par(mfrow=c(3,3))
-      for(ii in 1:9){
-        ni <- which(ferti==ii)
-        if(length(ni)>0)
-        plot(agei[ni,ti],ggi[ni,ti+1],main=paste("r_no",r_no,"fert",ii,"time",ti),xlab="age",ylab="grossgrowth")
-      }
-      par(mfrow=c(3,3))
-      ti <- nYears-1
-      for(ii in 1:9){
-        ni <- which(ferti==ii)
-        if(length(ni)>0)
-          plot(agei[ni,ti],ggi[ni,ti+1],main=paste("r_no","fert",ii,"time",ti),xlab="age",ylab="grossgrowth")
-      }
-    }
     print(paste("Sample area:",sum(dataS$area)))
     if(HarvScen!="Base" | fmi_from_allas){
       if(climScen==0){
@@ -966,23 +1262,125 @@ if(!FIGsOnly){
         out_currclim_fmi <- out
         clim2 <-out$clim
       } else {
+        dataSorig <- dataS
         workdir <- paste0(getwd(),"/")  
         startingYear <- 2015
         endingYear <- 2100
         nYears <- endingYear-startingYear
+        dataS <- dataSorig
+        #dataS <- dataS[IJs,]
+        if(ggTsekkaus & plantation){
+          dataS$age <- 0
+          dataS$ba <- 0.01
+          dataS$dbh <- 0.01
+          dataS$h <- 1.35
+        }
+        dataS$cons <- 0
         out <- runModel(1,sampleID=1, outType = "testRun", rcps = rcps, 
                         climScen = climScen,#RCP=0,
-                        harvScen=HarvScen, harvInten=HarvInten, procDrPeat=procDrPeat, 
+                        harvScen=HarvScen, harvInten=HarvInten, 
+                        procDrPeat=procDrPeat, 
                         thinFactX= thinFactX, landClassUnman = landClassUnman,
                         ECMmod = ECMmod, scale_cc_area = scale_cc_area,
                         P0currclim = P0currclim,
-                        fT0 = fT0,
+                        fT0 = fT0,ingrowth = F,
                         soilGridData = soilGridData,
                         compHarvX = compHarvX,ageHarvPriorX = ageHarvPriorX,
                         forceSaveInitSoil=F, sampleX = dataS, 
                         HcMod_Init = HcMod_Init)
         out_currclim_fmi <- out
         clim2 <-out$clim
+      }
+      if(ggTsekkaus){
+        pdf(paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/curves_",HarvScen,"_plantatation",plantation,"samplaus",samplaus,".pdf"))
+        bai <- out$region$multiOut[,,"BA",,1]
+        BAi <- apply(bai,1:2,sum)
+        agei <- apply(out$region$multiOut[,,"age",,1],1:2,mean)
+        ggi <- apply(out$region$multiOut[,,"grossGrowth",,1],1:2,sum)
+        Vi <- apply(out$region$multiOut[,,"V",,1],1:2,sum)
+        Hi <- apply(out$region$multiOut[,,"H",,1]*bai,1:2,sum)/BAi
+        Hi[BAi==0] <- 0
+        ferti <- out$region$multiOut[,1,"sitetype",1,1]
+        ferti[ferti>5] <- 5
+        ii <-1
+        if(TRUE){#plantation){
+          agei <- 1:nYears
+          par(mfrow=c(2,3))
+          IJs <- c(0,0,0,0,0)
+          for(ii in 1:5){
+            ni <- which(ferti==ii)
+            if(length(ni)>0){
+              plot(agei,ggi[ni[1],],main=paste("r_no",r_no,"fert",ii,"n=",length(ni)),
+                   xlab="time",ylab="grossgrowth",type="l",
+                   ylim=c(min(min(ggi),0),max(ggi)),xlim=c(0,85))
+              for(ij in 1:length(ni)) lines(agei,ggi[ni[ij],])
+              IJ <- which(ggi[ni,]==max(ggi[ni,]),arr.ind = T)[1]
+              IJs[ii] <- ni[IJ]
+              lines(agei,ggi[ni[IJ],],col="red",lwd=3)
+            }
+          }
+          par(mfrow=c(2,3))
+          for(ii in 1:5){
+            ni <- which(ferti==ii)
+            if(length(ni)>0){
+              plot(agei,Vi[ni[1],],main=paste("r_no",r_no,"fert",ii),
+                   xlab="time",ylab="V",type="l",
+                   ylim=c(0,max(Vi)),xlim=c(0,85))
+              for(ij in 1:length(ni)) lines(agei,Vi[ni[ij],])
+              #IJ <- which(Vi[ni,]==max(Vi[ni,]),arr.ind = T)[1]
+              #IJ <- which(ggi[ni,]==max(ggi[ni,]),arr.ind = T)[1]
+              lines(agei,Vi[IJs[ii],],col="red",lwd=3)
+            }
+          }
+          par(mfrow=c(2,3))
+          for(ii in 1:5){
+            ni <- which(ferti==ii)
+            if(length(ni)>0){
+              plot(agei,Hi[ni[1],],main=paste("r_no",r_no,"fert",ii),
+                   xlab="time",ylab="H",type="l",
+                   ylim=c(0,max(Hi)),xlim=c(0,85))
+              for(ij in 1:length(ni)) lines(agei,Hi[ni[ij],])
+              #IJ <- which(Hi[ni,]==max(Hi[ni,]),arr.ind = T)[1]
+              #IJ <- which(ggi[ni,]==max(ggi[ni,]),arr.ind = T)[1]
+              lines(agei,Hi[IJs[ii],],col="red", lwd=3)
+            }
+          }
+        } else{
+          for(ti in c(1,20,40,(nYears-1))){
+            par(mfrow=c(2,3))
+            for(ii in 1:5){
+              ni <- which(ferti==ii)
+              if(length(ni)>0){
+                plot(agei[ni,ti],ggi[ni,ti+1],main=paste("r_no",r_no,"fert",ii,"time",ti,"n=",length(ni)),
+                     xlab="age",ylab="grossgrowth",
+                     ylim=c(0,max(ggi)),xlim=c(0,150))
+              }
+            }
+            par(mfrow=c(2,3))
+            for(ii in 1:5){
+              ni <- which(ferti==ii)
+              if(length(ni)>0){
+                plot(agei[ni,ti],Vi[ni,ti],
+                     main=paste("r_no",r_no,"fert",ii,"time",ti),
+                     xlab="age",ylab="V",
+                     ylim=c(0,max(Vi)),xlim=c(0,150))
+              }
+            }
+            par(mfrow=c(2,3))
+            for(ii in 1:5){
+              ni <- which(ferti==ii)
+              if(length(ni)>0){
+                plot(agei[ni,ti],Hi[ni,ti],
+                     main=paste("r_no",r_no,"fert",ii,"time",ti),
+                     xlab="age",ylab="H",
+                     ylim=c(0,max(Hi)),xlim=c(0,150))
+              }
+            }
+          }
+        }
+        dev.off()
+        print(any(ggi< -1e14))
+        awrtyrya <- arayr
       }
       #NansRun <- any(is.na(out$region$multiOut[,,"NEP/SMI[layer_1]",,1]))
       #print(paste("Any NaNs in NEP?", NansRun))
@@ -1827,8 +2225,11 @@ if(!FIGsOnly){
     
     #
     #if(toFile) 
-      save(outresults, areatable, 
-                    file = paste0(outDir,fname,"_rno",r_noi,".rdata"))  
+    if(turku){
+      results_reg <-colMeans(outresults[(nYears-1):nYears,])  
+    }
+    save(outresults, areatable, 
+         file = paste0(outDir,fname,"_rno",r_noi,".rdata"))  
     if(fmi_from_allas & delete_fmi_data){
       file.remove(paste0(workdir,fmi_vars_PREBAS_file))
       file.remove(paste0(workdir,climID_lookup_file))
