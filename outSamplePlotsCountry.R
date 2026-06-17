@@ -163,7 +163,7 @@ fname <- paste0("results_agesample",samplaus,
 if(toFile) pdf(paste0(outDir,fname,".pdf"))
 if(!exists("FIGsOnly")) FIGsOnly <- F
 if(!FIGsOnly){
-  for(r_noi in 1:length(rids)){
+  for(r_noi in 7:length(rids)){
     if(r_noi>1) noPrebasLoading <- T
     toMem <- ls()
     set.seed(1)
@@ -226,10 +226,7 @@ if(!FIGsOnly){
     netsinksreg_per_ha2025_org <- as.numeric(netsinksreg_per_ha2025_org)
 
     print(paste("Start running region",r_no,"/",rname))
-  #  landclass <- c(sum(data.all$area[which(data.all$landclass==1)]),
-  #                              sum(data.all$area[which(data.all$landclass==2)]))  
-    
-    
+
     if(TRUE){
       print("Get coordinates...")
       load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/maakunta_",r_no,"_IDsTab.rdata"))
@@ -245,18 +242,21 @@ if(!FIGsOnly){
       rm(list=c("tabX","ntabX","data.IDs"))
       gc()
       
+      if(FALSE){
       #set_thin_PROJ6_warnings(TRUE)
       xy <- data.all[,c("segID","x","y")]
       coordinates(xy) <- c("x","y")
       proj4string(xy) <- crsX
       #cord = SpatialPoints(xy, proj4string=CRS("+init=EPSG:3067"))
+      print("get location lat lon...")
       location<-as.data.frame(spTransform(xy, CRS("+init=epsg:4326")))
       data.all$lon <- location$coords.x1#location$y
       data.all$lat <- location$coords.x2#location$y
       rm(list=c("xy","location"))
       gc()
       print("done.")
-      
+      }
+      print("Extract peat IDs...")
       #data.all <- cbind(data.all,data.IDs[match(data.all$segID, data.IDs$maakuntaID),4:5])
       finPeats <- raster("/scratch/project_2000994/MVMIsegments/segment-IDs/pseudopty.img")
       drPeatID <- 400 # ID = 400 for luke database; drained peatland
@@ -265,9 +265,10 @@ if(!FIGsOnly){
       if(FALSE){#file.exists(paste0("uncRuns/peatID_reg",r_no,".rdata"))){
         load(paste0("uncRuns/peatID_reg",r_no,".rdata"))
       } else {
-        print("Extract peatIDs...")
+        #print("Extract peatIDs...")
         peatIDs <-extract(finPeats, cbind(data.all$x,data.all$y))
       }
+      print("done.")
       data.all[,peatID:=peatIDs]
       data.all$peatID[which(data.all$peatID==100)]<-0
       data.all$peatID[which(data.all$peatID==400)]<-1
@@ -595,6 +596,38 @@ if(!FIGsOnly){
           }
           dataS <- data.all[nirandom[sample(1:length(nirandom),nSegs,replace=F)],]
         }
+        
+        if(TRUE){
+          if(FALSE){
+          print("Get coordinates...")
+          load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/maakunta_",r_no,"_IDsTab.rdata"))
+          data.IDs <- data.IDs[segID!=0]
+          data.IDs$segID <- data.IDs$maakuntaID
+          setkey(data.IDs,segID)
+          setkey(dataSample,segID)
+          #setkey(data.IDs,maakuntaID)
+          
+          tabX <- merge(data.IDs,dataSample)
+          ntabX <- tabX[,.I[which.max(y)],by=segID]$V1
+          dataSample <- cbind(dataSample, tabX[ntabX,c("x","y")])
+          rm(list=c("tabX","ntabX","data.IDs"))
+          gc()
+          }
+          
+          print("set lon lat coordinates")
+          #set_thin_PROJ6_warnings(TRUE)
+          xy <- dataSample[,c("segID","x","y")]
+          coordinates(xy) <- c("x","y")
+          proj4string(xy) <- crsX
+          #cord = SpatialPoints(xy, proj4string=CRS("+init=EPSG:3067"))
+          location<-as.data.frame(spTransform(xy, CRS("+init=epsg:4326")))
+          dataSample$lon <- location$coords.x1#location$y
+          dataSample$lat <- location$coords.x2#location$y
+          rm(list=c("xy","location"))
+          gc()
+          print("done.")
+        }
+        
         dataS <- dataSample 
         rm("dataSample"); gc()
         # dataS <- data.all[sample(1:nrow(data.all),nSegs,replace=F),]
@@ -1765,17 +1798,21 @@ if(!FIGsOnly){
             if(ik==1) ni <- n_lc1
             if(ik==2) ni <- n_lc2
             if(ik==3) ni <- n_lc3
-            if(varis[ij]%in%c("CH4em","N2Oem")){
-              outres <- sum(tmp[ni]*areas[ni])/sum(areas[ni])
-            } else {
-              if(varis[ij]%in%c("NEP_yasso","NEP/SMI[layer_1]") & !is.na(niNa)[1]){
-                ni <- setdiff(ni,niNa)
-                outres <- colSums(apply(tmp[ni,,],1:2,sum)*areas[ni])/sum(areas[ni])
-              } else if(varis[ij]=="GPP"){
-                outres <- colSums(tmp[ni,]*areas[ni])/sum(areas[ni])
+            if(length(ni)>1){
+              if(varis[ij]%in%c("CH4em","N2Oem")){
+                outres <- sum(tmp[ni]*areas[ni])/sum(areas[ni])
               } else {
-                outres <- colSums(apply(tmp[ni,,],1:2,sum)*areas[ni])/sum(areas[ni])
+                if(varis[ij]%in%c("NEP_yasso","NEP/SMI[layer_1]") & !is.na(niNa)[1]){
+                  ni <- setdiff(ni,niNa)
+                  outres <- colSums(apply(tmp[ni,,],1:2,sum)*areas[ni])/sum(areas[ni])
+                } else if(varis[ij]=="GPP"){
+                  outres <- colSums(tmp[ni,]*areas[ni])/sum(areas[ni])
+                } else {
+                  outres <- colSums(apply(tmp[ni,,],1:2,sum)*areas[ni])/sum(areas[ni])
+                }
               }
+            } else {
+              outres <- rep(0,nYears)
             }
             outresults <- cbind(outresults, outres)
             colnames(outresults)[ncol(outresults)] <- paste0(variNams[ij],"_",sortVarnams[ik])
@@ -1809,7 +1846,11 @@ if(!FIGsOnly){
             if(ik==1) ni <- n_lc1
             if(ik==2) ni <- n_lc2
             if(ik==3) ni <- n_lc3
-            outres <- colSums(apply(tmp[ni,,],1:2,mean)*areas[ni])/sum(areas[ni])
+            if(length(ni)>1){
+              outres <- colSums(apply(tmp[ni,,],1:2,mean)*areas[ni])/sum(areas[ni])
+            } else {
+              outres <- rep(0,nYears)
+            }
             outresults <- cbind(outresults, outres)
             colnames(outresults)[ncol(outresults)] <- paste0(variNams[ij],"_",sortVarnams[ik])
             # outresultsSum <- cbind(outresultsSum, outres)
