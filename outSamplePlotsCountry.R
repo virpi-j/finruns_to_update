@@ -296,8 +296,8 @@ if(!FIGsOnly){
           # "ba_pdf_by_reg_sp"       "d_pdf_by_reg"           "d_pdf_by_reg_sp"       
           # "h_pdf_by_reg"           "h_pdf_by_reg_sp"        "siteType_pdf_by_reg"   
           # "siteType_pdf_by_reg_sp"
-          rnoID <- as.character(r_no)
-          if(r_no<10) rnoID <- paste0("0",r_no)
+          rnoID <- as.character(r_nos[r_no])
+          if(r_nos[r_no]<10) rnoID <- paste0("0",r_no)
           
           eCDF_ba <- data.table(ba_pdf_by_reg[which(ba_pdf_by_reg$county_id==rnoID),2:3])
           #eCDF_ba$varx_seq <- eCDF_ba$varx_seq*10
@@ -390,7 +390,7 @@ if(!FIGsOnly){
             }
             qMSNFI[[8]] <- data.table(ecdf=eMSNFI,x=ex)
           }
-          #dataS <- data.all[sample(1:nrow(data.all),nSegs,replace = F),]
+          dataS <- dataSample <- data.all[sample(1:nrow(data.all),nSegs,replace = F),]
           
           if(max(data.all$ba)>max(eCDF_ba$x)) eCDF_ba <- rbind(eCDF_ba,data.table(ecdf=1,x=max(data.all$ba)*1.05))
           if(max(data.all$decid)>max(eCDF_decid$x)) eCDF_decid <- rbind(eCDF_decid,data.table(ecdf=1,x=max(data.all$ba)*1.05))
@@ -418,7 +418,7 @@ if(!FIGsOnly){
           }
           ii <- 1
           bamax <- max(data.all$ba)
-          dataS <- data.all
+          #dataS <- data.all
           dataCorr <- function(ii){
             if(ii%%1e5==0) print(paste(ii,"/",nrow(dataS)))
             dataSout<- array(c(min(bamax*1.1,correction_f(dataS$ba[ii],1)),
@@ -431,7 +431,8 @@ if(!FIGsOnly){
             #if(ii%%1e5==0) print(dataSout)
             return(dataSout)
           }
-          dataS <- apply(array(1:nrow(data.all),c(nrow(data.all),1)),1:2,dataCorr)
+          dataS <- apply(array(1:nSegs,c(nSegs,1)),1:2,dataCorr)
+          #dataS <- apply(array(1:nrow(dataS),c(nrow(data.all),1)),1:2,dataCorr)
           print("done.")
           dataS <- data.table(t(dataS[,,1]))
           colnames(dataS) <- c("ba","decid","pine","spruce","age","h","dbh")
@@ -469,7 +470,8 @@ if(!FIGsOnly){
                  xlim=c(0,max(c(data.all$h[ni],dataS$h))))
             points(dataS$h[ni2],dataS$dbh[ni2],col="red",pch=19,cex=0.2)
           }
-          data.all[,c("ba","decid","pine","spruce","age","h","dbh")] <- dataS
+          #data.all[,c("ba","decid","pine","spruce","age","h","dbh")] <- dataS
+          dataSample[,c("ba","decid","pine","spruce","age","h","dbh")] <- dataS
           rm("dataS")
           gc()
         }
@@ -593,7 +595,9 @@ if(!FIGsOnly){
           }
           dataS <- data.all[nirandom[sample(1:length(nirandom),nSegs,replace=F)],]
         }
-        dataS <- data.all[sample(1:nrow(data.all),nSegs,replace=F),]
+        dataS <- dataSample 
+        rm("dataSample"); gc()
+        # dataS <- data.all[sample(1:nrow(data.all),nSegs,replace=F),]
         print("save sample")
         save(dataS,file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/RegionRuns/dataS_",
                                r_no,"_",nSegs,".rdata"))
@@ -1873,11 +1877,11 @@ if(!FIGsOnly){
             lines(timei, tmp,col=colorsi[ik])
           }
         }
-        lines(timei,gg1,col="gray",lwd=0.5)
-        lines(timei,gg2,col="yellow",lwd=0.5)
-        lines(timei,gg3,col="orange",lwd=0.5)
-        lines(timei,gg4,col="brown",lwd=0.5)
-        lines(timei,gg5,col="magenta",lwd=0.5)
+        #lines(timei,gg1,col="gray",lwd=0.5)
+        #lines(timei,gg2,col="yellow",lwd=0.5)
+        #lines(timei,gg3,col="orange",lwd=0.5)
+        #lines(timei,gg4,col="brown",lwd=0.5)
+        #lines(timei,gg5,col="magenta",lwd=0.5)
         legend("bottomright",c(paste0("all ",round(totArea/1000),"kha"),
                                paste0(sortVarnams," ", round(sortTotAreas/1000),"kha")),
                pch=rep(1,length(sortVarnams)+1),cex=0.7,
