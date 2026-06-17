@@ -163,7 +163,7 @@ fname <- paste0("results_agesample",samplaus,
 if(toFile) pdf(paste0(outDir,fname,".pdf"))
 if(!exists("FIGsOnly")) FIGsOnly <- F
 if(!FIGsOnly){
-  for(r_noi in 7:length(rids)){
+  for(r_noi in 1:length(rids)){
     if(r_noi>1) noPrebasLoading <- T
     toMem <- ls()
     set.seed(1)
@@ -298,7 +298,7 @@ if(!FIGsOnly){
           # "h_pdf_by_reg"           "h_pdf_by_reg_sp"        "siteType_pdf_by_reg"   
           # "siteType_pdf_by_reg_sp"
           rnoID <- as.character(r_nos[r_no])
-          if(r_nos[r_no]<10) rnoID <- paste0("0",r_no)
+          if(r_nos[r_no]<10) rnoID <- paste0("0",rnos[r_no])
           
           eCDF_ba <- data.table(ba_pdf_by_reg[which(ba_pdf_by_reg$county_id==rnoID),2:3])
           #eCDF_ba$varx_seq <- eCDF_ba$varx_seq*10
