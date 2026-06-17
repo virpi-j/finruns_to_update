@@ -1534,7 +1534,7 @@ if(!FIGsOnly){
                      mapping = aes(x = time, y = shares, colour = "gray"))
     print(a1+a3+a2)
     
-    if(TRUE){
+    if(FALSE){
       treeW <- apply(output[,,c(24,25,31:33),,1],1:2,sum)
       gvW <- out$region$GVout[,,4]
       soilC <- out$region$soilCtot      
@@ -1586,7 +1586,8 @@ if(!FIGsOnly){
           # gC/m2*CtoCo2*10*ha -> MtCO2eq = 1e6*1000kg*ha
           #xssoil <- colSums(10*Rh[n1,2016:2023-2015]*areas[n1])/sum(areas[n1])*sum(data.all$area[which(data.all$peatID==peatIDs)])*44/12/1e9
           print("soilC sum simulations")
-          xssoil <- -(colSums((soilC[n1,-1]-soilC[n1,-ncol(treeW)])*areas[n1])[2017:2023-2015]/sum(areas[n1])*sum(data.all$area[which(data.all$peatID==peatIDs)])*44/12/1e9)
+          xssoil <- -(colSums((soilC[n1,-1]-soilC[n1,-ncol(treeW)])*areas[n1])[2017:2023-2015]/
+                        sum(areas[n1])*sum(data.all$area[which(data.all$peatID==peatIDs)])*44/12/1e9)
           print(-round(xssoil,2))
           print("soilC sum data")
           xdsoil <- as.numeric(Netsinks_soil_min[r_nod,-(1:2)])
